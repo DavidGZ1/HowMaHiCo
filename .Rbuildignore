@@ -1,9 +1,12 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.github$
 ^\.Rhistory$
 ^README\.md$
 ^CLAUDE\.md$
+^LICENSE\.md$
 ^project-style-guide\.md$
+^plans_dgz\.md$
 ^_pkgdown\.yml$
 ^pkgdown$
 ^docker$
