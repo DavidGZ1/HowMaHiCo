@@ -1,0 +1,14 @@
+url: https://davidgz1.github.io/HowMaHiCo/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Package overview
+  contents:
+  - HowMaHiCo-package
+
+# Filled in incrementally as functions are migrated/exported (Phases 2-3) and
+# again once the report entry point lands (Phase 4) and the Shiny launcher
+# lands (Phase 8). Every non-internal exported topic must appear here, or the
+# pkgdown Action fails with "topic missing from index".

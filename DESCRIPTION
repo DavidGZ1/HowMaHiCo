@@ -1,0 +1,47 @@
+Package: HowMaHiCo
+Title: LC-Immunopeptidomics QC Reporting Workflow
+Version: 0.0.0.9000
+Authors@R:
+    person("David", "Gomez-Zepeda", , "davidgz.science@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-9467-1213"))
+Description: Ingests LC-MS search-engine output (FragPipe, DIA-NN, PEAKS) for
+    LC-immunopeptidomics (MHC/HLA peptide) experiments, normalizes it into one
+    unified long-format peptide table, and renders self-contained interactive
+    HTML QC reports plus csv/xlsx/png result exports via a parameterized
+    RMarkdown template.
+License: MIT + file LICENSE
+URL: https://github.com/DavidGZ1/HowMaHiCo, https://davidgz1.github.io/HowMaHiCo/
+BugReports: https://github.com/DavidGZ1/HowMaHiCo/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: R (>= 3.5.0)
+Imports:
+    dplyr,
+    DT,
+    ggcorrplot,
+    ggplot2,
+    ggpubr,
+    ggseqlogo,
+    ggupset,
+    ggvenn,
+    gplots,
+    janitor,
+    kableExtra,
+    knitr,
+    mgsub,
+    RColorBrewer,
+    readr,
+    rmarkdown,
+    scales,
+    stringr,
+    tidyr,
+    viridis
+Suggests:
+    bslib,
+    forcats,
+    openxlsx,
+    plotly,
+    shiny,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
