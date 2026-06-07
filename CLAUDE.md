@@ -12,19 +12,24 @@ point tagged `pre-package-v0`): `project-style-guide.md` documents the target
 R-package + Docker + Shiny distribution pattern. The package layout is now primary —
 `DESCRIPTION`, `LICENSE`/`LICENSE.md`, `NAMESPACE`, `R/` (the ~40 functions migrated
 from `00_functions.R`, plus the report entry point), `inst/rmarkdown/templates/` (the
-two Rmds, converted to package report templates), `man/`, `_pkgdown.yml`,
-`.Rbuildignore` — `library(HowMaHiCo)` (or `devtools::load_all()`) gives you
-everything; `source()`-ing files from `0_code/` is no longer part of the workflow.
+two Rmds, converted to package report templates), `tests/testthat/` (hand-synthesized
+fixtures + a full testthat-edition-3 suite — loaders, annotation, checks, counting,
+io-export, overlap-counters, plotting smoke tests), `.github/workflows/R-CMD-check.yaml`
+(Win+Ubuntu CI, green on `dev`), `man/`, `_pkgdown.yml`, `.Rbuildignore` —
+`library(HowMaHiCo)` (or `devtools::load_all()`) gives you everything; `source()`-ing
+files from `0_code/` is no longer part of the workflow. `devtools::check()` is clean
+(0 errors/0 warnings) as of the Phase-5 doc/check pass.
 The original `0_code/`-based files (`00_functions.R`, `01_report_main_template.Rmd`,
 `02_report_upsets.Rmd`, `00_knit_reports.R`, `00_extract_sample_info_fragpipe.R`)
 still sit in the repo as the pre-migration reference copies — not deleted yet
-(tests/CI/Docker/Shiny/`.bat` tiers remain, tracked phase-by-phase in the conversion
-plan), but no longer the canonical source: treat `R/`/`inst/` as authoritative and
-`0_code/` as legacy/about-to-be-removed (the "Directory layout"/"Key files" tables
-below still document that legacy `0_code/`-based layout — rendering and the function
-library have already moved on, per "Pipeline / data flow" and "How to run" below;
-those two tables get a wholesale rewrite once `0_code/` itself is deleted in a later
-phase). RStudio project file: `HowMaHiCo.Rproj`.
+(Docker/Shiny/`.bat` distribution tiers remain — Phases 7-9 of the conversion plan —
+now that Phase 5's tests/CI have landed), but no longer the canonical source: treat
+`R/`/`inst/` as authoritative and `0_code/` as legacy/about-to-be-removed (the
+"Directory layout"/"Key files" tables below still document that legacy
+`0_code/`-based layout — rendering and the function library have already moved on,
+per "Pipeline / data flow" and "How to run" below; those two tables get a wholesale
+rewrite once `0_code/` itself is deleted in a later phase). RStudio project file:
+`HowMaHiCo.Rproj`.
 Tracked in a private GitHub repo (`DavidGZ1/HowMaHiCo`, remote `origin`); `2_data/`,
 `3_results/`, `4_figures/`, and rendered `*.html` reports are gitignored (regenerated
 by the pipeline, kept out of version control to keep the repo small).
