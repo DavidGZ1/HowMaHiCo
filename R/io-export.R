@@ -75,3 +75,43 @@ write.csv_rawr <- function(input, folder, prefix = NULL){
   }
   write.csv(input, file.path(folder, filename), row.names = FALSE)
 }
+
+#' Write a report's render parameters to csv
+#'
+#' Builds a one-row-per-parameter long-format data frame — package version,
+#' render timestamp, then every entry of `params` flattened to a string — and
+#' writes it via [write.csv_rawr()]. Deliberately a plain `input_params.csv`
+#' rather than a prepended xlsx sheet (a documented deviation from the style
+#' guide's "first sheet is always `input_params`" convention): assigning the
+#' table to a local variable named `input_params` lets `write.csv_rawr()`'s
+#' `deparse(substitute())` filename trick produce exactly
+#' `<prefix>_input_params.csv` / `input_params.csv` for free.
+#'
+#' Always called once per render from the template's final export block,
+#' independent of `CsvSave`/xlsx exports — `input_params.csv` is part of the
+#' "always written" tier alongside `pep_all.csv`/
+#' `counts_pep_all_condition.csv`/`seq_by_condition.xlsx`.
+#'
+#' @param params The Rmd `params` list passed to the report at render time.
+#' @param folder Destination directory for the csv.
+#' @param prefix Optional string prepended to the filename, forwarded to
+#'   [write.csv_rawr()].
+#'
+#' @return Invisible `NULL`; called for its side effect of writing
+#'   `input_params.csv`.
+#'
+#' @keywords internal
+#'
+#' @examples
+#' \dontrun{
+#' write_input_params(params, folder = FolderResults)
+#' }
+write_input_params <- function(params, folder, prefix = NULL){
+  input_params <- data.frame(
+    Parameter = c("package_version", "render_timestamp", names(params)),
+    Value = c(as.character(utils::packageVersion("HowMaHiCo")),
+              as.character(Sys.time()),
+              vapply(params, function(x) paste(as.character(x), collapse = "; "), character(1)))
+  )
+  write.csv_rawr(input_params, folder, prefix)
+}

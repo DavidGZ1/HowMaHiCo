@@ -1,0 +1,7 @@
+name: HowMaHiCo main QC report
+description: >
+  Parameterized LC-immunopeptidomics QC report: ID counts, replicate/condition
+  overlap, peptide size distributions, identification QC, motifs, PTM profile,
+  and csv/xlsx/png result exports. Renders against a `pep_all` table built from
+  FragPipe/DIA-NN/PEAKS search-engine output.
+create_dir: false

@@ -1,0 +1,7 @@
+name: HowMaHiCo overlap/UpSet report
+description: >
+  Secondary LC-immunopeptidomics report focused on intersample overlap: per
+  Sample_type/Condition UpSet plots and sample/patient count summaries, plus
+  csv exports. Narrower in scope than the main QC report (no ID-count,
+  distribution, or identification-QC sections).
+create_dir: false

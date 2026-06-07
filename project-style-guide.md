@@ -21,9 +21,8 @@ Parameterised RMarkdown template (inst/rmarkdown/templates/)
       — toggle static/interactive plots via params$PlotsInteractive
       │
       ▼
-Multiple csv files
+Multiple csv files — incl. always-written input_params.csv (version + all params)
 Excel workbook   — summary tables via write.xlsx()
-                 — first sheet is always input_params (version + all params)
 ```
 
 Distribution tiers (always provide all four, ordered easiest → most powerful):

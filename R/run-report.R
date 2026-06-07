@@ -1,0 +1,100 @@
+#' Render a HowMaHiCo QC report from the installed package templates
+#'
+#' Thin wrapper around [rmarkdown::render()] that locates one of the package's
+#' two report templates via [system.file()] and renders it with the supplied
+#' `params`. One call renders one report — composable (loop it for batch runs,
+#' see `derive_filtered_annotation()`/the batch-rendering example below) and
+#' Docker-idiomatic ("one container run = one job").
+#'
+#' `FolderData`/`FolderResults`/`FolderFigures` in `params` are **absolute
+#' paths** (or paths relative to the current working directory at render
+#' time) — unlike the legacy `0_code/`-era reports, the rendered template no
+#' longer assumes a fixed project-root-relative layout, since it now lives
+#' inside an installed package and can be rendered from anywhere.
+#'
+#' @param template One of `"howmahico-report"` (the main QC report) or
+#'   `"howmahico-upsets"` (the secondary overlap/UpSet report).
+#' @param params Named list of report parameters, as declared in the
+#'   template's YAML header (`Title`, `AnnotationFile`, `Subset`, `FolderData`,
+#'   `FolderResults`, `FolderFigures`, `Software`, ...).
+#' @param output_file Output HTML file path, forwarded to
+#'   [rmarkdown::render()].
+#' @param ... Additional arguments forwarded to [rmarkdown::render()] (e.g.
+#'   `quiet`, `envir`).
+#'
+#' @return The path to the rendered output file (invisibly), as returned by
+#'   [rmarkdown::render()].
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' run_howmahico_report(
+#'   template = "howmahico-report",
+#'   params = list(Title = "Report: MHC1p evaluation - dda_all",
+#'                 SampleSet = "MEGF_035_K251128",
+#'                 AnnotationFile = "sample_annotation_dda_all.csv",
+#'                 Subset = "dda_all",
+#'                 FolderData = "/data/2_data",
+#'                 FolderResults = "/data/3_results",
+#'                 FolderFigures = "/data/4_figures",
+#'                 Software = "fragpipe_dda_combined"),
+#'   output_file = "01_report_main__hla1_dda_all.html"
+#' )
+#'
+#' # Batch-rendering pattern (preserves 00_knit_reports.R's 6-subset loop):
+#' annot_jy <- derive_filtered_annotation("sample_annotation_dda_all.csv",
+#'                                        "1_documentation", "JY")
+#' for (subset in c("dda_all", "dda_jy", "dda_plasma")) {
+#'   run_howmahico_report(template = "howmahico-report",
+#'                        params = list(Subset = subset, ...),
+#'                        output_file = paste0("01_report_main__hla1_", subset, ".html"))
+#' }
+#' }
+run_howmahico_report <- function(template = c("howmahico-report", "howmahico-upsets"),
+                                 params, output_file, ...){
+  template <- match.arg(template)
+  skeleton <- system.file("rmarkdown", "templates", template, "skeleton", "skeleton.Rmd",
+                          package = "HowMaHiCo")
+  # render() defaults to knitting in parent.frame() — that's *this* function's
+  # own environment, which already binds a `params` argument and collides with
+  # the `params` rmarkdown injects into the knit environment. Knit in a fresh
+  # environment instead.
+  rmarkdown::render(input = skeleton, output_file = output_file, params = params,
+                    envir = new.env(parent = globalenv()), ...)
+}
+
+#' Derive a Condition-filtered copy of a sample annotation file
+#'
+#' Reads `annotation_file` from `folder`, keeps only rows whose `Condition`
+#' matches `pattern` (via [grepl()]), and writes the result alongside it as
+#' `<stem>_<suffix>.csv` — the preprocessing step `00_knit_reports.R` ran once
+#' to derive the `_jy`/`_plasma` annotation subsets from `_all` before
+#' batch-rendering per-subset reports.
+#'
+#' @param annotation_file Name of the source annotation csv (in `folder`),
+#'   e.g. `"sample_annotation_dda_all.csv"`.
+#' @param folder Directory containing `annotation_file` (and where the
+#'   filtered copy is written), e.g. `"1_documentation"`.
+#' @param pattern Regular expression matched against `Condition` via
+#'   [grepl()] to select rows, e.g. `"JY"` or `"Plasma"`.
+#' @param suffix Suffix appended to the filename stem to name the filtered
+#'   copy (defaults to `tolower(pattern)`).
+#'
+#' @return The path to the written filtered annotation csv (invisibly).
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' derive_filtered_annotation("sample_annotation_dda_all.csv", "1_documentation", "JY")
+#' derive_filtered_annotation("sample_annotation_dda_all.csv", "1_documentation", "Plasma")
+#' }
+derive_filtered_annotation <- function(annotation_file, folder, pattern, suffix = tolower(pattern)){
+  stem <- sub("_all\\.csv$", "", annotation_file)
+  output_file <- file.path(folder, paste0(stem, "_", suffix, ".csv"))
+  utils::read.csv(file.path(folder, annotation_file)) %>%
+    dplyr::filter(grepl(pattern, Condition)) %>%
+    utils::write.csv(output_file, row.names = FALSE)
+  invisible(output_file)
+}
