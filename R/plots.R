@@ -217,6 +217,67 @@ plot_pepmz <- function(input, title, xlimits = NULL){
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 10))
 }
 
+#' Stacked bar chart of total ID counts per Condition, split by length range
+#'
+#' Plots `n_<level>` (`level` one of `"Peptides"`/`"Sequences"`/`"Proteins"`)
+#' against `Condition`, filled by `Length_range`, with a `"Total=..."`
+#' annotation above each bar reporting the `"All peptides"` row's count.
+#'
+#' The original report-inline version closed over three chunk-local globals
+#' (`count_lim`, `counts_size_total`, `shortpep_range`); this migrated version
+#' threads them through as explicit arguments — `lim_level` (the y-axis upper
+#' limit looked up from `count_lim` by the caller) and `shortpep_range`
+#' (defaulted to the standard 8-13 AA HLA-I window). The `counts_size_total`
+#' closure reference is replaced by `df` itself, since every call site already
+#' passes `counts_size_total` as `df` — these were always the same object.
+#'
+#' @param df A counts data frame with `Condition`, `Length_range`, and an
+#'   `n_<level>` column (e.g. the output of `count_ids_condition_bylengthrange`-
+#'   style summaries, including an `"All peptides"` total row per `Condition`).
+#' @param level One of `"Peptides"`, `"Sequences"`, `"Proteins"` — selects the
+#'   `n_<level>` column to plot and labels the y-axis.
+#' @param lim_level Upper y-axis limit (e.g. looked up from a `count_lim`
+#'   table by `Level`/`"Limit_total"`).
+#' @param shortpep_range Length-2 vector `c(min, max)` used to label the
+#'   `"others"` `Length_range` class as `"< min OR > max AAs"`.
+#'
+#' @return A `ggpubr` bar chart (`ggbarplot`) with per-bar count labels, a
+#'   `"Total=..."` annotation, and a viridis fill scale.
+#'
+#' @keywords internal
+#'
+#' @examples
+#' \dontrun{
+#' plot_bp_count_length(counts_size_total, "Peptides", lim_level = 50000, shortpep_range = c(8, 13))
+#' }
+plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)){
+  nlevel <- paste0("n_", level)
+  df %>%
+    dplyr::filter(Length_range != "All peptides") %>%
+    droplevels() %>%
+    dplyr::mutate(Length_range = dplyr::recode(Length_range,
+                                                others = paste0("< ", shortpep_range[1], " OR > ", shortpep_range[2], " AAs"))) %>%
+    ggpubr::ggbarplot(x = "Condition", y = nlevel, fill = "Length_range", group = "Length_range",
+                      label = TRUE, alpha = 0.5,
+                      lab.vjust = 1.5,
+                      lab.nb.digits = 0, lab.size = 2.5) +
+    ggplot2::geom_text(data = df %>% dplyr::filter(Length_range == "All peptides"),
+                       ggplot2::aes(label = paste0("Total=\n", get(nlevel))),
+                       nudge_y = 300 + lim_level / 10,
+                       size = 2.5, alpha = 0.8,
+                       parse = FALSE) +
+    theme_rawr() +
+    ggplot2::scale_y_continuous(limits = c(0, lim_level), breaks = seq(0, lim_level, 5000),
+                                labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+    ggplot2::ylab(paste0("Nb ", level)) +
+    ggplot2::xlab("Condition") +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::labs(fill = "Length") +
+    ggplot2::scale_fill_viridis_d(end = 1) +
+    ggplot2::theme(legend.position = "right") +
+    ggplot2::ggtitle(paste0("Unique ", level, " (total, comparing lengths)"))
+}
+
 #' Four-way Venn diagram of a grouped variable
 #'
 #' Splits `variable` by `group` (expects at most 4 groups — [ggvenn::ggvenn()]
@@ -254,7 +315,8 @@ plot_venn4 <- function(input, variable, group){
 #'
 #' Counts, for each distinct value of `vars`, the set of `Compare` groups it
 #' appears in, and renders an UpSet-style intersection plot via
-#' [ggupset::scale_x_upset()].
+#' [ggupset::scale_x_upset()], optionally annotated with absolute or
+#' percentage intersection-size labels.
 #'
 #' @param df A `pep_all`-shaped data frame.
 #' @param vars Column (tidy-evaluated) whose distinct values define the items
@@ -262,6 +324,10 @@ plot_venn4 <- function(input, variable, group){
 #' @param n_intersections Maximum number of intersections to display.
 #' @param Compare Name (string) of the column defining the groups compared
 #'   (becomes the upset's set membership axis), e.g. `"Condition"`.
+#' @param labels One of `"abs"` (absolute intersection counts, the default),
+#'   `"perc"` (percentage of the total), or any other value to omit the
+#'   per-bar count labels entirely.
+#' @param lab.size Text size of the per-bar count/percentage labels.
 #'
 #' @return A ggplot2/`ggupset` object with an intersection-count bar chart and
 #'   a caption reporting the total unique count and intersections shown.
@@ -272,19 +338,19 @@ plot_venn4 <- function(input, variable, group){
 #' \dontrun{
 #' plot_upset(pep_all, Sequence, n_intersections = 10, Compare = "Condition")
 #' }
-plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition"){
+plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition", labels = "abs", lab.size = 2){
   ## prepare data
   df[, "Compare"] <- df[, Compare]
   df_distinct <- df %>%
     dplyr::distinct(Compare, {{ vars }}, .keep_all = FALSE)
   df_distinct_total <- df_distinct %>% dplyr::pull({{ vars }}) %>% dplyr::n_distinct()
   ## plot
-  df_distinct %>%
+  upset_table <- df_distinct %>%
     dplyr::group_by({{ vars }}) %>%
-    dplyr::summarize(Compare = list(as.character(Compare)), .groups = "drop") %>%
+    dplyr::summarize(Compare = list(as.character(Compare)), .groups = "drop")
+  p_upset <- upset_table %>%
     ggplot2::ggplot(ggplot2::aes(x = Compare)) +
     ggplot2::geom_bar(fill = "#39568CFF") +
-    ggplot2::geom_text(stat = "count", ggplot2::aes(label = ggplot2::after_stat(count)), vjust = -0.2, size = 2) +
     ggupset::scale_x_upset(n_intersections = n_intersections) +
     ggplot2::theme_bw(base_size = 8) +
     ggplot2::theme(plot.margin = ggplot2::unit(c(0.5, 0.5, 0.5, 3), "cm")) +
@@ -293,6 +359,54 @@ plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition"){
       combmatrix.panel.line.size = 0,
       combmatrix.label.make_space = FALSE) +
     ggplot2::labs(caption = paste0("Total unique = ", df_distinct_total, "    Max. intersections shown = ", n_intersections))
+  if(labels == "perc"){
+    p_upset <- p_upset +
+      ggplot2::geom_text(stat = "count", ggplot2::aes(label = ggplot2::after_stat(paste0(round(100 * count / sum(count), 1), "%"))),
+                         vjust = -0.2, size = lab.size)
+  }
+  if(labels == "abs"){
+    p_upset <- p_upset +
+      ggplot2::geom_text(stat = "count", ggplot2::aes(label = ggplot2::after_stat(count)),
+                         vjust = -0.2, size = lab.size)
+  }
+  return(p_upset)
+}
+
+#' Batch of UpSet plots across several variables
+#'
+#' Runs [plot_upset()] once per entry of `vars`, restricting `df` to the
+#' distinct `(var, Compare)` combinations beforehand (via [select_unique()]) so
+#' each plot only sees the columns it needs, and titles each plot
+#' `"<var> overlap by <Compare>"`.
+#'
+#' @param df A `pep_all`-shaped data frame.
+#' @param vars Character vector of column names to plot overlap for, e.g.
+#'   `c("Peptide", "Sequence", "Accession")`.
+#' @param n_intersections Maximum number of intersections to display per plot.
+#' @param Compare Name (string) of the column defining the groups compared.
+#' @param labels Forwarded to [plot_upset()] (`"abs"`, `"perc"`, or other).
+#' @param lab.size Forwarded to [plot_upset()].
+#'
+#' @return A named list of ggplot2/`ggupset` objects, one per entry of `vars`,
+#'   named `"<var>_by_<Compare>"`.
+#'
+#' @keywords internal
+#'
+#' @examples
+#' \dontrun{
+#' plot_upset_batch(pep_all, c("Peptide", "Sequence", "Accession"), Compare = "Condition")
+#' }
+plot_upset_batch <- function(df, vars, n_intersections = 20, Compare = "Condition", labels = "abs", lab.size = 2){
+  output <-
+    lapply(vars, function(x){
+      df %>%
+        select_unique(var = x, Compare) %>%
+        plot_upset(., var, n_intersections = n_intersections, Compare = Compare,
+                   labels = labels, lab.size = lab.size) +
+        ggplot2::ggtitle(paste0(x, " overlap by ", Compare))
+    })
+  names(output) <- paste0(vars, "_by_", Compare)
+  return(output)
 }
 
 #' Sequence motif logo for peptides of a given length

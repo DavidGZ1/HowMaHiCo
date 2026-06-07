@@ -4,7 +4,14 @@
 \alias{plot_upset}
 \title{UpSet plot of overlap between groups for a given variable}
 \usage{
-plot_upset(df, vars, n_intersections = 10, Compare = "Condition")
+plot_upset(
+  df,
+  vars,
+  n_intersections = 10,
+  Compare = "Condition",
+  labels = "abs",
+  lab.size = 2
+)
 }
 \arguments{
 \item{df}{A \code{pep_all}-shaped data frame.}
@@ -16,6 +23,12 @@ being compared, e.g. \code{Sequence}.}
 
 \item{Compare}{Name (string) of the column defining the groups compared
 (becomes the upset's set membership axis), e.g. \code{"Condition"}.}
+
+\item{labels}{One of \code{"abs"} (absolute intersection counts, the default),
+\code{"perc"} (percentage of the total), or any other value to omit the
+per-bar count labels entirely.}
+
+\item{lab.size}{Text size of the per-bar count/percentage labels.}
 }
 \value{
 A ggplot2/\code{ggupset} object with an intersection-count bar chart and
@@ -24,7 +37,8 @@ a caption reporting the total unique count and intersections shown.
 \description{
 Counts, for each distinct value of \code{vars}, the set of \code{Compare} groups it
 appears in, and renders an UpSet-style intersection plot via
-\code{\link[ggupset:scale_x_upset]{ggupset::scale_x_upset()}}.
+\code{\link[ggupset:scale_x_upset]{ggupset::scale_x_upset()}}, optionally annotated with absolute or
+percentage intersection-size labels.
 }
 \examples{
 \dontrun{

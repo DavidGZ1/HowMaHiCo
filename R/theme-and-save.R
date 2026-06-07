@@ -23,39 +23,6 @@ theme_rawr <- function(base_size = 8){
                    plot.title = ggplot2::element_text(face = "bold", size = 8))
 }
 
-#' Save a ggplot to the figures folder, skipping plots that were never built
-#'
-#' Looks up `input` by the name it was called with (via `deparse(substitute())`)
-#' and only calls [ggplot2::ggsave()] if an object of that name exists in the
-#' calling environment — this lets report chunks unconditionally call
-#' `ggsave_rawr(p_some_plot, "some_plot")` even when `p_some_plot` was
-#' conditionally skipped upstream (e.g. no non-NA correlation to plot), without
-#' erroring.
-#'
-#' @param input The plot object to save (NSE: its variable name is used to
-#'   check existence, not its value).
-#' @param file Output file name, without extension; saved as `<file>.png`
-#'   under `4_figures/`.
-#' @param width,height Figure dimensions in cm, passed to [ggplot2::ggsave()].
-#'
-#' @return Invisible `NULL`; called for its side effect of writing a png (or
-#'   warning that it was skipped).
-#'
-#' @keywords internal
-#'
-#' @examples
-#' \dontrun{
-#' ggsave_rawr(p_peplength_all, "peplength_all")
-#' }
-ggsave_rawr <- function(input, file, width = 8, height = 10) {
-  if(exists(deparse(substitute(input))) == TRUE){
-    ggplot2::ggsave(file.path("4_figures", paste0(file, ".png")), input, device = "png",
-                    scale = 1, width = width, height = height, units = "cm")
-  }else{
-    warning(paste0(file, ".png was not saved because the plot was not generated"))
-  }
-}
-
 #' Print a plot, skipping ones that were never built
 #'
 #' Looks up `input` by the name it was called with (via `deparse(substitute())`)
