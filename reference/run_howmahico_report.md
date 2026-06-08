@@ -32,7 +32,10 @@ run_howmahico_report(
 
   Named list of report parameters, as declared in the template's YAML
   header (`Title`, `AnnotationFile`, `Subset`, `FolderData`,
-  `FolderResults`, `FolderFigures`, `Software`, ...).
+  `FolderResults`, `FolderFigures`, `Software`, ...). Pass
+  `ProjectDir = "/absolute/path/to/project"` to resolve relative folder
+  paths from that directory instead of the current working directory —
+  useful when R is started from a subdirectory (e.g. `0_code/`).
 
 - output_file:
 

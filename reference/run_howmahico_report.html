@@ -70,7 +70,10 @@ Docker-idiomatic ("one container run = one job").</p>
 <dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
 <dd><p>Named list of report parameters, as declared in the
 template's YAML header (<code>Title</code>, <code>AnnotationFile</code>, <code>Subset</code>, <code>FolderData</code>,
-<code>FolderResults</code>, <code>FolderFigures</code>, <code>Software</code>, ...).</p></dd>
+<code>FolderResults</code>, <code>FolderFigures</code>, <code>Software</code>, ...). Pass
+<code>ProjectDir = "/absolute/path/to/project"</code> to resolve relative folder paths
+from that directory instead of the current working directory — useful when
+R is started from a subdirectory (e.g. <code>0_code/</code>).</p></dd>
 
 
 <dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
