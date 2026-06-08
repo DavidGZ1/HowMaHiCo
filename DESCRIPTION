@@ -29,6 +29,8 @@ Imports:
     janitor,
     kableExtra,
     mgsub,
+    openxlsx,
+    plotly,
     RColorBrewer,
     readr,
     rmarkdown,
@@ -41,8 +43,6 @@ Suggests:
     bslib,
     forcats,
     knitr,
-    openxlsx,
-    plotly,
     shiny,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

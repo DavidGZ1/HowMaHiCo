@@ -16,7 +16,10 @@
 #'   `"howmahico-upsets"` (the secondary overlap/UpSet report).
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`Title`, `AnnotationFile`, `Subset`, `FolderData`,
-#'   `FolderResults`, `FolderFigures`, `Software`, ...).
+#'   `FolderResults`, `FolderFigures`, `Software`, ...). Pass
+#'   `ProjectDir = "/absolute/path/to/project"` to resolve relative folder paths
+#'   from that directory instead of the current working directory — useful when
+#'   R is started from a subdirectory (e.g. `0_code/`).
 #' @param output_file Output HTML file path, forwarded to
 #'   [rmarkdown::render()].
 #' @param ... Additional arguments forwarded to [rmarkdown::render()] (e.g.
@@ -60,7 +63,10 @@ run_howmahico_report <- function(template = c("howmahico-report", "howmahico-ups
   # own environment, which already binds a `params` argument and collides with
   # the `params` rmarkdown injects into the knit environment. Knit in a fresh
   # environment instead.
+  knit_root_dir <- if (!is.null(params$ProjectDir) && nzchar(params$ProjectDir))
+    normalizePath(params$ProjectDir, mustWork = FALSE) else NULL
   rmarkdown::render(input = skeleton, output_file = output_file, params = params,
+                    knit_root_dir = knit_root_dir,
                     envir = new.env(parent = globalenv()), ...)
 }
 

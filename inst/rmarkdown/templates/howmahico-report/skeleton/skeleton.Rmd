@@ -19,6 +19,7 @@ params:
   FolderData: "2_data" # ABSOLUTE path (or relative to the render-time working directory); for subfolders use "/"
   FolderResults: "3_results" # ABSOLUTE path (or relative to the render-time working directory)
   FolderFigures: "4_figures" # ABSOLUTE path (or relative to the render-time working directory)
+  ProjectDir: ~ # Optional: absolute path to the project root. Set when R's working directory is not the project root (e.g. running from a subfolder). Relative folder paths are resolved from here.
   Instrument: "tims_tof" #faims_orbi, orbi
   Software: "peaks_xpro" # options: fragpipe_dda_individual, fragpipe_dda_combined, diann; to be added: peaks_xpro, peaks_11, fragpipe_diann
   ShortPeptideLenghtMin: 8
@@ -70,10 +71,22 @@ email: david.gomez-zepeda@dkfz.de
 #General parameters for knitr
 require("knitr")
 knitr::opts_chunk$set(echo = FALSE)
+if (!is.null(params$ProjectDir) && nzchar(params$ProjectDir))
+  knitr::opts_knit$set(root.dir = normalizePath(params$ProjectDir, mustWork = FALSE))
 ```
 
 ```{r initialize, message=FALSE, include=FALSE}
 library(HowMaHiCo)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(kableExtra)
+library(ggpubr)
+library(viridis)
+library(plotly)
+library(openxlsx)
+library(DT)
 
 # handy settings
 
