@@ -343,32 +343,7 @@ for(i in 1:length(counts_levels)){
   nlevel = paste0("n_", level)
   lim_level <- count_lim[count_lim$Level == level, "Limit_mean"]
 
-  bp_count_mean[[i]] <-
-    counts_size %>%
-    filter(Length_range !=  "others") %>%  droplevels %>%
-    ggbarplot(x = "Condition", y = nlevel, fill ="Condition", facet.by = "Length_range",
-              add = "mean_sd", scales = "free_x",
-              label = TRUE, alpha = 0.5,
-              lab.vjust = -2, lab.nb.digits=0, lab.size = 2.5, nrow = 2) +
-    theme_rawr() +
-    # scale_y_continuous(limits = c(0, lim_level), breaks = seq(0, lim_level, 500)) +
-    scale_y_continuous(limits = c(0, lim_level), breaks = seq(0, lim_level, 5000), labels = scales::label_number(suffix = " k", scale = 1e-3)) +
-    ylab(paste0("Nb ", level)) +
-    xlab("Condition") +
-    rotate_x_text(70) +
-    labs(fill = "Condition") +
-    scale_fill_viridis_d(end = 1) +
-    theme(legend.position = "none") +
-    ggtitle(paste0("Unique ", level, " (mean +/- sd)")) 
-    
-  # if(params$TestStats){
-  #   bp_count_mean[[i]] <-
-  #     bp_count_mean[[i]] +
-  #     stat_compare_means(aes(group= Condition) ,  method = "anova", size=2) +
-  #     stat_compare_means(aes(group= Condition) , label = "p.signif", method = "t.test", size=2,
-  #                        comparisons  = comp_condition, hide.ns = TRUE) +
-  #     scale_y_continuous(limits = c(0, lim_level*length(conditions)/2), breaks = seq(0, lim_level*length(conditions)/2, 500))
-  # }
+  bp_count_mean[[i]] <- plot_count_mean_sd(counts_size, level, lim_level)
   #rename
   names(bp_count_mean)[i] <- level
   #print
@@ -471,232 +446,17 @@ bp_prop_all_condition_charge
 
 ## Overlap intra-Condition (across replicates) {.tabset}
 
-### Peptides
+```{r results='asis', echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
+overlap_ids    <- c("Peptide", "Sequence", "Accession")
+overlap_labels <- c("Peptides", "Sequences", "Proteins")
 
-```{r echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
-##Get count of peptides in function of nb of samples where it was IDed
-npep_all_overlap <-
-  pep_all %>% 
-  select(Condition, Sample, Peptide) %>%  unique %>% 
-  group_by(Condition, Peptide) %>% 
-  summarize(n_Samples= n_distinct(Sample), .groups = "drop") %>% 
-  group_by(Condition, n_Samples) %>%
-  summarize(n_Peptides= n_distinct(Peptide), .groups = "drop") %>%
-  mutate(n_Samples = as.factor(n_Samples)) %>%
-  arrange(Condition, desc(n_Samples)) %>% 
-  group_by(Condition) %>% 
-  mutate(total_Peptides = sum(n_Peptides),
-         perc_Peptides = paste0("", round(100*(n_Peptides/total_Peptides), 1), "%"),
-         cum_Peptides = cumsum(n_Peptides))
-
-npep_ylim_overlap <- ceiling((max(npep_all_overlap$total_Peptides)*1.2/100))*100
-
-##Plot
-bp_all_overlap <-
-  npep_all_overlap %>% 
-  ggbarplot(x = "Condition", y = "n_Peptides", fill ="n_Samples",  label = FALSE, lab.pos = "in",
-            lab.nb.digits=0, lab.size = 2.5, alpha = 0.8) +
-  geom_text(aes(y=cum_Peptides, label = perc_Peptides), size = 2.5, nudge_y = -300) +
-  geom_text(aes(y=total_Peptides, label = total_Peptides), size = 2.5, nudge_y = +300) +
-  theme_rawr() +
-  ylab("Nb Peptides") +
-  xlab("Condition") +
-  rotate_x_text(70) +
-  scale_y_continuous(limits = c(0, npep_ylim_overlap), breaks = seq(0,npep_ylim_overlap, by = 5000),
-                     labels = scales::label_number(suffix = " k", scale = 1e-3)) +
-  # scale_y_continuous(limits = c(0, npep_ylim_overlap), breaks = seq(0, npep_ylim_overlap, 500)) +
-  scale_fill_viridis_d(begin = 0.2, end = 0.8, "ID in n Replicates") + 
-  ggtitle("All Peptides") 
-##Get count of peptides in function of nb of samples where it was IDed
-npep_short_overlap <-
-  pep_short %>%  
-  select(Condition, Sample, Peptide) %>%  unique %>% 
-  group_by(Condition, Peptide) %>% 
-  summarize(n_Samples= n_distinct(Sample), .groups = "drop") %>% 
-  group_by(Condition, n_Samples) %>%
-  summarize(n_Peptides= n_distinct(Peptide), .groups = "drop") %>%
-  mutate(n_Samples = as.factor(n_Samples)) %>%
-  arrange(Condition, desc(n_Samples)) %>% 
-  group_by(Condition) %>% 
-  mutate(total_Peptides = sum(n_Peptides),
-         perc_Peptides = paste0("", round(100*(n_Peptides/total_Peptides), 1), "%"),
-         cum_Peptides = cumsum(n_Peptides))
-##Plot
-bp_short_overlap <-
-  npep_short_overlap %>% 
-  ggbarplot(x = "Condition", y = "n_Peptides", fill ="n_Samples",  label = FALSE, lab.pos = "in",
-            lab.nb.digits=0, lab.size = 2.5, alpha = 0.8) +
-  geom_text(aes(y=cum_Peptides, label = perc_Peptides), size = 2.5, nudge_y = -300) +
-  geom_text(aes(y=total_Peptides, label = total_Peptides), size = 2.5, nudge_y = +300) +
-  theme_rawr() +
-  ylab("Nb Peptides") +
-  xlab("Condition") +
-  rotate_x_text(70) +
-        # scale_y_continuous(limits = c(0, npep_ylim_overlap), breaks = seq(0, npep_ylim_overlap, 500)) +
-  scale_y_continuous(limits = c(0, npep_ylim_overlap), breaks = seq(0,npep_ylim_overlap, by = 5000),
-                     labels = scales::label_number(suffix = " k", scale = 1e-3)) +
-  
-  scale_fill_viridis_d(begin = 0.2, end = 0.8, "ID in n Replicates") + 
-  ggtitle(paste0("Selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")) 
-
-bp_npep_overlap <-
-  ggarrange(bp_all_overlap + rremove("xlab") + rremove("x.text"),
-          bp_short_overlap,  nrow = 2,heights = c(0.4, 0.6), align = "v",
-          common.legend = TRUE, legend = "right")
-bp_npep_overlap
-```
-
-### Sequences
-
-```{r echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
-##Get count of Sequences in function of nb of samples where it was IDed
-nseq_all_overlap <-
-  pep_all %>% 
-  select(Condition, Sample, Sequence) %>%  unique %>% 
-  group_by(Condition, Sequence) %>% 
-  summarize(n_Samples= n_distinct(Sample), .groups = "drop") %>% 
-  group_by(Condition, n_Samples) %>%
-  summarize(n_Sequences= n_distinct(Sequence), .groups = "drop") %>%
-  mutate(n_Samples = as.factor(n_Samples)) %>%
-  arrange(Condition, desc(n_Samples)) %>% 
-  group_by(Condition) %>% 
-  mutate(total_Sequences = sum(n_Sequences),
-         perc_Sequences = paste0("", round(100*(n_Sequences/total_Sequences), 1), "%"),
-         cum_Sequences = cumsum(n_Sequences))
-
-nseq_ylim_overlap <- ceiling((max(nseq_all_overlap$total_Sequences)*1.2/100))*100
-
-##Plot
-bp_all_overlap <-
-  nseq_all_overlap %>% 
-  ggbarplot(x = "Condition", y = "n_Sequences", fill ="n_Samples",  label = FALSE, lab.pos = "in",
-            lab.nb.digits=0, lab.size = 2.5, alpha = 0.8) +
-  geom_text(aes(y=cum_Sequences, label = perc_Sequences), size = 2.5, nudge_y = -300) +
-  geom_text(aes(y=total_Sequences, label = total_Sequences), size = 2.5, nudge_y = +300) +
-  theme_rawr() +
-  ylab("Nb Sequences") +
-  xlab("Condition") +
-  rotate_x_text(70) +
-  # scale_y_continuous(limits = c(0, npep_ylim), breaks = seq(0, nseq_ylim_overlap, 500)) +
-  scale_y_continuous(limits = c(0, nseq_ylim_overlap), breaks = seq(0,nseq_ylim_overlap, by = 5000),
-                     labels = scales::label_number(suffix = " k", scale = 1e-3)) +
-  scale_fill_viridis_d(begin = 0.2, end = 0.8, "ID in n Replicates") + 
-  ggtitle("All Sequences") 
-##Get count of Sequences in function of nb of samples where it was IDed
-nseq_short_overlap <-
-  pep_short %>%  
-  select(Condition, Sample, Sequence) %>%  unique %>% 
-  group_by(Condition, Sequence) %>% 
-  summarize(n_Samples= n_distinct(Sample), .groups = "drop") %>% 
-  group_by(Condition, n_Samples) %>%
-  summarize(n_Sequences= n_distinct(Sequence), .groups = "drop") %>%
-  mutate(n_Samples = as.factor(n_Samples)) %>%
-  arrange(Condition, desc(n_Samples)) %>% 
-  group_by(Condition) %>% 
-  mutate(total_Sequences = sum(n_Sequences),
-         perc_Sequences = paste0("", round(100*(n_Sequences/total_Sequences), 1), "%"),
-         cum_Sequences = cumsum(n_Sequences))
-##Plot
-bp_short_overlap <-
-  nseq_short_overlap %>% 
-  ggbarplot(x = "Condition", y = "n_Sequences", fill ="n_Samples",  label = FALSE, lab.pos = "in",
-            lab.nb.digits=0, lab.size = 2.5, alpha = 0.8) +
-  geom_text(aes(y=cum_Sequences, label = perc_Sequences), size = 2.5, nudge_y = -300) +
-  geom_text(aes(y=total_Sequences, label = total_Sequences), size = 2.5, nudge_y = +300) +
-  theme_rawr() +
-  ylab("Nb Sequences") +
-  xlab("Condition") +
-  rotate_x_text(70) +
-    # scale_y_continuous(limits = c(0, nseq_ylim_overlap), breaks = seq(0, nseq_ylim_overlap, 500)) +
-  scale_y_continuous(limits = c(0, nseq_ylim_overlap), breaks = seq(0,nseq_ylim_overlap, by = 5000),
-                     labels = scales::label_number(suffix = " k", scale = 1e-3)) +
-  scale_fill_viridis_d(begin = 0.2, end = 0.8, "ID in n Replicates") + 
-  ggtitle(paste0("Selected Sequences (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")) 
-
-
-
-bp_nseq_overlap <-
-  ggarrange(bp_all_overlap + rremove("xlab") + rremove("x.text"),
-          bp_short_overlap,  nrow = 2,heights = c(0.4, 0.6), align = "v",
-          common.legend = TRUE, legend = "right")
-bp_nseq_overlap
-```
-
-
-### Proteins
-
-```{r echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
-#Get count of Accessions in function of nb of samples where it was IDed
-nprot_all_overlap <-
-  pep_all %>% 
-  select(Condition, Sample, Accession) %>%  unique %>% 
-  group_by(Condition, Accession) %>% 
-  summarize(n_Samples= n_distinct(Sample), .groups = "drop") %>% 
-  group_by(Condition, n_Samples) %>%
-  summarize(n_Accessions= n_distinct(Accession), .groups = "drop") %>%
-  mutate(n_Samples = as.factor(n_Samples)) %>%
-  arrange(Condition, desc(n_Samples)) %>% 
-  group_by(Condition) %>% 
-  mutate(total_Accessions = sum(n_Accessions),
-         perc_Accessions = paste0("", round(100*(n_Accessions/total_Accessions), 1), "%"),
-         cum_Accessions = cumsum(n_Accessions))
-
-nprot_ylim_overlap <- ceiling((max(nprot_all_overlap$total_Accessions)*1.2/100))*100
-
-##Plot
-bp__nprot_all_overlap <-
-  nprot_all_overlap %>% 
-  ggbarplot(x = "Condition", y = "n_Accessions", fill ="n_Samples",  label = FALSE, lab.pos = "in",
-            lab.nb.digits=0, lab.size = 2.5, alpha = 0.8) +
-  geom_text(aes(y=cum_Accessions, label = perc_Accessions), size = 2.5, nudge_y = -200) +
-  geom_text(aes(y=total_Accessions, label = total_Accessions), size = 2.5, nudge_y = +200) +
-  theme_rawr() +
-  ylab("Nb Proteins") +
-  xlab("Condition") +
-  rotate_x_text(70) +
-      # scale_y_continuous(limits = c(0, nprot_ylim_overlap), breaks = seq(0, nprot_ylim_overlap, 500)) +
-  scale_y_continuous(limits = c(0, nprot_ylim_overlap), breaks = seq(0,nprot_ylim_overlap, by = 5000),
-                     labels = scales::label_number(suffix = " k", scale = 1e-3)) +
-  scale_fill_viridis_d(begin = 0.2, end = 0.8, "ID in n Replicates") + 
-  ggtitle("Proteins from all peptides") 
-##Get count of Accessions in function of nb of samples where it was IDed
-nprot_short_overlap <-
-  pep_short %>% 
-  select(Condition, Sample, Accession) %>%  unique %>% 
-  group_by(Condition, Accession) %>% 
-  summarize(n_Samples= n_distinct(Sample), .groups = "drop") %>% 
-  group_by(Condition, n_Samples) %>%
-  summarize(n_Accessions= n_distinct(Accession), .groups = "drop") %>%
-  mutate(n_Samples = as.factor(n_Samples)) %>%
-  arrange(Condition, desc(n_Samples)) %>% 
-  group_by(Condition) %>% 
-  mutate(total_Accessions = sum(n_Accessions),
-         perc_Accessions = paste0("", round(100*(n_Accessions/total_Accessions), 1), "%"),
-         cum_Accessions = cumsum(n_Accessions))
-##Plot
-bp_nprot_short_overlap <-
-  nprot_short_overlap %>% 
-  ggbarplot(x = "Condition", y = "n_Accessions", fill ="n_Samples",  label = FALSE, lab.pos = "in",
-            lab.nb.digits=0, lab.size = 2.5, alpha = 0.8) +
-  geom_text(aes(y=cum_Accessions, label = perc_Accessions), size = 2.5, nudge_y = -200) +
-  geom_text(aes(y=total_Accessions, label = total_Accessions), size = 2.5, nudge_y = +200) +
-  theme_rawr() +
-  ylab("Nb Proteins") +
-  xlab("Condition") +
-  rotate_x_text(70) +
-        # scale_y_continuous(limits = c(0, nprot_ylim_overlap), breaks = seq(0, nprot_ylim_overlap, 500)) +
-  scale_y_continuous(limits = c(0, nprot_ylim_overlap), breaks = seq(0,nprot_ylim_overlap, by = 5000),
-                     labels = scales::label_number(suffix = " k", scale = 1e-3)) +
-  scale_fill_viridis_d(begin = 0.2, end = 0.8, "ID in n Replicates") + 
-    ggtitle(paste0("Proteins from ", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs")) 
-
-  # ggtitle("Proteins from short Peptides") 
-
-bp_nprot_overlap <-
-  ggarrange(bp__nprot_all_overlap + rremove("xlab") + rremove("x.text"),
-          bp_nprot_short_overlap,  nrow = 2,heights = c(0.4, 0.6), align = "v",
-          common.legend = TRUE, legend = "right")
-bp_nprot_overlap
+for (i in seq_along(overlap_ids)) {
+  cat("### ", overlap_labels[i], "\n")
+  print(plot_overlap_intra_condition(pep_all, pep_short,
+                                     id_col         = overlap_ids[i],
+                                     shortpep_range = shortpep_range))
+  cat("\n\n")
+}
 ```
 
 
@@ -834,6 +594,9 @@ up_prot_short_overlap_condition
 
 ```{r echo=FALSE, warning=FALSE, fig.width=6}
 # calculations needed for Condition, Bioreplicate, and sample-wise overlap and uniqueness
+npep_all_overlap <- pep_all %>%
+  dplyr::group_by(Condition) %>%
+  dplyr::summarise(total_Peptides = dplyr::n_distinct(Peptide), .groups = "drop")
 
 #complete condition comparison with same condition in each side
 comp_condition_replicated <- c(combn(conditions, 2, simplify =  FALSE) , 
@@ -1311,51 +1074,15 @@ ggprint_rawr(pviolin_areacv_biorep_short)
 ### Violin & boxplots
 
 ```{r echo=FALSE, fig.width=6, fig.height=7}
-vp_score_score <-
-  pep_all %>% 
-  mutate(ChargeSimple = as.factor(case_when(Charge == "+ 1" ~ "+ 1",
-                                  TRUE ~ ">= +2"))) %>% 
-  # ggviolin(x = "Condition", y = "Score", fill = "Condition",
-  #          add = "boxplot") +
-  ggviolin(x = "Condition", y = "Score", fill = "Condition", facet.by = "ChargeSimple", nrow = 2)+
-  geom_boxplot( fill = NA, outlier.shape = NA, width = 0.5,) +
-  stat_boxplot(geom ='errorbar',  width = 0.5) +
-  #  stat_compare_means(aes(group= Condition) ,  method = "kruskal.test", size=2) +
-  # stat_compare_means(aes(group= Condition) , label = "p.signif", method = "wilcox.test", size=2, 
-  #                    comparisons  = comp_condition) +
-  ggtitle("Score distribution, and boxplot") +
-  theme_minimal(base_size = 9) +
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  rotate_x_text(70) +
-  scale_fill_viridis_d() +
-  theme(plot.background = element_rect(fill = "white"))  +
-  theme(legend.position = "none")
+vp_score_score <- plot_qc_violin(pep_all, "Score", "Score distribution, and boxplot")
 vp_score_score
 ```
 
 ### Boxplots
 
 ```{r echo=FALSE, fig.width=6, fig.height=7}
-bp_score_score <-
-  pep_all %>% 
-  mutate(ChargeSimple = as.factor(case_when(Charge == "+ 1" ~ "+ 1",
-                                  TRUE ~ ">= +2"))) %>% 
-  # ggviolin(x = "Condition", y = "Score", fill = "Condition",
-  #          add = "boxplot") +
-  ggboxplot(x = "Condition", y = "Score", color = "Condition", facet.by = "ChargeSimple", nrow = 2)+
-  stat_boxplot(geom ='errorbar',  width = 0.5) +
-  #  stat_compare_means(aes(group= Condition) ,  method = "kruskal.test", size=2) +
-  # stat_compare_means(aes(group= Condition) , label = "p.signif", method = "wilcox.test", size=2, 
-  #                    comparisons  = comp_condition) +
-  ggtitle("Score boxplot") +
-  theme_minimal(base_size = 9) +
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  rotate_x_text(70) +
-  scale_color_viridis_d() +
-  theme(plot.background = element_rect(fill = "white")) +
-  theme(legend.position = "none")
-bp_score_score #%>%  ggplotly
-
+bp_score_score <- plot_qc_box(pep_all, "Score", "Score boxplot")
+bp_score_score
 ```
 
 ## Mass eror per condition and charge {.tabset}
@@ -1363,45 +1090,14 @@ bp_score_score #%>%  ggplotly
 ### Violin & boxplots
 
 ```{r echo=FALSE, fig.width=6, fig.height=7}
-vp_masserror_ppm <-
-  pep_all %>% 
-  mutate(ChargeSimple = as.factor(case_when(Charge == "+ 1" ~ "+ 1",
-                                  TRUE ~ ">= +2"))) %>% 
-  ggviolin(x = "Condition", y = "ppm", fill = "Condition", facet.by = "ChargeSimple", nrow = 2)+
-  geom_boxplot( fill = NA, outlier.shape = NA, width = 0.5,) +
-  stat_boxplot(geom ='errorbar',  width = 0.5) +
-  #  stat_compare_means(aes(group= Condition) ,  method = "kruskal.test", size=2) +
-  # stat_compare_means(aes(group= Condition) , label = "p.signif", method = "wilcox.test", size=2, 
-  #                    comparisons  = comp_condition) +
-  ggtitle("Mass error distribution, and boxplot") +
-  theme_minimal(base_size = 9) +
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  rotate_x_text(70) +
-  scale_fill_viridis_d() +
-  theme(plot.background = element_rect(fill = "white")) +
-  theme(legend.position = "none")
+vp_masserror_ppm <- plot_qc_violin(pep_all, "ppm", "Mass error distribution, and boxplot")
 vp_masserror_ppm
 ```
 
 ### Boxplots alone
 
 ```{r echo=FALSE, fig.width=6, fig.height=7}
-bp_masserror_ppm <-
-  pep_all %>%
-  mutate(ChargeSimple = as.factor(case_when(Charge == "+ 1" ~ "+ 1",
-                                  TRUE ~ ">= +2"))) %>% 
-  ggboxplot(x = "Condition", y = "ppm", color = "Condition", facet.by = "ChargeSimple", nrow = 2)+
-  stat_boxplot(geom ='errorbar',  width = 0.5) +
-  #  stat_compare_means(aes(group= Condition) ,  method = "kruskal.test", size=2) +
-  # stat_compare_means(aes(group= Condition) , label = "p.signif", method = "wilcox.test", size=2, 
-  #                    comparisons  = comp_condition) +
-  ggtitle("Mass error boxplot") +
-  theme_minimal(base_size = 9) +
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  rotate_x_text(70) +
-  scale_color_viridis_d() +
-  theme(plot.background = element_rect(fill = "white")) +
-  theme(legend.position = "none")
+bp_masserror_ppm <- plot_qc_box(pep_all, "ppm", "Mass error boxplot")
 bp_masserror_ppm
 ```
 
@@ -1440,84 +1136,16 @@ Note that numbers mean different things in function of the software
 
 ### Count
   
-```{r, results='asis', echo = FALSE, fig.width=6, fig.height=3.5}
-pep_short_ptm <- 
-  pep_short %>%
-  filter(PTM != "") %>% 
-  mutate(PTM = gsub(" ", "", PTM)) %>%  # Fragpipe sometimes introduces spaces but not always
-  separate_rows(PTM, sep = ";|,") %>% #";" for PEAKS, ", " for fragpipe
-  mutate(PTM = trimws(PTM, "left", "[0-9]+")) 
-
-count_pep_short_ptm <- 
-  pep_short_ptm %>% 
-  group_by(Condition, BioReplicate, Sample, PTM) %>%
-  summarise(n_Peptides = n_distinct(Peptide), 
-            n_Sequences = n_distinct(Sequence),
-            n_Proteins = n_distinct(Accession),
-            SumArea = sum(Area, na.rm = TRUE),
-            .groups = "drop") %>% 
-  complete(PTM, Condition, BioReplicate, Sample) %>% 
-  mutate(across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))
-
-count_pep_short_ptm_cond <- 
-  pep_short_ptm %>% 
-  separate_rows(PTM, sep = ";|,") %>% 
-  # group_by(Condition) %>%  #get totals
-  # mutate(Total_Peptides = n_distinct(Peptide), 
-  #           Total_Sequences = n_distinct(Sequence),
-  #           Total_Proteins = n_distinct(Accession)) %>% 
-  # group_by(Condition,  PTM, Total_Peptides, Total_Sequences, Total_Proteins) %>%
-    group_by(Condition,  PTM) %>%
-  summarise(n_Peptides = n_distinct(Peptide), 
-            n_Sequences = n_distinct(Sequence),
-            n_Proteins = n_distinct(Accession),
-            SumArea = sum(Area, na.rm = TRUE), 
-            .groups = "drop") %>% 
-  complete(PTM, Condition) %>% 
-  mutate(across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))
-  
-
-# npep_ptm_ylim <- max(count_pep_short_ptm$n_Peptides)
-hm_ptm_count_cond <- 
-  count_pep_short_ptm_cond %>% 
-  ggplot(aes(y = PTM, x = Condition, fill = n_Peptides)) +
-  geom_tile() +
-  geom_text(aes(label = n_Peptides)) +
-  scale_fill_viridis(alpha = 0.9, option = "D", begin =  0.1) +
-  theme_rawr() +
-  rotate_x_text(35)+
-  ggtitle("PTM profile, counts of modified peptides")
-
-
+```{r, echo = FALSE, fig.width=6, fig.height=3.5}
+hm_ptm_count_cond <- plot_ptm_heatmap(pep_short, type = "count", shortpep_range = shortpep_range)
 hm_ptm_count_cond
 ```
 
 ### Proportion
 
-```{r, results='asis', echo = FALSE, fig.width=6, fig.height=3.5}
-proportion_pep_short_ptm_cond <-
-  count_pep_short_ptm_cond %>% 
-  select(PTM, Condition, n_Peptides) %>% 
-  bind_rows(counts_size_total %>%  filter(Length_range == paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"))  %>%
-              select(Condition, n_Peptides) %>%  mutate(PTM = "Total") ) %>% 
-  group_by(Condition) %>% 
-
-  mutate(prop_Peptides = round(n_Peptides/n_Peptides[PTM == "Total"],4),
-         perc_Peptides = prop_Peptides*100)
-     
-
-hm_ptm_prop_cond <-
-  proportion_pep_short_ptm_cond %>% 
-  filter(PTM != "Total") %>%  droplevels %>% 
-  ggplot(aes(y = PTM, x = Condition, fill = perc_Peptides)) +
-  geom_tile() +
-  geom_text(aes(label = paste0(perc_Peptides, "%")), size = 2.5) +
-  scale_fill_viridis(alpha = 0.9, option = "D", begin =  0.1) +
-  theme_rawr() +
-  rotate_x_text(35)+
-  ggtitle("PTM profile, proportion of modified peptides vs total")       
- 
-hm_ptm_prop_cond               
+```{r, echo = FALSE, fig.width=6, fig.height=3.5}
+hm_ptm_prop_cond <- plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = shortpep_range)
+hm_ptm_prop_cond
 ```
 
 
@@ -1582,12 +1210,6 @@ if(params$CsvSave == TRUE){
 
 
 if(params$PlotsSave == TRUE){
-  ggsave_rawr(bp_npep_overlap, file = "bp_npep_overlap", folder = FolderFigures, width = n_conditions + 5, height  = 12)
-  ggsave_rawr(bp_nseq_overlap, file = "bp_nseq_overlap", folder = FolderFigures, width = n_conditions + 5, height  = 12)
-  ggsave_rawr(bp_nprot_overlap, file = "bp_nprot_overlap", folder = FolderFigures, width = n_conditions + 5, height  = 12)
-  ggsave_rawr(bp_npep_charge, file = "bp_npep_charge", folder = FolderFigures, width = n_conditions + 5, height  = 14)
-  ggsave_rawr(bp_npep_charge_cond, file = "bp_npep_charge_cond", folder = FolderFigures, width = n_conditions + 5, height  = 20)
-
   ggsave_rawr(pvenn_conditions, file = "pvenn_conditions", folder = FolderFigures, height = 18,width = 12)
   ggsave_rawr(up_peptides_overlap_condition, file = "up_peptides_overlap_condition", folder = FolderFigures,
               width = n_conditions + 5, height  = 12)

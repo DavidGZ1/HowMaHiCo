@@ -691,3 +691,302 @@ plot_corr <- function(mat){
                    axis.text.y = ggplot2::element_text(size = 6)) +
     ggpubr::rotate_x_text(65)
 }
+
+#' Mean ± SD barplot of ID counts per Condition, faceted by length range
+#'
+#' Replaces the inline ggbarplot body in the "Average +/- sd" loop of the main
+#' report template. Filters out the `"others"` length range (only plots the
+#' `"All peptides"` and the expected-length rows), then renders a faceted
+#' barplot showing mean ± SD across BioReplicates per Condition.
+#'
+#' @param df A counts data frame shaped like `counts_size` (one row per
+#'   BioReplicate × Condition × Length_range, with `n_Peptides`,
+#'   `n_Sequences`, `n_Proteins` columns).
+#' @param level One of `"Peptides"`, `"Sequences"`, `"Proteins"`.
+#' @param lim_level Upper y-axis limit (e.g. looked up from a `count_lim`
+#'   table by `Level`/`"Limit_mean"`).
+#'
+#' @return A `ggpubr` barplot with mean ± SD error bars and viridis fill.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_count_mean_sd(counts_size, "Peptides", lim_level = 30000)
+#' }
+plot_count_mean_sd <- function(df, level, lim_level) {
+  nlevel <- paste0("n_", level)
+  df %>%
+    dplyr::filter(Length_range != "others") %>%
+    droplevels() %>%
+    ggpubr::ggbarplot(x = "Condition", y = nlevel, fill = "Condition",
+                      facet.by = "Length_range", add = "mean_sd", scales = "free_x",
+                      label = TRUE, alpha = 0.5,
+                      lab.vjust = -2, lab.nb.digits = 0, lab.size = 2.5, nrow = 2) +
+    theme_rawr() +
+    ggplot2::scale_y_continuous(limits = c(0, lim_level),
+                                breaks = seq(0, lim_level, 5000),
+                                labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+    ggplot2::ylab(paste0("Nb ", level)) +
+    ggplot2::xlab("Condition") +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::labs(fill = "Condition") +
+    ggplot2::scale_fill_viridis_d(end = 1) +
+    ggplot2::theme(legend.position = "none") +
+    ggplot2::ggtitle(paste0("Unique ", level, " (mean +/- sd)"))
+}
+
+#' Stacked overlap barplot (all vs short peptides) for one ID level
+#'
+#' Builds two barplots — one for `pep_all` and one for `pep_short` — showing
+#' how many IDs were detected in 1, 2, 3, … replicates per Condition, then
+#' combines them vertically with [ggpubr::ggarrange()]. Works for Peptides,
+#' Sequences, or Proteins by dispatching on `id_col`.
+#'
+#' @param pep_all,pep_short `pep_all`-shaped data frames (all and length-
+#'   filtered peptides respectively).
+#' @param id_col Column defining the ID level: `"Peptide"`, `"Sequence"`, or
+#'   `"Accession"`.
+#' @param shortpep_range Length-2 numeric vector `c(min, max)` used only to
+#'   build the subtitle of the lower panel.
+#'
+#' @return A [ggpubr::ggarrange()] figure (upper: all peptides; lower: short
+#'   peptides) with a shared legend.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_overlap_intra_condition(pep_all, pep_short, "Peptide")
+#' plot_overlap_intra_condition(pep_all, pep_short, "Accession")
+#' }
+plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
+                                         shortpep_range = c(8, 13)) {
+  n_col  <- dplyr::case_when(id_col == "Peptide"   ~ "n_Peptides",
+                              id_col == "Sequence"  ~ "n_Sequences",
+                              id_col == "Accession" ~ "n_Accessions")
+  ylabel <- dplyr::case_when(id_col == "Peptide"   ~ "Nb Peptides",
+                              id_col == "Sequence"  ~ "Nb Sequences",
+                              id_col == "Accession" ~ "Nb Proteins")
+  title_all <- dplyr::case_when(
+    id_col == "Peptide"   ~ "All Peptides",
+    id_col == "Sequence"  ~ "All Sequences",
+    id_col == "Accession" ~ "Proteins from all peptides")
+  title_short <- dplyr::case_when(
+    id_col == "Peptide"   ~ paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+    id_col == "Sequence"  ~ paste0("Selected Sequences (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+    id_col == "Accession" ~ paste0("Proteins from ", shortpep_range[1], " to ", shortpep_range[2], " AAs"))
+  nudge <- if (id_col == "Accession") 200 else 300
+  tot_col <- paste0("total_", sub("n_", "", n_col))
+
+  .make_overlap_df <- function(df) {
+    df %>%
+      dplyr::select(Condition, Sample, dplyr::all_of(id_col)) %>%
+      unique() %>%
+      dplyr::group_by(Condition, .data[[id_col]]) %>%
+      dplyr::summarize(n_Samples = dplyr::n_distinct(Sample), .groups = "drop") %>%
+      dplyr::group_by(Condition, n_Samples) %>%
+      dplyr::summarize(n_ids = dplyr::n_distinct(.data[[id_col]]), .groups = "drop") %>%
+      dplyr::rename_with(.fn = ~n_col, .cols = "n_ids") %>%
+      dplyr::mutate(n_Samples = as.factor(n_Samples)) %>%
+      dplyr::arrange(Condition, dplyr::desc(n_Samples)) %>%
+      dplyr::group_by(Condition) %>%
+      dplyr::mutate(
+        tot_val = sum(.data[[n_col]]),
+        perc    = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
+        cum     = cumsum(.data[[n_col]])) %>%
+      dplyr::rename_with(.fn = ~tot_col, .cols = "tot_val")
+  }
+
+  .make_bar <- function(df_ov, title) {
+    ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
+    df_ov %>%
+      ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
+                        label = FALSE, lab.pos = "in",
+                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.8) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
+                         size = 2.5, nudge_y = -nudge) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
+                         size = 2.5, nudge_y = nudge) +
+      theme_rawr() +
+      ggplot2::ylab(ylabel) +
+      ggplot2::xlab("Condition") +
+      ggpubr::rotate_x_text(70) +
+      ggplot2::scale_y_continuous(
+        limits = c(0, ylim_ov),
+        breaks = seq(0, ylim_ov, 5000),
+        labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+      ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
+      ggplot2::ggtitle(title)
+  }
+
+  df_all_ov   <- .make_overlap_df(pep_all)
+  df_short_ov <- .make_overlap_df(pep_short)
+  bp_all      <- .make_bar(df_all_ov,   title_all)
+  bp_short    <- .make_bar(df_short_ov, title_short)
+  ggpubr::ggarrange(
+    bp_all   + ggpubr::rremove("xlab") + ggpubr::rremove("x.text"),
+    bp_short,
+    nrow = 2, heights = c(0.4, 0.6), align = "v",
+    common.legend = TRUE, legend = "right")
+}
+
+#' Violin + overlaid boxplot of Score or mass error per Condition and charge
+#'
+#' Creates a `ChargeSimple` column ("+1" vs ">= +2"), then renders a
+#' [ggpubr::ggviolin()] faceted by charge group with an overlaid boxplot and
+#' error bars.
+#'
+#' @param df A `pep_all`-shaped data frame with `Charge` and `y_var` columns.
+#' @param y_var Column name (string) to plot on the y-axis, e.g. `"Score"` or
+#'   `"ppm"`.
+#' @param title Plot title.
+#'
+#' @return A `ggpubr` violin/boxplot figure, faceted by `ChargeSimple`.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_qc_violin(pep_all, "Score", "Score distribution, and boxplot")
+#' plot_qc_violin(pep_all, "ppm",   "Mass error distribution, and boxplot")
+#' }
+plot_qc_violin <- function(df, y_var, title) {
+  df %>%
+    dplyr::mutate(ChargeSimple = as.factor(
+      dplyr::case_when(Charge == "+ 1" ~ "+ 1", TRUE ~ ">= +2"))) %>%
+    ggpubr::ggviolin(x = "Condition", y = y_var, fill = "Condition",
+                     facet.by = "ChargeSimple", nrow = 2) +
+    ggplot2::geom_boxplot(fill = NA, outlier.shape = NA, width = 0.5) +
+    ggplot2::stat_boxplot(geom = "errorbar", width = 0.5) +
+    ggplot2::ggtitle(title) +
+    ggplot2::theme_minimal(base_size = 9) +
+    ggplot2::theme(strip.background = ggplot2::element_blank(),
+                   strip.text       = ggplot2::element_text(face = "bold"),
+                   plot.background  = ggplot2::element_rect(fill = "white"),
+                   legend.position  = "none") +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::scale_fill_viridis_d()
+}
+
+#' Boxplot of Score or mass error per Condition and charge
+#'
+#' Creates a `ChargeSimple` column ("+1" vs ">= +2"), then renders a
+#' [ggpubr::ggboxplot()] faceted by charge group.
+#'
+#' @param df A `pep_all`-shaped data frame with `Charge` and `y_var` columns.
+#' @param y_var Column name (string) to plot on the y-axis, e.g. `"Score"` or
+#'   `"ppm"`.
+#' @param title Plot title.
+#'
+#' @return A `ggpubr` boxplot figure, faceted by `ChargeSimple`.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_qc_box(pep_all, "Score", "Score boxplot")
+#' plot_qc_box(pep_all, "ppm",   "Mass error boxplot")
+#' }
+plot_qc_box <- function(df, y_var, title) {
+  df %>%
+    dplyr::mutate(ChargeSimple = as.factor(
+      dplyr::case_when(Charge == "+ 1" ~ "+ 1", TRUE ~ ">= +2"))) %>%
+    ggpubr::ggboxplot(x = "Condition", y = y_var, color = "Condition",
+                      facet.by = "ChargeSimple", nrow = 2) +
+    ggplot2::stat_boxplot(geom = "errorbar", width = 0.5) +
+    ggplot2::ggtitle(title) +
+    ggplot2::theme_minimal(base_size = 9) +
+    ggplot2::theme(strip.background = ggplot2::element_blank(),
+                   strip.text       = ggplot2::element_text(face = "bold"),
+                   plot.background  = ggplot2::element_rect(fill = "white"),
+                   legend.position  = "none") +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::scale_color_viridis_d()
+}
+
+#' Heatmap of PTM counts or proportions for length-filtered peptides
+#'
+#' Cleans PTM annotation strings, splits multi-PTM entries (`;`/`,` delimited),
+#' and renders a [ggplot2::geom_tile()] heatmap of PTM counts or proportions
+#' per Condition. All data preparation is handled internally — only `pep_short`
+#' (the length-filtered peptide table) is needed.
+#'
+#' @param pep_short Length-filtered `pep_all`-shaped data frame (e.g. the
+#'   `pep_short` object created in the report's `initialize` chunk).
+#' @param type `"count"` (default) for absolute peptide counts per PTM, or
+#'   `"proportion"` for the percentage of PTM-modified vs total peptides.
+#' @param shortpep_range Length-2 numeric vector `c(min, max)` — used only for
+#'   the `"proportion"` subtitle (the denominator is computed directly from
+#'   `pep_short`).
+#'
+#' @return A ggplot2 tile heatmap.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_ptm_heatmap(pep_short, type = "count")
+#' plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = c(8, 13))
+#' }
+plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
+                              shortpep_range = c(8, 13)) {
+  type <- match.arg(type)
+
+  pep_short_ptm <-
+    pep_short %>%
+    dplyr::filter(PTM != "") %>%
+    dplyr::mutate(PTM = gsub(" ", "", PTM)) %>%
+    tidyr::separate_rows(PTM, sep = ";|,") %>%
+    dplyr::mutate(PTM = trimws(PTM, "left", "[0-9]+"))
+
+  count_df <-
+    pep_short_ptm %>%
+    tidyr::separate_rows(PTM, sep = ";|,") %>%
+    dplyr::group_by(Condition, PTM) %>%
+    dplyr::summarise(n_Peptides  = dplyr::n_distinct(Peptide),
+                     n_Sequences = dplyr::n_distinct(Sequence),
+                     n_Proteins  = dplyr::n_distinct(Accession),
+                     SumArea     = sum(Area, na.rm = TRUE),
+                     .groups = "drop") %>%
+    tidyr::complete(PTM, Condition) %>%
+    dplyr::mutate(dplyr::across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))
+
+  if (type == "count") {
+    count_df %>%
+      ggplot2::ggplot(ggplot2::aes(y = PTM, x = Condition, fill = n_Peptides)) +
+      ggplot2::geom_tile() +
+      ggplot2::geom_text(ggplot2::aes(label = n_Peptides)) +
+      viridis::scale_fill_viridis(alpha = 0.9, option = "D", begin = 0.1) +
+      theme_rawr() +
+      ggpubr::rotate_x_text(35) +
+      ggplot2::ggtitle("PTM profile, counts of modified peptides")
+  } else {
+    totals_df <-
+      pep_short %>%
+      dplyr::group_by(Condition) %>%
+      dplyr::summarise(n_Peptides = dplyr::n_distinct(Peptide), .groups = "drop") %>%
+      dplyr::mutate(PTM = "Total")
+
+    count_df %>%
+      dplyr::select(PTM, Condition, n_Peptides) %>%
+      dplyr::bind_rows(totals_df) %>%
+      dplyr::group_by(Condition) %>%
+      dplyr::mutate(prop_Peptides = round(n_Peptides / n_Peptides[PTM == "Total"], 4)) %>%
+      dplyr::mutate(perc_Peptides = .data[["prop_Peptides"]] * 100) %>%
+      dplyr::filter(PTM != "Total") %>%
+      droplevels() %>%
+      ggplot2::ggplot(ggplot2::aes(y = PTM, x = Condition, fill = .data[["perc_Peptides"]])) +
+      ggplot2::geom_tile() +
+      ggplot2::geom_text(ggplot2::aes(label = paste0(.data[["perc_Peptides"]], "%")), size = 2.5) +
+      viridis::scale_fill_viridis(alpha = 0.9, option = "D", begin = 0.1) +
+      theme_rawr() +
+      ggpubr::rotate_x_text(35) +
+      ggplot2::ggtitle("PTM profile, proportion of modified peptides vs total")
+  }
+}

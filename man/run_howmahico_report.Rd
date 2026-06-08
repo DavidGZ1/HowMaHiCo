@@ -17,7 +17,10 @@ run_howmahico_report(
 
 \item{params}{Named list of report parameters, as declared in the
 template's YAML header (\code{Title}, \code{AnnotationFile}, \code{Subset}, \code{FolderData},
-\code{FolderResults}, \code{FolderFigures}, \code{Software}, ...).}
+\code{FolderResults}, \code{FolderFigures}, \code{Software}, ...). Pass
+\code{ProjectDir = "/absolute/path/to/project"} to resolve relative folder paths
+from that directory instead of the current working directory — useful when
+R is started from a subdirectory (e.g. \verb{0_code/}).}
 
 \item{output_file}{Output HTML file path, forwarded to
 \code{\link[rmarkdown:render]{rmarkdown::render()}}.}
