@@ -11,6 +11,7 @@
 #' @return Invisible `NULL`; called for its side effects (`stop()`/`warning()`).
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -42,6 +43,7 @@ check_file_exists <- function(file, overwrite = FALSE){
 #' @return Invisible `NULL`; called for its side effects (`stop()`/`warning()`).
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

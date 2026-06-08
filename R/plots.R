@@ -67,6 +67,7 @@ plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
 #'   the title annotated above.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -121,6 +122,7 @@ plot_peplength_dens <- function(input, title, ylimits = NULL, xlimits = NULL){
 #'   an "Apex = ..." annotation) with the title annotated above.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -176,6 +178,7 @@ plot_pepmass <- function(input, title, xlimits = NULL){
 #'   an "Apex = ..." annotation) with the title annotated above.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -245,6 +248,7 @@ plot_pepmz <- function(input, title, xlimits = NULL){
 #'   `"Total=..."` annotation, and a viridis fill scale.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -333,6 +337,7 @@ plot_venn4 <- function(input, variable, group){
 #'   a caption reporting the total unique count and intersections shown.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -391,6 +396,7 @@ plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition", la
 #'   named `"<var>_by_<Compare>"`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -424,6 +430,7 @@ plot_upset_batch <- function(df, vars, n_intersections = 20, Compare = "Conditio
 #' @return A `ggseqlogo` ggplot object, faceted by `by`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -535,6 +542,7 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #' @return A ggplot2 stacked bar chart.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -573,6 +581,7 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
 #' @return A ggplot2 stacked bar chart.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -614,6 +623,7 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
 #' @return A ggplot2 violin/boxplot figure.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -652,6 +662,7 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
 #' @return A `ggcorrplot` ggplot object.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

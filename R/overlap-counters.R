@@ -10,6 +10,7 @@
 #'   and `cond2`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -32,6 +33,7 @@ count_intersect <- function(input, variable, cond1, cond2){
 #'   `cond2` combined.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -145,6 +147,7 @@ count_uniqueby_ip <- function(input, var, by, level = "Peptide"){
 #'   `n_*` count column from each of the five summaries.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

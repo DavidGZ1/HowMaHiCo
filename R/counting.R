@@ -7,6 +7,7 @@
 #'   with `n_Peptides`, `n_Sequences`, `n_Proteins`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -45,6 +46,7 @@ count_ids <- function(input){
 #'   `Proteins`), with `Length_range` factor-ordered for stacked-bar plotting.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -124,6 +126,7 @@ count_ids_condition_bylengthrange <- function(input){
 #'   factor column (`"+ 1"`, `"+ 2"`, `">= +3"`).
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -152,6 +155,7 @@ get_charge_group <- function(input){
 #'   `Proportion`, `Percentage`, `CumProportion` columns.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -183,6 +187,7 @@ get_proportion_charge <- function(df){
 #'   columns giving the number of samples it was seen in for each condition.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -211,6 +216,7 @@ count_ids_by <- function(input, ...){
 #'   `Area_CV_perc`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -237,6 +243,7 @@ summarise_area <- function(input, by){
 #'   containing that group's unique non-empty sequences.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -267,6 +274,7 @@ list_sequences <- function(input, by){
 #'   columns ordered by the factor levels of `col`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -300,6 +308,7 @@ get_mat_log2area <- function(input, row, col){
 #'   proportions of the total.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

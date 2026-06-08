@@ -168,6 +168,7 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 #'   PEAKS sample.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

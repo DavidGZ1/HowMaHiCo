@@ -16,6 +16,7 @@
 #'   character column converted to a factor ordered by first appearance.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -62,6 +63,7 @@ read_annot <- function(file_annot){
 #' @return A `DT::datatable` htmlwidget.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

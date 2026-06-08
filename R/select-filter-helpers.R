@@ -12,6 +12,7 @@
 #'   removed and unused factor levels dropped.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -39,6 +40,7 @@ select_unique <- function(input, ...){
 #'   removed and unused factor levels dropped.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

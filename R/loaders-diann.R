@@ -15,6 +15,7 @@
 #'   with `Sample_fp` identifying the source subfolder of each row.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -57,6 +58,7 @@ diann_read_tsv_batch <- function(folder, testmode = FALSE){
 #' @return The input reshaped into `pep_all` long format.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -181,6 +183,7 @@ diann_parse_pep_all <- function(input, shortpep_range = c(8, 13)){
 #'   relocated to the end and empty factor levels dropped.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

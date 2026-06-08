@@ -9,6 +9,7 @@
 #' @return A ggplot2 theme object, addable to a plot with `+`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -37,6 +38,7 @@ theme_rawr <- function(base_size = 8){
 #' @return The printed object (invisibly), or a warning if it does not exist.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

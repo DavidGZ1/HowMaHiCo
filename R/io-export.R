@@ -24,6 +24,7 @@
 #'   warning that it was skipped).
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -61,6 +62,7 @@ ggsave_rawr <- function(input, file, folder, width = 8, height = 10) {
 #' @return Invisible `NULL`; called for its side effect of writing a csv.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -101,6 +103,7 @@ write.csv_rawr <- function(input, folder, prefix = NULL){
 #'   `input_params.csv`.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{

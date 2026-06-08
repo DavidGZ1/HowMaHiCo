@@ -48,6 +48,7 @@ fp_read_psm <- function(folder, samplename, testmode = FALSE){
 #'   `Sample_fp` identifying the source subfolder of each row.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -88,6 +89,7 @@ fp_read_psm_batch <- function(folder, testmode = FALSE){
 #' @return The input reshaped into `pep_all` long format.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
@@ -181,6 +183,7 @@ fp_parse_pep_all <- function(input, shortpep_range = c(8, 13)){
 #'   dropped.
 #'
 #' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
