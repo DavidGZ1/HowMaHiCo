@@ -11,3 +11,6 @@
 
 # Rendered HTML reports
 *.html
+
+# Locally-built pkgdown site (deployed to gh-pages by .github/workflows/pkgdown.yaml)
+/docs/

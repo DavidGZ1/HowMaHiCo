@@ -4,11 +4,77 @@ template:
   bootstrap: 5
 
 reference:
+- title: Render reports
+  desc: Entry points that render the parameterized QC report templates end-to-end
+  contents:
+  - run_howmahico_report
+  - derive_filtered_annotation
+
+- title: Annotation
+  desc: Read, validate, and display sample annotation tables
+  contents:
+  - read_annot
+  - print_annot
+
+- title: Data loaders
+  desc: Software-specific loader families that converge on the unified `pep_all` schema
+  contents:
+  - fp_read_psm_batch
+  - fp_parse_pep_all
+  - fp_annotate
+  - diann_read_tsv_batch
+  - diann_parse_pep_all
+  - diann_annotate
+  - peaks_read_batch
+
+- title: Checks
+  desc: Guard against clobbering existing output and summarise global ID composition
+  contents:
+  - check_file_exists
+  - check_output_exists
+  - check_ids_global
+
+- title: Counting & overlap analysis
+  desc: Tabulate ID counts, charge/area summaries, sequence lists, and cross-condition overlaps
+  contents:
+  - count_ids
+  - count_ids_condition_bylengthrange
+  - count_ids_by
+  - get_charge_group
+  - get_proportion_charge
+  - get_mat_log2area
+  - summarise_area
+  - list_sequences
+  - count_intersect
+  - count_merged
+  - count_samples_patients
+  - select_unique
+  - filter_unique
+
+- title: Plotting
+  desc: QC plots covering ID size/charge distributions, overlaps, motifs, and correlation
+  contents:
+  - plot_peplength_dens
+  - plot_pepmass
+  - plot_pepmz
+  - plot_bp_count_length
+  - plot_upset
+  - plot_upset_batch
+  - ggseqlogo_bylength
+  - plot_prop_length_condition
+  - plot_charge_proportions
+  - plot_violin_areacv
+  - plot_corr
+  - theme_rawr
+
+- title: Export & I/O helpers
+  desc: Write report outputs (plots, csvs, render parameters) to disk
+  contents:
+  - ggsave_rawr
+  - ggprint_rawr
+  - write.csv_rawr
+  - write_input_params
+
 - title: Package overview
   contents:
   - HowMaHiCo-package
-
-# Filled in incrementally as functions are migrated/exported (Phases 2-3) and
-# again once the report entry point lands (Phase 4) and the Shiny launcher
-# lands (Phase 8). Every non-internal exported topic must appear here, or the
-# pkgdown Action fails with "topic missing from index".
