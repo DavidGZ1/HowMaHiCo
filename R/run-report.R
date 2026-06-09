@@ -24,8 +24,9 @@
 #'   to a recognised value. Pass `ProjectDir = "/absolute/path/to/project"` to
 #'   resolve relative folder paths from that directory instead of the current
 #'   working directory — useful when R is started from a subdirectory.
-#' @param output_file Output HTML file path, forwarded to
-#'   [rmarkdown::render()].
+#' @param output_file Output HTML file path. Relative paths are resolved
+#'   against `params$ProjectDir` (if supplied) or the current working directory
+#'   at call time — never against the package-internal skeleton location.
 #' @param ... Additional arguments forwarded to [rmarkdown::render()] (e.g.
 #'   `quiet`, `envir`).
 #'
@@ -68,6 +69,10 @@ run_howmahico_report <- function(template = c("01_mhc_report", "02_mhc_upsets"),
   # environment instead.
   knit_root_dir <- if (!is.null(params$ProjectDir) && nzchar(params$ProjectDir))
     normalizePath(params$ProjectDir, mustWork = FALSE) else NULL
+  # Resolve output_file against the project root (or cwd) so a bare filename
+  # doesn't land inside the package library next to skeleton.Rmd.
+  base_dir <- if (!is.null(knit_root_dir)) knit_root_dir else getwd()
+  output_file <- normalizePath(file.path(base_dir, output_file), mustWork = FALSE)
   rmarkdown::render(input = skeleton, output_file = output_file, params = params,
                     knit_root_dir = knit_root_dir,
                     envir = new.env(parent = globalenv()), ...)
