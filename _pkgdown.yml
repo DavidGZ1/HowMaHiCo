@@ -19,13 +19,16 @@ reference:
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema
   contents:
-  - fp_read_psm_batch
-  - fp_parse_pep_all
-  - fp_annotate
-  - diann_read_tsv_batch
-  - diann_parse_pep_all
-  - diann_annotate
-  - peaks_read_batch
+  - read_fragpipe
+  - read_fragpipe_batch
+  - parse_fragpipe
+  - annotate_fragpipe
+  - read_diann
+  - read_diann_batch
+  - parse_diann
+  - annotate_diann
+  - read_peaks
+  - read_peaks_batch
 
 - title: Checks
   desc: Guard against clobbering existing output and summarise global ID composition
