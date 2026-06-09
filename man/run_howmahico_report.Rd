@@ -26,8 +26,9 @@ to a recognised value. Pass \code{ProjectDir = "/absolute/path/to/project"} to
 resolve relative folder paths from that directory instead of the current
 working directory — useful when R is started from a subdirectory.}
 
-\item{output_file}{Output HTML file path, forwarded to
-\code{\link[rmarkdown:render]{rmarkdown::render()}}.}
+\item{output_file}{Output HTML file path. Relative paths are resolved
+against \code{params$ProjectDir} (if supplied) or the current working directory
+at call time — never against the package-internal skeleton location.}
 
 \item{...}{Additional arguments forwarded to \code{\link[rmarkdown:render]{rmarkdown::render()}} (e.g.
 \code{quiet}, \code{envir}).}
