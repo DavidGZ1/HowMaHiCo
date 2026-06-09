@@ -4,11 +4,13 @@
 
 Plans by DGZ to improve HowMaHiCo.
 
+Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
+
 ## To do
 
-## In standby
 
-Do not consider these in the planning, until they are moved to "to do"
+
+## In standby
 
 * one single parser function
 
@@ -20,7 +22,7 @@ Do not consider these in the planning, until they are moved to "to do"
 
 * deal with code possibly buried in a folder, e.g. as option in setup:
 
-opts\_knit$set(root.dir = normalizePath("..")) 
+opts\_knit$set(root.dir = normalizePath(".."))
 
 * libraries not being loaded: kableExtra, ggpubr, viridis, plotly, openxlsx, dplyr
 * standardize function names:
@@ -51,5 +53,10 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * check if it is possible to simplify the params entered in howmahico-report, provide a plan
 * the batch readers currently read all the files in the data folder, then drop what is not in the annotation table. provide a plan to only read what is needed.
 * read\_peaks\_batch has to be split because it currently includes the parser inside
-* 
+* update readme and documentation following the example in example/0\\\_code/00\\\_pipeline\\\_example
+* rename templates howmahico-report to 01\\\_mhc\\\_report, and howmahico-upsets to 02\\\_mhc\\\_upsets, the required functions and documentation
+* implement default modes for:
+
+  * MHC1, ShortPeptideLengthMin = 8, ShortPeptideLengthMax = 13
+  * MHC2, ShortPeptideLengthMin = 12, ShortPeptideLengthMax = 25
 
