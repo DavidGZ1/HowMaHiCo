@@ -503,7 +503,7 @@ overlap_ids    <- c("Peptide", "Sequence", "Accession")
 overlap_labels <- c("Peptides", "Sequences", "Proteins")
 
 for (i in seq_along(overlap_ids)) {
-  cat("### ", overlap_labels[i], "\n")
+  cat("\n### ", overlap_labels[i], "\n")
   print(plot_overlap_intra_condition(pep_all, pep_short,
                                      id_col         = overlap_ids[i],
                                      shortpep_range = shortpep_range))
