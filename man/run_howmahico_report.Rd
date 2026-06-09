@@ -17,10 +17,12 @@ run_howmahico_report(
 
 \item{params}{Named list of report parameters, as declared in the
 template's YAML header (\code{Title}, \code{AnnotationFile}, \code{Subset}, \code{FolderData},
-\code{FolderResults}, \code{FolderFigures}, \code{Software}, ...). Pass
-\code{ProjectDir = "/absolute/path/to/project"} to resolve relative folder paths
-from that directory instead of the current working directory — useful when
-R is started from a subdirectory (e.g. \verb{0_code/}).}
+\code{FolderResults}, \code{FolderFigures}, \code{Software}, \code{MHCclass}, ...). Key params:
+\code{MHCclass} — \code{"MHC1"} (8-13 AA window, default) or \code{"MHC2"} (12-25 AA
+window); overrides \code{ShortPeptideLengthMin}/\code{ShortPeptideLengthMax} when set
+to a recognised value. Pass \code{ProjectDir = "/absolute/path/to/project"} to
+resolve relative folder paths from that directory instead of the current
+working directory — useful when R is started from a subdirectory.}
 
 \item{output_file}{Output HTML file path, forwarded to
 \code{\link[rmarkdown:render]{rmarkdown::render()}}.}

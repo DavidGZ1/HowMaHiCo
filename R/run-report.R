@@ -16,10 +16,12 @@
 #'   `"02_mhc_upsets"` (the secondary overlap/UpSet report).
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`Title`, `AnnotationFile`, `Subset`, `FolderData`,
-#'   `FolderResults`, `FolderFigures`, `Software`, ...). Pass
-#'   `ProjectDir = "/absolute/path/to/project"` to resolve relative folder paths
-#'   from that directory instead of the current working directory — useful when
-#'   R is started from a subdirectory (e.g. `0_code/`).
+#'   `FolderResults`, `FolderFigures`, `Software`, `MHCclass`, ...). Key params:
+#'   `MHCclass` — `"MHC1"` (8-13 AA window, default) or `"MHC2"` (12-25 AA
+#'   window); overrides `ShortPeptideLengthMin`/`ShortPeptideLengthMax` when set
+#'   to a recognised value. Pass `ProjectDir = "/absolute/path/to/project"` to
+#'   resolve relative folder paths from that directory instead of the current
+#'   working directory — useful when R is started from a subdirectory.
 #' @param output_file Output HTML file path, forwarded to
 #'   [rmarkdown::render()].
 #' @param ... Additional arguments forwarded to [rmarkdown::render()] (e.g.
