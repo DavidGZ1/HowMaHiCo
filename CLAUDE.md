@@ -142,6 +142,14 @@ container run = one job"):
 
 ```r
 library(HowMaHiCo)
+
+# Step 1 — auto-generate annotation skeleton, then open and fill in metadata columns
+get_annot_fragpipe(dir_data = "2_data") |>
+  get_annot_sampleid(file_sample_list = "1_documentation/sample_list.xlsx") |>
+  write.csv(row.names = FALSE, file = "1_documentation/sample_annotation_dda_all.csv")
+# → open CSV, complete Condition / BioReplicate / TechReplicate / Sample_ID, save
+
+# Step 2 — render
 run_howmahico_report(
   template = "01_mhc_report",            # or "02_mhc_upsets"
   params = list(Title = "Report: MHC1p evaluation - dda_all",
@@ -149,7 +157,8 @@ run_howmahico_report(
                 FolderDocumentation = "1_documentation",
                 Subset = "dda_all",
                 FolderData = "2_data", FolderResults = "3_results", FolderFigures = "4_figures",
-                Software = "fragpipe_dda_combined", ...),
+                Software = "fragpipe_dda_combined",
+                MHCclass = "MHC1"),       # or "MHC2" for 12-25 AA window
   output_file = "01_report_main__hla1_dda_all.html"
 )
 ```
@@ -175,7 +184,8 @@ didn't need (they hardcoded `1_documentation/`):
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |
-| `ShortPeptideLengthMin/Max` | Defines `pep_short` window (8–13 for HLA-I) |
+| `MHCclass` | `"MHC1"` (8–13 AA, default) or `"MHC2"` (12–25 AA) — sets `shortpep_range`; overrides `ShortPeptideLengthMin/Max` |
+| `ShortPeptideLengthMin/Max` | Custom `pep_short` window; used only when `MHCclass` is not a recognised value |
 | `ResultsOverwrite` | FALSE makes `check_output_exists`/`check_file_exists` abort if outputs already exist |
 | `TestMode` | TRUE = load only first ~100 lines per file (fast iteration; can break correlation plots) |
 | `CsvSave` / `PlotsSave` | TRUE = also export intermediary csvs / png plots |
