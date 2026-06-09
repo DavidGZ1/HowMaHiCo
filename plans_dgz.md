@@ -7,7 +7,7 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
-
+* some plots use scale_y_continous with fixed breaks and labels. Change them to a more general one, with n.breaks = 5
 
 ## In standby
 
