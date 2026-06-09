@@ -57,7 +57,7 @@ test_that("ggseqlogo_bylength prints about groups dropped for lacking sequences 
   # Length == 8 (SIINFEKL) only appears in JY_plasma -- JY_tissue/MM_plasma get dropped.
   # The notice is emitted via print(), not message(), so check stdout, not the
   # message condition.
-  expect_output(ggseqlogo_bylength(pep_all, seq_length = 8, by = "Condition"), "were droped")
+  suppressWarnings(expect_output(ggseqlogo_bylength(pep_all, seq_length = 8, by = "Condition"), "were droped"))
 })
 
 test_that("plot_prop_length_condition builds a stacked Length_range proportion bar chart", {
