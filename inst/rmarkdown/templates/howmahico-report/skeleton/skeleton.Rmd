@@ -93,18 +93,18 @@ library(DT)
 shortpep_range <-  c(params$ShortPeptideLenghtMin, params$ShortPeptideLenghtMax)
 
 if(params$Subset == ""){
-  suffix <- params$Subset
+  subset <- params$Subset
   FolderResults <- params$FolderResults
   FolderFigures <- params$FolderFigures
 }else{
-  suffix <- paste0(params$Subset, "_")
+  subset <- paste0(params$Subset, "_")
   dir.create(file.path(params$FolderResults, params$Subset))
   dir.create(file.path(params$FolderFigures, params$Subset))
   FolderResults <- file.path(params$FolderResults, params$Subset)
   FolderFigures <- file.path(params$FolderFigures, params$Subset)
 }
 
-file_rda <- file.path( file.path(params$FolderData,paste0(suffix, "pep_all.rda")))
+file_rda <- file.path( file.path(params$FolderData,paste0(subset, "pep_all.rda")))
 
 # pre-checks to avoid overwriting files
 check_output_exists(params$FolderResults, overwrite =  params$ResultsOverwrite)
