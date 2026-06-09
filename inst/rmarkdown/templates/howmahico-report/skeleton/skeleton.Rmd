@@ -1172,9 +1172,6 @@ if(params$CsvSave == TRUE){
 
 if(params$PlotsSave == TRUE){
   ggsave_rawr(pvenn_conditions, file = "pvenn_conditions", folder = FolderFigures, height = 18,width = 12)
-  ggsave_rawr(up_peptides_overlap_condition, file = "up_peptides_overlap_condition", folder = FolderFigures,
-              width = n_conditions + 5, height  = 12)
-  ggsave_rawr(up_protein_overlap_condition, file = "up_protein_overlap_condition", folder = FolderFigures, width = n_conditions + 5, height  = 12)
   ggsave_rawr(hm_overlap_matrix, file = "hm_overlap_matrix", folder = FolderFigures, width = n_conditions + 5, height  = 12)
   ggsave_rawr(phist_pep_length_merged, "phist_pep_length_merged", folder = FolderFigures, width = n_conditions*1.5 + 2, height=8)
   ggsave_rawr(phist_pep_mass_merged, "phist_pep_mass_merged.tif", folder = FolderFigures, width =  n_conditions*1.5 + 2, height=10)
