@@ -4,7 +4,12 @@
 \alias{plot_prop_length_condition}
 \title{Stacked bar chart of peptide proportions by \code{Length_range} and \code{Condition}}
 \usage{
-plot_prop_length_condition(input, level2plot = "Peptides", label_size = 1.6)
+plot_prop_length_condition(
+  input,
+  level2plot = "Peptides",
+  label_size = 1.6,
+  palette = NULL
+)
 }
 \arguments{
 \item{input}{Output of \code{\link[=count_ids_condition_bylengthrange]{count_ids_condition_bylengthrange()}}.}
@@ -14,6 +19,9 @@ plot_prop_length_condition(input, level2plot = "Peptides", label_size = 1.6)
 
 \item{label_size}{Text size for the percentage labels (\code{geom_text}); mirrors
 the report's \code{PlotTextLabelSize} param.}
+
+\item{palette}{Optional named character vector mapping \code{Length_range} values
+to fill colours. When \code{NULL} (default) \code{scale_fill_viridis_d()} is used.}
 }
 \value{
 A ggplot2 stacked bar chart.

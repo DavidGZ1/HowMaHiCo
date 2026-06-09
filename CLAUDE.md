@@ -149,10 +149,10 @@ get_annot_fragpipe(dir_data = "2_data") |>
   write.csv(row.names = FALSE, file = "1_documentation/sample_annotation_dda_all.csv")
 # → open CSV, complete Condition / BioReplicate / TechReplicate / Sample_ID, save
 
-# Step 2 — render
+# Step 2 — render (title is auto-generated from SampleSet / Subset / MHCclass / date)
 run_howmahico_report(
   template = "01_mhc_report",            # or "02_mhc_upsets"
-  params = list(Title = "Report: MHC1p evaluation - dda_all",
+  params = list(SampleSet = "MEGF_035",
                 AnnotationFile = "sample_annotation_dda_all.csv",
                 FolderDocumentation = "1_documentation",
                 Subset = "dda_all",
@@ -179,6 +179,7 @@ didn't need (they hardcoded `1_documentation/`):
 | Param | Purpose |
 |---|---|
 | `Software` | `fragpipe_dda_combined` \| `fragpipe_dda_individual` \| `diann` \| `peaks_xpro` — selects the loader branch |
+| `SampleSet` | Human-readable experiment name; used in the auto-generated report title |
 | `Subset` | Subset name; becomes a filename prefix and a subfolder under `FolderResults`/`FolderFigures` |
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
 | `AnnotationFile` | CSV name within `FolderDocumentation` |

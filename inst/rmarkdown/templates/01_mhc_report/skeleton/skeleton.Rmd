@@ -9,7 +9,6 @@ output:
   editor_options: 
   chunk_output_type: inline
 params:
-  Title: "Report: Major Histocompatibility Complex (MaHiCo) immunopeptidomics evaluation"
   SampleSet: "example"
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
@@ -29,7 +28,7 @@ params:
   ResultsOverwrite: TRUE # FALSE throws error when output files already exist to avoid overwriting
   PlotsSave: FALSE #Saves all the plots as .png
   CsvSave: FALSE # TRUE = saves all intermediary csvs, FALSE = saves only essential
-title: "`r params$Title`"
+title: "`r paste0('01_mhc_report | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 
@@ -95,6 +94,12 @@ shortpep_range <- if (params$MHCclass %in% names(mhcclass_ranges)) {
   c(params$ShortPeptideLengthMin, params$ShortPeptideLengthMax)
 }
 
+mhcclass_palettes <- list(MHC1 = c("#fde725", "#440154"), MHC2 = c("#21918c", "#440154"))
+shortpep_palette <- mhcclass_palettes[[if (params$MHCclass %in% names(mhcclass_palettes))
+                                         params$MHCclass else "MHC1"]]
+shortpep_colors <- setNames(shortpep_palette,
+  c(paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"), "others"))
+
 if(params$Subset == ""){
   subset <- params$Subset
   FolderResults <- params$FolderResults
@@ -139,13 +144,21 @@ if(params$Instrument == "faims_orbi"){
 
 annot <- read_annot(file.path(params$FolderDocumentation, params$AnnotationFile))
 
-# check all files in annot
-data_files_all <- list.files(params$FolderData, recursive = TRUE)
-# gsub("[/]psm.tsv", "", data_files_all[grepl("psm", data_files_all)])
-annot_in_data <- as.character(annot$Sample_fp) %in% gsub("[/]psm.tsv", "", data_files_all[grepl("psm", data_files_all)])
-if(any(!annot_in_data)){
-  print(as.character(annot$Sample_fp)[! annot_in_data])
-  stop("The files above were not found in data folder")
+# check all files in annot exist in FolderData
+expected_files <- if (grepl("fragpipe_dda", params$Software)) {
+  file.path(params$FolderData, annot$Sample_fp, "psm.tsv")
+} else if (params$Software == "diann") {
+  file.path(params$FolderData, annot$Sample_fp, "report.tsv")
+} else if (params$Software == "peaks_xpro") {
+  file.path(params$FolderData, annot$Sample_peaks)
+} else {
+  character(0)
+}
+missing_files <- expected_files[!file.exists(expected_files)]
+if (length(missing_files) > 0) {
+  message("Missing files:")
+  print(missing_files)
+  stop("Files listed in annotation table were not found. Check FolderData and annotation paths.")
 }
 
 ```
@@ -322,18 +335,26 @@ counts_size_mean <-
             .groups = "drop") %>% 
   mutate(across(where(is.numeric), ~ round(.x, 2)))
 ## Condition total
-counts_size_total <-   
-  bind_rows(counts_all_total %>% 
+counts_size_total <-
+  bind_rows(counts_all_total %>%
               mutate(Length_range =  "All peptides"),
-            pep_all %>% 
+            pep_all %>%
               group_by(Condition, Length_range) %>%
-              summarise(n_Peptides = n_distinct(Peptide), 
+              summarise(n_Peptides = n_distinct(Peptide),
                         n_Sequences = n_distinct(Sequence),
                         n_Proteins = n_distinct(Accession),
-                        .groups = "drop")) %>% 
+                        .groups = "drop")) %>%
   #arrange factors in a logical way
-  mutate(Length_range = factor(Length_range, 
+  mutate(Length_range = factor(Length_range,
                                levels = c("All peptides", "others", paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"))))
+
+# Per-sample y-axis limits
+counts_all_sample <- counts_size %>% dplyr::filter(Length_range == "All peptides")
+count_lim$Limit_sample <- c(
+  ceiling(max(counts_all_sample$n_Peptides)  * 1.2 / 100) * 100,
+  ceiling(max(counts_all_sample$n_Sequences) * 1.2 / 100) * 100,
+  ceiling(max(counts_all_sample$n_Proteins)  * 1.2 / 100) * 100
+)
 ```
 
 
@@ -368,13 +389,13 @@ Total IDs by Condition in function of length range
 
 bp_count_length <- list(plot_bp_count_length(df = counts_size_total, level = counts_levels[1],
                                               lim_level = count_lim[count_lim$Level == counts_levels[1], "Limit_total"],
-                                              shortpep_range = shortpep_range),
+                                              shortpep_range = shortpep_range, palette = shortpep_colors),
                         plot_bp_count_length(df = counts_size_total, level = counts_levels[2],
                                               lim_level = count_lim[count_lim$Level == counts_levels[2], "Limit_total"],
-                                              shortpep_range = shortpep_range),
+                                              shortpep_range = shortpep_range, palette = shortpep_colors),
                         plot_bp_count_length(df = counts_size_total, level = counts_levels[3],
                                               lim_level = count_lim[count_lim$Level == counts_levels[3], "Limit_total"],
-                                              shortpep_range = shortpep_range))
+                                              shortpep_range = shortpep_range, palette = shortpep_colors))
 
 names(bp_count_length) <- counts_levels
 for(i in 1:length(counts_levels)){
@@ -396,7 +417,7 @@ count_all_condition_lengthrange  <-
 
 bp_prop_length_pep_condition <-
   count_all_condition_lengthrange   %>%  
-  plot_prop_length_condition()  +
+  plot_prop_length_condition(palette = shortpep_colors)  +
   rotate_x_text(70) 
     
 
@@ -405,6 +426,30 @@ bp_prop_length_pep_condition <-
 
 # ggsave_thunder(bp_prop_length_pep_condition, width = 8, height = 4)
 bp_prop_length_pep_condition
+```
+
+## Total by Sample {.tabset}
+
+Total IDs by Sample in function of length range
+
+```{r results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE}
+bp_count_length_sample <- list(
+  plot_bp_count_length(df = counts_size, level = counts_levels[1],
+                       lim_level = count_lim[count_lim$Level == counts_levels[1], "Limit_sample"],
+                       shortpep_range = shortpep_range, x_var = "Sample", palette = shortpep_colors),
+  plot_bp_count_length(df = counts_size, level = counts_levels[2],
+                       lim_level = count_lim[count_lim$Level == counts_levels[2], "Limit_sample"],
+                       shortpep_range = shortpep_range, x_var = "Sample", palette = shortpep_colors),
+  plot_bp_count_length(df = counts_size, level = counts_levels[3],
+                       lim_level = count_lim[count_lim$Level == counts_levels[3], "Limit_sample"],
+                       shortpep_range = shortpep_range, x_var = "Sample", palette = shortpep_colors)
+)
+names(bp_count_length_sample) <- counts_levels
+for(i in 1:length(counts_levels)){
+  cat("### ", counts_levels[i], "\n")
+  print(bp_count_length_sample[[i]])
+  cat('\n\n')
+}
 ```
 
 ## Peptides identified per charge +1 to +4 {.tabset}
@@ -751,12 +796,9 @@ chromato_pep_all <-
   ggplot(aes(x = RT, y = Count, fill  = Condition)) + geom_bar(stat="identity", position = position_dodge2()) +
   ylab("Peptides") + xlab("RT *min") + 
   ggtitle("Peptide ID chromatogram: All peptides identified") +
-  theme_minimal(base_size = 9) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold"),
-        legend.key.size = unit(0.5, 'cm')) +
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
   scale_fill_viridis_d() +
-  theme(plot.background = element_rect(fill = "white")) +
   theme(legend.position = "none")
 
 chromato_pep_all
@@ -772,11 +814,9 @@ hm_pep_invk0_mz_all <-
   scale_fill_viridis_c(option = "plasma") +
   ylab("1/k0") + xlab("m/z") + 
   ggtitle("All peptides identified") +
-  theme_minimal(base_size = 8) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  scale_color_viridis_d() +
-  theme(plot.background = element_rect(fill = "white"))
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
+  scale_color_viridis_d()
 
 hm_pep_invk0_mz_all
 ```
@@ -791,11 +831,9 @@ hm_pep_invk0_rt_all <-
   scale_fill_viridis_c(option = "plasma") +
   ylab("1/k0") + xlab("RT (min)") + 
   ggtitle("All peptides identified") +
-  theme_minimal(base_size = 8) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  scale_color_viridis_d() +
-  theme(plot.background = element_rect(fill = "white"))
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
+  scale_color_viridis_d()
 
 hm_pep_invk0_rt_all
 ```
@@ -811,11 +849,9 @@ hm_pep_mz_rt_all <-
   scale_fill_viridis_c(option = "plasma") +
   ylab("m/z") + xlab("RT (min)") + 
   ggtitle("All peptides identified") +
-  theme_minimal(base_size = 8) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  scale_color_viridis_d() +
-  theme(plot.background = element_rect(fill = "white"))
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
+  scale_color_viridis_d()
 
 hm_pep_mz_rt_all
 ```
@@ -833,12 +869,9 @@ chromato_pep_short <-
   ggplot(aes(x = RT, y = Count, fill  =Condition)) + geom_bar(stat="identity", position = position_dodge2()) +
   ylab("Peptides") + xlab("RT *min") + 
   ggtitle(paste0("Peptide ID chromatogram: Selected peptides identified (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_minimal(base_size = 9) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold"),
-        legend.key.size = unit(0.5, 'cm')) +
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
   scale_fill_viridis_d() +
-  theme(plot.background = element_rect(fill = "white")) +
   theme(legend.position = "none")
 
 chromato_pep_short
@@ -854,11 +887,9 @@ hm_pep_invk0_mz_short <-
   scale_fill_viridis_c(option = "plasma") +
   ylab("1/k0") + xlab("m/z") + 
   ggtitle(paste0("Selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_minimal(base_size = 8) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  scale_color_viridis_d() +
-  theme(plot.background = element_rect(fill = "white"))
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
+  scale_color_viridis_d()
 
 hm_pep_invk0_mz_short
 ```
@@ -873,11 +904,9 @@ hm_pep_invk0_rt_short <-
   scale_fill_viridis_c(option = "plasma") +
   ylab("1/k0") + xlab("RT (min)") + 
   ggtitle(paste0("Selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_minimal(base_size = 8) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  scale_color_viridis_d()  +
-  theme(plot.background = element_rect(fill = "white"))
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
+  scale_color_viridis_d()
 
 hm_pep_invk0_rt_short
 ```
@@ -893,11 +922,9 @@ hm_pep_mz_rt_short <-
   scale_fill_viridis_c(option = "plasma") +
   ylab("m/z") + xlab("RT (min)") + 
   ggtitle(paste0("Selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_minimal(base_size = 8) +
-  facet_wrap(~Condition, ncol = phis_ncol)+
-  theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
-  scale_color_viridis_d()  +
-  theme(plot.background = element_rect(fill = "white"))
+  theme_howmahico() +
+  facet_wrap(~Condition, ncol = phis_ncol) +
+  scale_color_viridis_d()
 
 hm_pep_mz_rt_short
 ```
