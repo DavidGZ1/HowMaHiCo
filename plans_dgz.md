@@ -13,7 +13,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 * one single parser function
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins
-* 2do by me,Identification counts, average +/-sd, split into individual plots for each length
 * reorder plots in a way that makes more sense
 
 
@@ -73,3 +72,4 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * Peptide motifs: show up to length = 24 (was 22)
 * # Identification counts ## Average +/- sd: all peptides and selected peptides shown separately in nested tabsets
 * "# Peptide ID distribution across RT, 1/k0 and m/z": extracted to plot_pseudochromatogram() and plot_2d_distribution(); skeleton simplified to 1-2 lines per chunk
+* 2do by me,Identification counts, average +/-sd, split into individual plots for each length
