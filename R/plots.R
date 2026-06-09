@@ -141,7 +141,9 @@ plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
                                 palette = NULL, xlimits = c(5, 25)) {
   type <- match.arg(type)
   range_label <- paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs")
-  p <- input %>%
+  # Pre-compute counts and normalise by condition total so density reflects the
+  # full distribution (not each fill group independently).
+  df <- input %>%
     dplyr::mutate(
       in_range = factor(
         ifelse(Length >= shortpep_range[1] & Length <= shortpep_range[2],
@@ -149,19 +151,20 @@ plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
         levels = c(range_label, "others")
       )
     ) %>%
-    ggplot2::ggplot(ggplot2::aes(x = Length, fill = in_range))
-  if (type == "density") {
-    p <- p + ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density)),
-                                     binwidth = 1, color ="black", alpha = 0.7)
-  } else {
-    p <- p + ggplot2::geom_histogram(binwidth = 1, color ="black", alpha = 0.7)
-  }
-  p <- p +
+    dplyr::count(Condition, Length, in_range) %>%
+    dplyr::group_by(Condition) %>%
+    dplyr::mutate(density = n / sum(n)) %>%
+    dplyr::ungroup()
+  y_var <- if (type == "density") "density" else "n"
+  y_lab <- if (type == "density") "Density" else "Count"
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = Length, y = .data[[y_var]],
+                                        fill = in_range)) +
+    ggplot2::geom_col(color = "black", alpha = 0.7) +
     ggplot2::facet_wrap(~Condition) +
     ggplot2::scale_x_continuous(limits = xlimits,
                                 breaks = seq(xlimits[1], xlimits[2], 3)) +
     ggplot2::xlab("Peptide length (AAs)") +
-    ggplot2::ylab(if (type == "density") "Density" else "Count") +
+    ggplot2::ylab(y_lab) +
     ggplot2::labs(fill = "Length") +
     theme_howmahico()
   if (!is.null(palette)) {
