@@ -59,7 +59,9 @@ count_ids <- function(input){
 #' }
 count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
   if (group_var != "Condition")
-    input <- dplyr::rename(input, "Condition" = dplyr::all_of(group_var))
+    input <- input %>%
+      dplyr::select(-dplyr::any_of("Condition")) %>%
+      dplyr::rename("Condition" = dplyr::all_of(group_var))
   # count_ids from thunder, works differently to the other one above
   count_ids <- function(input, ..., total = FALSE){
     # count distinct entries for Modified_Peptides.Modified, Peptides.Modified and Proteins
