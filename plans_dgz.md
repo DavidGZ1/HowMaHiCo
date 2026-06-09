@@ -6,9 +6,11 @@ Plans by DGZ to improve HowMaHiCo.
 
 ## To do
 
-* rename templates howmahico-report to 01\_mhc\_report, and howmahico-upsets to 02\_mhc\_upsets, update the required functions and documentation
-* update readme and documentation following the example in example/0\_code/00\_pipeline\_example
-* one single parser function: read\_peaks\_batch has to be split because it currently includes the parser inside
+## In standby
+
+Do not consider these in the planning, until they are moved to "to do"
+
+* one single parser function
 
 
 
@@ -48,5 +50,6 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * correct mentions of "suffix" to "subset"
 * check if it is possible to simplify the params entered in howmahico-report, provide a plan
 * the batch readers currently read all the files in the data folder, then drop what is not in the annotation table. provide a plan to only read what is needed.
+* read\_peaks\_batch has to be split because it currently includes the parser inside
 * 
 
