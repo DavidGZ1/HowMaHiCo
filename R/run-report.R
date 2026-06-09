@@ -15,8 +15,10 @@
 #' @param template One of `"01_mhc_report"` (the main QC report) or
 #'   `"02_mhc_upsets"` (the secondary overlap/UpSet report).
 #' @param params Named list of report parameters, as declared in the
-#'   template's YAML header (`Title`, `AnnotationFile`, `Subset`, `FolderData`,
-#'   `FolderResults`, `FolderFigures`, `Software`, `MHCclass`, ...). Key params:
+#'   template's YAML header (`SampleSet`, `AnnotationFile`, `Subset`,
+#'   `FolderData`, `FolderResults`, `FolderFigures`, `Software`, `MHCclass`,
+#'   ...). The report title is auto-generated from `SampleSet`, `Subset`,
+#'   `MHCclass`, and the render date — no `Title` param needed. Key params:
 #'   `MHCclass` — `"MHC1"` (8-13 AA window, default) or `"MHC2"` (12-25 AA
 #'   window); overrides `ShortPeptideLengthMin`/`ShortPeptideLengthMax` when set
 #'   to a recognised value. Pass `ProjectDir = "/absolute/path/to/project"` to
@@ -36,8 +38,7 @@
 #' \dontrun{
 #' run_howmahico_report(
 #'   template = "01_mhc_report",
-#'   params = list(Title = "Report: MHC1p evaluation - dda_all",
-#'                 SampleSet = "MEGF_035_K251128",
+#'   params = list(SampleSet = "MEGF_035_K251128",
 #'                 AnnotationFile = "sample_annotation_dda_all.csv",
 #'                 Subset = "dda_all",
 #'                 FolderData = "/data/2_data",

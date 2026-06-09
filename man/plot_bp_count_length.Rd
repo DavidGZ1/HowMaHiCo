@@ -4,7 +4,14 @@
 \alias{plot_bp_count_length}
 \title{Stacked bar chart of total ID counts per Condition, split by length range}
 \usage{
-plot_bp_count_length(df, level, lim_level, shortpep_range = c(8, 13))
+plot_bp_count_length(
+  df,
+  level,
+  lim_level,
+  shortpep_range = c(8, 13),
+  x_var = "Condition",
+  palette = NULL
+)
 }
 \arguments{
 \item{df}{A counts data frame with \code{Condition}, \code{Length_range}, and an
@@ -19,10 +26,17 @@ table by \code{Level}/\code{"Limit_total"}).}
 
 \item{shortpep_range}{Length-2 vector \code{c(min, max)} used to label the
 \code{"others"} \code{Length_range} class as \code{"< min OR > max AAs"}.}
+
+\item{x_var}{Column name for the x-axis (default \code{"Condition"}). Pass
+\code{"Sample"} for a per-sample version of the plot.}
+
+\item{palette}{Optional named character vector mapping \code{Length_range} values
+to fill colours (e.g. \code{c("8 to 13 AAs" = "#fde725", "others" = "#440154")}).
+When \code{NULL} (default) \code{scale_fill_viridis_d()} is used.}
 }
 \value{
 A \code{ggpubr} bar chart (\code{ggbarplot}) with per-bar count labels, a
-\code{"Total=..."} annotation, and a viridis fill scale.
+\code{"Total=..."} annotation, and a viridis or manual fill scale.
 }
 \description{
 Plots \verb{n_<level>} (\code{level} one of \code{"Peptides"}/\code{"Sequences"}/\code{"Proteins"})

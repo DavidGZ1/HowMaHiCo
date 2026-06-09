@@ -46,7 +46,7 @@ plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
     ggplot2::scale_x_continuous(limits = xlimits, breaks = seq(0, xlimits[2], by = 3)) +
     ggplot2::ylab("Peptide count") +
     ggplot2::xlab("Peptide length") +
-    theme_rawr()
+    theme_howmahico()
   ggpubr::ggarrange(p_length_bp, p_length_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") %>%
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 8))
 }
@@ -102,7 +102,7 @@ plot_peplength_dens <- function(input, title, ylimits = NULL, xlimits = NULL){
     ggplot2::geom_histogram(fill = "#39568CFF", binwidth = 1) +
     ggplot2::scale_x_continuous(limits = xlimits, breaks = seq(0, xlimits[2], by = 3)) +
     ggplot2::xlab("Peptide length") +
-    theme_rawr()
+    theme_howmahico()
   ggpubr::ggarrange(p_length_bp, p_length_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") %>%
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 8))
 }
@@ -153,7 +153,7 @@ plot_pepmass <- function(input, title, xlimits = NULL){
                       label = paste0("Apex = ", round(max_dens_x, 1))) +
     ggplot2::ylab("Density") +
     ggplot2::xlab("Peptide Mass (Da)") +
-    theme_rawr()
+    theme_howmahico()
   if(!is.null(xlimits)){
     p_mass_bp <- p_mass_bp + ggplot2::scale_x_continuous(limits = xlimits)
     p_mass_hist <- p_mass_hist + ggplot2::scale_x_continuous(limits = xlimits)
@@ -209,7 +209,7 @@ plot_pepmz <- function(input, title, xlimits = NULL){
                       label = paste0("Apex = ", round(max_dens_x, 1))) +
     ggplot2::ylab("Density") +
     ggplot2::xlab("Peptide m/z") +
-    theme_rawr()
+    theme_howmahico()
 
   if(!is.null(xlimits)){
     p_mass_bp <- p_mass_bp + ggplot2::scale_x_continuous(limits = xlimits)
@@ -243,9 +243,14 @@ plot_pepmz <- function(input, title, xlimits = NULL){
 #'   table by `Level`/`"Limit_total"`).
 #' @param shortpep_range Length-2 vector `c(min, max)` used to label the
 #'   `"others"` `Length_range` class as `"< min OR > max AAs"`.
+#' @param x_var Column name for the x-axis (default `"Condition"`). Pass
+#'   `"Sample"` for a per-sample version of the plot.
+#' @param palette Optional named character vector mapping `Length_range` values
+#'   to fill colours (e.g. `c("8 to 13 AAs" = "#fde725", "others" = "#440154")`).
+#'   When `NULL` (default) `scale_fill_viridis_d()` is used.
 #'
 #' @return A `ggpubr` bar chart (`ggbarplot`) with per-bar count labels, a
-#'   `"Total=..."` annotation, and a viridis fill scale.
+#'   `"Total=..."` annotation, and a viridis or manual fill scale.
 #'
 #' @keywords internal
 #' @export
@@ -254,14 +259,15 @@ plot_pepmz <- function(input, title, xlimits = NULL){
 #' \dontrun{
 #' plot_bp_count_length(counts_size_total, "Peptides", lim_level = 50000, shortpep_range = c(8, 13))
 #' }
-plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)){
+plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13),
+                                  x_var = "Condition", palette = NULL){
   nlevel <- paste0("n_", level)
-  df %>%
+  p <- df %>%
     dplyr::filter(Length_range != "All peptides") %>%
     droplevels() %>%
     dplyr::mutate(Length_range = dplyr::recode(Length_range,
                                                 others = paste0("< ", shortpep_range[1], " OR > ", shortpep_range[2], " AAs"))) %>%
-    ggpubr::ggbarplot(x = "Condition", y = nlevel, fill = "Length_range", group = "Length_range",
+    ggpubr::ggbarplot(x = x_var, y = nlevel, fill = "Length_range", group = "Length_range",
                       label = TRUE, alpha = 0.5,
                       lab.vjust = 1.5,
                       lab.nb.digits = 0, lab.size = 2.5) +
@@ -270,16 +276,21 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
                        nudge_y = 300 + lim_level / 10,
                        size = 2.5, alpha = 0.8,
                        parse = FALSE) +
-    theme_rawr() +
+    theme_howmahico() +
     ggplot2::scale_y_continuous(limits = c(0, lim_level), breaks = seq(0, lim_level, 5000),
                                 labels = scales::label_number(suffix = " k", scale = 1e-3)) +
     ggplot2::ylab(paste0("Nb ", level)) +
-    ggplot2::xlab("Condition") +
+    ggplot2::xlab(x_var) +
     ggpubr::rotate_x_text(70) +
     ggplot2::labs(fill = "Length") +
-    ggplot2::scale_fill_viridis_d(end = 1) +
     ggplot2::theme(legend.position = "right") +
     ggplot2::ggtitle(paste0("Unique ", level, " (total, comparing lengths)"))
+  if (!is.null(palette)) {
+    p <- p + ggplot2::scale_fill_manual(values = palette)
+  } else {
+    p <- p + ggplot2::scale_fill_viridis_d(end = 1)
+  }
+  p
 }
 
 #' Four-way Venn diagram of a grouped variable
@@ -546,6 +557,8 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #'   `"Peptides"`, `"Proteins"`.
 #' @param label_size Text size for the percentage labels (`geom_text`); mirrors
 #'   the report's `PlotTextLabelSize` param.
+#' @param palette Optional named character vector mapping `Length_range` values
+#'   to fill colours. When `NULL` (default) `scale_fill_viridis_d()` is used.
 #'
 #' @return A ggplot2 stacked bar chart.
 #'
@@ -556,8 +569,9 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #' \dontrun{
 #' plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all))
 #' }
-plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 1.6){
-  input %>%
+plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 1.6,
+                                        palette = NULL){
+  p <- input %>%
     dplyr::filter(Length_range != "All peptides",
                   Level == level2plot) %>%
     droplevels %>%
@@ -566,13 +580,18 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
                       ggplot2::aes(fill = Length_range),
                       position = ggplot2::position_stack()) +
     ggplot2::geom_text(ggplot2::aes(label = Percentage, y = CumProportion - 0.015), size = label_size) +
-    theme_rawr() +
+    theme_howmahico() +
     ggplot2::scale_y_continuous(breaks = seq(0, 1, 0.25), labels = c("0", "", "50", "", "100"), limits = c(0, 1.02)) +
     ggplot2::labs(fill = "Length") +
     ggplot2::ylab("% Peptides") +
-    ggplot2::scale_fill_viridis_d(end = 1, alpha = 0.5) +
     ggplot2::theme(legend.position = "right") +
     ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(size = 0.3)))
+  if (!is.null(palette)) {
+    p <- p + ggplot2::scale_fill_manual(values = scales::alpha(palette, 0.5))
+  } else {
+    p <- p + ggplot2::scale_fill_viridis_d(end = 1, alpha = 0.5)
+  }
+  p
 }
 
 #' Stacked bar chart of charge-state proportions by group
@@ -609,7 +628,7 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
     ggplot2::geom_text(ggplot2::aes(label = Percentage, y = Proportion),
                        size = label_size, position = ggplot2::position_stack(vjust = 0.8)) +
     ggplot2::scale_y_continuous(breaks = seq(0, 2, 0.25), labels = c("0", "", "50", "", "100", "", "150", "", "200")) + # removed since for fragpipe total may be 100%, due to multiple charges assigned
-    theme_rawr() +
+    theme_howmahico() +
     ggplot2::scale_fill_viridis_d(end = 0.7, name = "Charge") +
     ggplot2::scale_color_viridis_d(end = 0.7, name = "Charge") +
     ggplot2::theme(legend.position = "right") +
@@ -652,7 +671,7 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
                           geom = "text", size = label_size, vjust = 1.5) + # n = peptides IDed in all the replicates
     ggplot2::scale_y_continuous(labels = scales::percent_format(accuracy = 1),
                                 name = "Area %CV", breaks = seq(0, cv_ylim, by = 0.25), limits = c(0, cv_ylim)) +
-    theme_rawr() +
+    theme_howmahico() +
     ggplot2::scale_fill_viridis_d(begin = 0, end = 1) +
     ggpubr::rotate_x_text(70)
 }
@@ -732,7 +751,7 @@ plot_count_mean_sd <- function(df, level, lim_level) {
                       facet.by = "Length_range", add = "mean_sd", scales = "free_x",
                       label = TRUE, alpha = 0.5,
                       lab.vjust = -2, lab.nb.digits = 0, lab.size = 2.5, nrow = 2) +
-    theme_rawr() +
+    theme_howmahico() +
     ggplot2::scale_y_continuous(limits = c(0, lim_level),
                                 breaks = seq(0, lim_level, 5000),
                                 labels = scales::label_number(suffix = " k", scale = 1e-3)) +
@@ -818,7 +837,7 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
                          size = 2.5, nudge_y = -nudge) +
       ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
                          size = 2.5, nudge_y = nudge) +
-      theme_rawr() +
+      theme_howmahico() +
       ggplot2::ylab(ylabel) +
       ggplot2::xlab("Condition") +
       ggpubr::rotate_x_text(70) +
@@ -871,11 +890,8 @@ plot_qc_violin <- function(df, y_var, title) {
     ggplot2::geom_boxplot(fill = NA, outlier.shape = NA, width = 0.5) +
     ggplot2::stat_boxplot(geom = "errorbar", width = 0.5) +
     ggplot2::ggtitle(title) +
-    ggplot2::theme_minimal(base_size = 9) +
-    ggplot2::theme(strip.background = ggplot2::element_blank(),
-                   strip.text       = ggplot2::element_text(face = "bold"),
-                   plot.background  = ggplot2::element_rect(fill = "white"),
-                   legend.position  = "none") +
+    theme_howmahico() +
+    ggplot2::theme(legend.position = "none") +
     ggpubr::rotate_x_text(70) +
     ggplot2::scale_fill_viridis_d()
 }
@@ -908,11 +924,8 @@ plot_qc_box <- function(df, y_var, title) {
                       facet.by = "ChargeSimple", nrow = 2) +
     ggplot2::stat_boxplot(geom = "errorbar", width = 0.5) +
     ggplot2::ggtitle(title) +
-    ggplot2::theme_minimal(base_size = 9) +
-    ggplot2::theme(strip.background = ggplot2::element_blank(),
-                   strip.text       = ggplot2::element_text(face = "bold"),
-                   plot.background  = ggplot2::element_rect(fill = "white"),
-                   legend.position  = "none") +
+    theme_howmahico() +
+    ggplot2::theme(legend.position = "none") +
     ggpubr::rotate_x_text(70) +
     ggplot2::scale_color_viridis_d()
 }
@@ -971,7 +984,7 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
       ggplot2::geom_tile() +
       ggplot2::geom_text(ggplot2::aes(label = n_Peptides)) +
       viridis::scale_fill_viridis(alpha = 0.9, option = "D", begin = 0.1) +
-      theme_rawr() +
+      theme_howmahico() +
       ggpubr::rotate_x_text(35) +
       ggplot2::ggtitle("PTM profile, counts of modified peptides")
   } else {
@@ -993,7 +1006,7 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
       ggplot2::geom_tile() +
       ggplot2::geom_text(ggplot2::aes(label = paste0(.data[["perc_Peptides"]], "%")), size = 2.5) +
       viridis::scale_fill_viridis(alpha = 0.9, option = "D", begin = 0.1) +
-      theme_rawr() +
+      theme_howmahico() +
       ggpubr::rotate_x_text(35) +
       ggplot2::ggtitle("PTM profile, proportion of modified peptides vs total")
   }

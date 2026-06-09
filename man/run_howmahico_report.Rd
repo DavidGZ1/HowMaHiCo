@@ -16,8 +16,10 @@ run_howmahico_report(
 \code{"02_mhc_upsets"} (the secondary overlap/UpSet report).}
 
 \item{params}{Named list of report parameters, as declared in the
-template's YAML header (\code{Title}, \code{AnnotationFile}, \code{Subset}, \code{FolderData},
-\code{FolderResults}, \code{FolderFigures}, \code{Software}, \code{MHCclass}, ...). Key params:
+template's YAML header (\code{SampleSet}, \code{AnnotationFile}, \code{Subset},
+\code{FolderData}, \code{FolderResults}, \code{FolderFigures}, \code{Software}, \code{MHCclass},
+...). The report title is auto-generated from \code{SampleSet}, \code{Subset},
+\code{MHCclass}, and the render date — no \code{Title} param needed. Key params:
 \code{MHCclass} — \code{"MHC1"} (8-13 AA window, default) or \code{"MHC2"} (12-25 AA
 window); overrides \code{ShortPeptideLengthMin}/\code{ShortPeptideLengthMax} when set
 to a recognised value. Pass \code{ProjectDir = "/absolute/path/to/project"} to
@@ -52,8 +54,7 @@ inside an installed package and can be rendered from anywhere.
 \dontrun{
 run_howmahico_report(
   template = "01_mhc_report",
-  params = list(Title = "Report: MHC1p evaluation - dda_all",
-                SampleSet = "MEGF_035_K251128",
+  params = list(SampleSet = "MEGF_035_K251128",
                 AnnotationFile = "sample_annotation_dda_all.csv",
                 Subset = "dda_all",
                 FolderData = "/data/2_data",
