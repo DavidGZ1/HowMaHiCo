@@ -5,15 +5,15 @@
 \title{Render a HowMaHiCo QC report from the installed package templates}
 \usage{
 run_howmahico_report(
-  template = c("howmahico-report", "howmahico-upsets"),
+  template = c("01_mhc_report", "02_mhc_upsets"),
   params,
   output_file,
   ...
 )
 }
 \arguments{
-\item{template}{One of \code{"howmahico-report"} (the main QC report) or
-\code{"howmahico-upsets"} (the secondary overlap/UpSet report).}
+\item{template}{One of \code{"01_mhc_report"} (the main QC report) or
+\code{"02_mhc_upsets"} (the secondary overlap/UpSet report).}
 
 \item{params}{Named list of report parameters, as declared in the
 template's YAML header (\code{Title}, \code{AnnotationFile}, \code{Subset}, \code{FolderData},
@@ -49,7 +49,7 @@ inside an installed package and can be rendered from anywhere.
 \examples{
 \dontrun{
 run_howmahico_report(
-  template = "howmahico-report",
+  template = "01_mhc_report",
   params = list(Title = "Report: MHC1p evaluation - dda_all",
                 SampleSet = "MEGF_035_K251128",
                 AnnotationFile = "sample_annotation_dda_all.csv",
@@ -65,7 +65,7 @@ run_howmahico_report(
 annot_jy <- derive_filtered_annotation("sample_annotation_dda_all.csv",
                                        "1_documentation", "JY")
 for (subset in c("dda_all", "dda_jy", "dda_plasma")) {
-  run_howmahico_report(template = "howmahico-report",
+  run_howmahico_report(template = "01_mhc_report",
                        params = list(Subset = subset, ...),
                        output_file = paste0("01_report_main__hla1_", subset, ".html"))
 }

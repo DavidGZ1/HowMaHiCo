@@ -12,8 +12,8 @@
 #' longer assumes a fixed project-root-relative layout, since it now lives
 #' inside an installed package and can be rendered from anywhere.
 #'
-#' @param template One of `"howmahico-report"` (the main QC report) or
-#'   `"howmahico-upsets"` (the secondary overlap/UpSet report).
+#' @param template One of `"01_mhc_report"` (the main QC report) or
+#'   `"02_mhc_upsets"` (the secondary overlap/UpSet report).
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`Title`, `AnnotationFile`, `Subset`, `FolderData`,
 #'   `FolderResults`, `FolderFigures`, `Software`, ...). Pass
@@ -33,7 +33,7 @@
 #' @examples
 #' \dontrun{
 #' run_howmahico_report(
-#'   template = "howmahico-report",
+#'   template = "01_mhc_report",
 #'   params = list(Title = "Report: MHC1p evaluation - dda_all",
 #'                 SampleSet = "MEGF_035_K251128",
 #'                 AnnotationFile = "sample_annotation_dda_all.csv",
@@ -49,12 +49,12 @@
 #' annot_jy <- derive_filtered_annotation("sample_annotation_dda_all.csv",
 #'                                        "1_documentation", "JY")
 #' for (subset in c("dda_all", "dda_jy", "dda_plasma")) {
-#'   run_howmahico_report(template = "howmahico-report",
+#'   run_howmahico_report(template = "01_mhc_report",
 #'                        params = list(Subset = subset, ...),
 #'                        output_file = paste0("01_report_main__hla1_", subset, ".html"))
 #' }
 #' }
-run_howmahico_report <- function(template = c("howmahico-report", "howmahico-upsets"),
+run_howmahico_report <- function(template = c("01_mhc_report", "02_mhc_upsets"),
                                  params, output_file, ...){
   template <- match.arg(template)
   skeleton <- system.file("rmarkdown", "templates", template, "skeleton", "skeleton.Rmd",

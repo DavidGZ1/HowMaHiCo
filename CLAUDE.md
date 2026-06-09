@@ -35,7 +35,7 @@ HowMaHiCo calls.
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (~40) + vendored helper |
-| `inst/rmarkdown/templates/` | `howmahico-report/` and `howmahico-upsets/` skeleton Rmds |
+| `inst/rmarkdown/templates/` | `01_mhc_report/` and `02_mhc_upsets/` skeleton Rmds |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
 | `example/` | Legacy `0_code/`, `1_documentation/` pre-migration reference copies (gitignored) |
@@ -53,7 +53,7 @@ LC-MS search output (FragPipe psm.tsv, DIA-NN report.tsv, PEAKS peptide.csv)
 pep_all  — unified long-format table, cached as <FolderData>/<subset>_pep_all.rda
       │
       ▼
-inst/rmarkdown/templates/howmahico-report/skeleton/skeleton.Rmd
+inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd
       │   rendered via run_howmahico_report() → self-contained interactive HTML report
       │   (ID counts, overlaps, distributions, QC sections — see below)
       ▼
@@ -61,9 +61,9 @@ inst/rmarkdown/templates/howmahico-report/skeleton/skeleton.Rmd
       +   <FolderFigures>/<subset>/*.png (optional)
 ```
 
-`howmahico-upsets` (`inst/rmarkdown/templates/howmahico-upsets/`) is the secondary
+`02_mhc_upsets` (`inst/rmarkdown/templates/02_mhc_upsets/`) is the secondary
 overlap/UpSet-only report template, rendered the same way with
-`template = "howmahico-upsets"`.
+`template = "02_mhc_upsets"`.
 
 ## Key files
 
@@ -90,14 +90,14 @@ overlap/UpSet-only report template, rendered the same way with
 - **`R/run-report.R`** — `run_howmahico_report`, `derive_filtered_annotation`
 - **`R/get-report.R`** — `get_report_template` (copies a skeleton to the working dir)
 - **`R/vendored-deltaprotr.R`** — vendored `get_dirs_index_peaks()` from `deltaProtR`
-- **`inst/rmarkdown/templates/howmahico-report/skeleton/skeleton.Rmd`** (~1100 lines)
+- **`inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd`** (~1100 lines)
   — the main QC report. Sections: total IDs (incl. decoys/contaminants) → ID counts
   (mean±sd, by length, by charge) → intra-condition replicate overlap → cross-condition
   UpSet plots → pairwise overlap matrices → peptide size distribution (length/mass/m_z)
   → 2D ID distributions (RT × 1/k0 × m/z, "pseudochromatograms") → log2(Area) Pearson
   correlation → Area %CV violin plots → identification QC (Score, ppm by condition &
   charge) → peptide motifs (seqlogo by length) → PTM profile → export block
-- **`inst/rmarkdown/templates/howmahico-upsets/skeleton/skeleton.Rmd`** — secondary
+- **`inst/rmarkdown/templates/02_mhc_upsets/skeleton/skeleton.Rmd`** — secondary
   report focused on overlap/UpSet plots (loads from cached `.rda`, same params)
 
 ## Annotation file schema (`1_documentation/sample_annotation_*.csv`)
@@ -143,7 +143,7 @@ container run = one job"):
 ```r
 library(HowMaHiCo)
 run_howmahico_report(
-  template = "howmahico-report",        # or "howmahico-upsets"
+  template = "01_mhc_report",            # or "02_mhc_upsets"
   params = list(Title = "Report: MHC1p evaluation - dda_all",
                 AnnotationFile = "sample_annotation_dda_all.csv",
                 FolderDocumentation = "1_documentation",

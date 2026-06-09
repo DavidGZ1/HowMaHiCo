@@ -21,7 +21,7 @@ LC-MS search output (FragPipe psm.tsv, DIA-NN report.tsv, PEAKS peptide.csv)
 pep_all  — unified long-format peptide table
       │
       ▼
-inst/rmarkdown/templates/howmahico-report/skeleton/skeleton.Rmd
+inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd
       │   rendered via run_howmahico_report() — self-contained interactive HTML
       │   (ID counts, replicate/condition overlaps, size & charge distributions,
       │    RT/ion-mobility/m_z "pseudochromatograms", Area correlation & %CV,
@@ -39,7 +39,7 @@ conditions and replicates.
 | Folder | Contents |
 |---|---|
 | `R/` | Package source — the ~40 functions (loaders, annotation, counting, plotting, export) plus the `run_howmahico_report()`/`derive_filtered_annotation()` entry points |
-| `inst/rmarkdown/templates/` | The two parameterized Rmd report templates (`howmahico-report`, `howmahico-upsets`), packaged for `rmarkdown::draft()`/`run_howmahico_report()` |
+| `inst/rmarkdown/templates/` | The two parameterized Rmd report templates (`01_mhc_report`, `02_mhc_upsets`), packaged for `rmarkdown::draft()`/`run_howmahico_report()` |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
 | `man/` | Generated roxygen2 documentation (`.Rd`) |
 | `1_documentation/` | Sample annotation CSVs (one per analysis subset) |
@@ -73,7 +73,7 @@ conditions and replicates.
    ```r
    library(HowMaHiCo)
    run_howmahico_report(
-     template = "howmahico-report",        # or "howmahico-upsets"
+     template = "01_mhc_report",            # or "02_mhc_upsets"
      params = list(Title = "Report: MHC1p evaluation - dda_all",
                    AnnotationFile = "sample_annotation_dda_all.csv",
                    FolderDocumentation = "1_documentation",
