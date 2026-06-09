@@ -152,9 +152,9 @@ plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
     ggplot2::ggplot(ggplot2::aes(x = Length, fill = in_range))
   if (type == "density") {
     p <- p + ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density)),
-                                     binwidth = 1)
+                                     binwidth = 1, color ="black", alpha = 0.7)
   } else {
-    p <- p + ggplot2::geom_histogram(binwidth = 1)
+    p <- p + ggplot2::geom_histogram(binwidth = 1, color ="black", alpha = 0.7)
   }
   p <- p +
     ggplot2::facet_wrap(~Condition) +
