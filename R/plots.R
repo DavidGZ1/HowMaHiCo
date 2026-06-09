@@ -346,7 +346,7 @@ plot_venn4 <- function(input, variable, group){
 #' }
 plot_upset <- 
   function(df, vars, n_intersections = 10, Compare = "Condition", labels = "perc", lab.size = 2, 
-             plot.margin = ggplot2:unit(c(0.2,0.2,0.2,0.2), "cm")){
+             plot.margin = ggplot2::unit(c(0.2,0.2,0.2,0.2), "cm")){
   ## prepare data
   df[, "Compare"] <- df[, Compare]
   df_distinct <- df %>%
@@ -408,7 +408,7 @@ plot_upset <-
 #' plot_upset_batch(pep_all, c("Peptide", "Sequence", "Accession"), Compare = "Condition")
 #' }
 plot_upset_batch <-   function(df, vars, n_intersections = 20, Compare = "Condition", labels = "perc", lab.size = 2,
-           plot.margin = unit(c(0.2,0.2,0.2,0.2), "cm")){
+           plot.margin = ggplot2::unit(c(0.2,0.2,0.2,0.2), "cm")){
   output <-
     lapply(vars, function(x){
       df %>%
