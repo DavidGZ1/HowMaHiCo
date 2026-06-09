@@ -13,22 +13,22 @@ params:
   SampleSet: "OBIM_001 MM"
   DataAnalysisNames: "MF, DGZ"
   WetLabNames: "LK"
-  AnnotationFile: "sample_annotation_mm_hla1.csv" # Samples Annotation file in /1_documentation
+  FolderDocumentation: "1_documentation" # ABSOLUTE path (or relative to the render-time working directory) containing AnnotationFile
+  AnnotationFile: "sample_annotation_mm_hla1.csv" # Samples Annotation file, in FolderDocumentation
   Subset: "mm_hla1" # subset name, is added as prefix to file names and used to creat subfolders for results and figures
-  FolderData: "2_data" #for subfolders use "/"
-  FolderResults: "3_results"
-  FolderFigures: "4_figures"
+  FolderData: "2_data" # ABSOLUTE path (or relative to the render-time working directory); for subfolders use "/"
+  FolderResults: "3_results" # ABSOLUTE path (or relative to the render-time working directory)
+  FolderFigures: "4_figures" # ABSOLUTE path (or relative to the render-time working directory)
+  ProjectDir: ~ # Optional: absolute path to the project root. Set when R's working directory is not the project root (e.g. running from a subfolder). Relative folder paths are resolved from here.
   Instrument: "tims_tof" #faims_orbi, orbi
   Software: "diann" # options: fragpipe_dda_individual, fragpipe_dda_combined; to be added: peaks_xpro, peaks_11, fragpipe_diann
-  ShortPeptideLenghtMin: 8
-  ShortPeptideLenghtMax: 13
-  PlotTextLabelSize: 1.6
+  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); overrides ShortPeptideLengthMin/Max
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
   TestMode: FALSE # if TRUE, only first 100 lines from each file will be loaded; Warning: may mess up correlation plots
-  PlotsInteractive: FALSE #TRUE = interactive in html, FALSE = static
   ResultsOverwrite: TRUE # FALSE throws error when output files already exist to avoid overwriting
   PlotsSave: FALSE #Saves all the plots as .png
   CsvSave: TRUE # TRUE = saves all intermediary csvs, FALSE = saves only essential
-  TestStats: FALSE #Performs Anova and T-test to compare conditions TRUE or FALSE
 title: "`r params$Title`"
 ---
 
@@ -59,186 +59,51 @@ title: "`r params$Title`"
 ```{r setup, include=FALSE, echo=FALSE}
 #General parameters for knitr
 require("knitr")
-opts_knit$set(root.dir = normalizePath("..")) 
 knitr::opts_chunk$set(echo = FALSE)
+if (!is.null(params$ProjectDir) && nzchar(params$ProjectDir))
+  knitr::opts_knit$set(root.dir = normalizePath(params$ProjectDir, mustWork = FALSE))
 ```
 
 
 ```{r initialize, message=FALSE, include=FALSE}
-source(file.path("0_code", "00_functions.R"))  #Load libraries and functions
-library(deltaProtR) #deltaProtR is a package under development by DavidGZ https://github.com/DavidGZ1/deltaProtPeaks or https://github.com/DavidGZ1/deltaProtR
+library(HowMaHiCo)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(kableExtra)
+library(ggpubr)
+library(viridis)
+library(plotly)
+library(openxlsx)
+library(DT)
 
 # handy settings
 
-shortpep_range <-  c(params$ShortPeptideLenghtMin, params$ShortPeptideLenghtMax)
+mhcclass_ranges <- list(MHC1 = c(8L, 13L), MHC2 = c(12L, 25L))
+shortpep_range <- if (params$MHCclass %in% names(mhcclass_ranges)) {
+  mhcclass_ranges[[params$MHCclass]]
+} else {
+  c(params$ShortPeptideLengthMin, params$ShortPeptideLengthMax)
+}
 
 if(params$Subset == ""){
   suffix <- params$Subset
   FolderResults <- params$FolderResults
-  FolderFigures <- params$FolderResults
+  FolderFigures <- params$FolderFigures
 }else{
   suffix <- paste0(params$Subset, "_")
   dir.create(file.path(params$FolderResults, params$Subset))
   dir.create(file.path(params$FolderFigures, params$Subset))
   FolderResults <- file.path(params$FolderResults, params$Subset)
-  FolderFigures <- file.path(params$FolderResults, params$Subset)
+  FolderFigures <- file.path(params$FolderFigures, params$Subset)
 }
 
 file_rda <- file.path( file.path(params$FolderData,paste0(suffix, "pep_all.rda")))
 
 # pre-checks to avoid overwriting files
-check_output_exists(params$FolderResult, overwrite =  params$ResultsOverwrite)
+check_output_exists(params$FolderResults, overwrite =  params$ResultsOverwrite)
 check_file_exists(file_rda, overwrite =  params$ResultsOverwrite)
-
-```
-
-
-```{r}
-# extra functions
-select_unique <- function(input, ...){
-  input %>% 
-    select(...) %>% 
-    unique() %>% 
-    droplevels()
-}
-filter_unique <- function(input, ...){
-  input %>% 
-    filter(...) %>% 
-    unique() %>% 
-    droplevels()
-}
-
-plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition", labels = "abs", lab.size = 2){
-  # get an upset plot of the number of different vars
-  ## prepare data
-  df[, "Compare"] <- df[, Compare]
-  df_distinct <- df %>%
-    distinct(Compare, {{ vars }}, .keep_all= FALSE)
-  df_distinct_total <-  df_distinct %>% pull({{ vars }}) %>%  n_distinct()
-  ## plot
-  upset_table <-   df_distinct %>%
-    group_by({{ vars }}) %>%
-    summarize(Compare = list(as.character(Compare)), .groups = "drop") 
-  p_upset <- upset_table %>%
-    ggplot(aes(x=Compare)) +
-    geom_bar(fill ="#39568CFF") +
-    # geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.2, size = 2) +
-    scale_x_upset(n_intersections = n_intersections) +
-    theme_bw(base_size = 8)+
-    theme(plot.margin = unit(c(0.2,0.2,0.2,2.2), "cm")) +
-    theme_combmatrix(
-      combmatrix.panel.point.color.fill = "#39568CFF",
-      combmatrix.panel.line.size = 0,
-      combmatrix.label.make_space = FALSE) +
-    labs(caption = paste0("Total unique = ", df_distinct_total, "    Max. intersections shown = ", n_intersections))
-  if(labels == "perc"){
-    p_upset <- p_upset +
-      geom_text(stat = "count", aes(label = after_stat(paste0(round(100*count/sum(count), 1), "%"))),
-                vjust = -0.2, size = lab.size)
-  }
-  if(labels == "abs"){
-    p_upset <- p_upset +
-      geom_text(stat = "count", aes(label = after_stat(count)),
-                vjust = -0.2, size = lab.size)
-  }
-
-  return(p_upset)
-}
-
-
-plot_upset_batch <- function(df, vars, n_intersections = 20, Compare = "Condition", labels = "abs", lab.size = 2){
-  output <- 
-    lapply(vars, function(x){
-      df %>% 
-        select_unique(var = x, Compare) %>% 
-        plot_upset(., var, n_intersections = n_intersections, Compare = Compare,
-                   labels = labels, lab.size = lab.size) +
-        ggtitle(paste0(x, " overlap by ", Compare))
-    })
-  names(output) <- paste0(var_levels, "_by_", Compare)
-  return(output)
-}
-
-write.csv_rawr <- function(input, folder = FolderResults){
-  write.csv(input, file.path(folder,
-                             paste0(params$Subset, "_", deparse(substitute(input)), ".csv")), row.names = FALSE)
-}
-
-count_uniqueby <- function (df, vars, by, total = FALSE, sep = "_"){
-  # count unique or distinct entries in variables grouped by
-  require(dplyr)
-  count_by <- df %>%
-    group_by(across({{by}})) %>% 
-    summarise(across({{vars}}, list(n = n_distinct),
-                     .names = paste0("{fn}", sep, "{col}")), 
-              .groups = "drop")
-  if (total == TRUE) {
-    count_total <- df %>% 
-      mutate(across({{by}}, ~sub(.x, pattern = ".*", replacement = "Total"))) %>% 
-      group_by(across({{by}})) %>% 
-      summarise(across({{vars}}, list(n = n_distinct),
-                       .names = paste0("{fn}", sep, "{col}")),
-                .groups = "drop")
-    count_by <- rbind(count_by, count_total)
-  }
-  return(count_by)
-}
-
-count_uniqueby_ip  <- function(input, var, by,  level = "Peptide"){
-  # count number of samples and patients were Peptide or Protein (=level) were detected in group "by"
-  # var = one single column, e.g. Patient or Sample
-  # note: removed ProteinFirst, GeneFirst from the grouping,  because some Peptides assigned to difft ProteinFirst in the different processes
-  if(level == "Peptide") {
-    key_columns <-  c("Accession", "ProteinFirst",  "GeneFirst",  "OrganismFirst",  "Length", "Peptide", "Sequence")
-  }
-  if(level == "Protein") {
-    key_columns <-  c("Accession", "ProteinFirst",  "GeneFirst",  "OrganismFirst")
-  }
-  input %>% 
-    count_uniqueby(vars = {{var}},
-                   by = c({{by}}, all_of(key_columns))) %>% 
-    pivot_wider(id_cols = all_of(key_columns),
-                names_from = {{by}}, values_from = starts_with("n_"), names_glue = "{.value}s.{.name}", values_fill = 0) %>% 
-    arrange(pick(key_columns))
-}
-count_samples_patients  <- function(input, level){
-  # summarizes pep_all counts per Patient, Sample_type, and Condition for Peptide or Protein (=level) 
-  counts_total_samples <- count_uniqueby_ip(mutate(input, Condition = "Total") , 
-                                            var = Sample, by = Condition, level)
-  counts_total_patients <- count_uniqueby_ip(mutate(input, Condition = "Total") ,
-                                             var = Patient, by = Condition, level)
-  counts_patient <- count_uniqueby_ip(input, var = Sample, by = Patient, level)
-  counts_type <- count_uniqueby_ip(input, var = Patient, by = Sample_type, level)
-  counts_condition <- count_uniqueby_ip(input, var = Sample, by = Condition, level)
-  # check that rows are in the same order
-  if(level == "Peptide") {
-    key_columns <-  c("Accession", "ProteinFirst",  "GeneFirst",  "OrganismFirst",  "Length", "Peptide", "Sequence")
-  }
-  if(level == "Protein") {
-    key_columns <-  c("Accession", "ProteinFirst",  "GeneFirst",  "OrganismFirst")
-  }
-  key_info <- counts_condition[, key_columns] 
-  if(all(key_info == counts_total_patients[, key_columns], na.rm = TRUE) &
-     all(key_info == counts_total_samples[, key_columns], na.rm = TRUE) &
-     all(key_info == counts_patient[, key_columns], na.rm = TRUE) &
-     all(key_info == counts_type[, key_columns], na.rm = TRUE)){
-    # if all the key columns are identical, merge counts
-    output <- 
-      cbind(
-        key_info, 
-        counts_total_samples   %>%  select(starts_with("n_")),
-        counts_total_patients   %>%  select(starts_with("n_")),
-        counts_type  %>%  select(starts_with("n_")),
-        counts_patient  %>%  select(starts_with("n_")),
-        counts_condition %>%  select(starts_with("n_"))
-      ) 
-  }else{
-    stop("data in key_columns is not the same, check if they were ordered correctly")
-  }
-  return(output)
-}
-
-
 
 ```
 
@@ -254,7 +119,7 @@ Below are shown the UpSet plots representing the overlap between the conditions 
 * Peptides (e.g. in barplots): this includes possible peptidoforms (i.e. different PTMs); although the peptides are often detected only in one peptidoform.
 * Sequences (e.g. in Venn plots): this refers to the stripped peptide sequence regardless of the possible PTMs.
 * All peptides = all peptides detected
-* Selected peptides = `r paste0(params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs")`
+* Selected peptides = `r paste0(shortpep_range[1]," to ", shortpep_range[2], " AAs")`
 
 
 # Input
@@ -280,8 +145,11 @@ pep_all <-
   relocate(Sample_type,.before = "Condition") 
 
 write.csv(unique(pep_all[names(pep_all)[c(1:8)]]),
-          file.path("1_documentation", paste0("extended_", params$AnnotationFile)),
+          file.path(params$FolderDocumentation, paste0("extended_", params$AnnotationFile)),
           row.names = FALSE)
+
+# Always-written export: render parameters, independent of CsvSave/PlotsSave
+write_input_params(params, folder = FolderResults, prefix = params$Subset)
 ```
 
 ```{r}
@@ -372,7 +240,7 @@ pep_patient_condition_summary <-
 ## Peptide-level
 
 - Exported in 3_results/counts_pep_all_wide (all peptides)
-- Exported in 3_results/counts_pep_selected_wide (`r paste0("Selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")`)
+- Exported in 3_results/counts_pep_selected_wide (`r paste0("Selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")`)
 
 
 Note: protein groups are encoded in the "Accession".  "ProteinFirst" was not included in the table because some peptides were attributed to different ProteinFirst despite having the same Sequence and Accession (protein group). This was because files were processed in multiple processes. 
@@ -395,11 +263,11 @@ counts_pep_all_wide <-
       # relocate(starts_with("in_"), .after = "Sequence") 
 
 # counts_pep_all_wide
-write.csv_rawr(counts_pep_all_wide)
+write.csv_rawr(counts_pep_all_wide, folder = FolderResults, prefix = params$Subset)
 
 counts_pep_selected_wide <- 
   count_samples_patients(pep_short, "Peptide") #%>% 
-write.csv_rawr(counts_pep_selected_wide)
+write.csv_rawr(counts_pep_selected_wide, folder = FolderResults, prefix = params$Subset)
 
 ```
 
@@ -407,7 +275,7 @@ write.csv_rawr(counts_pep_selected_wide)
 
 
 - Exported in 3_results/counts_prot_all_wide (proteins from all proteins)
-- Exported in 3_results/counts_prot_selected_wide (`r paste0("Proteins from selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")`)
+- Exported in 3_results/counts_prot_selected_wide (`r paste0("Proteins from selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")`)
 
 
 ```{r}
@@ -426,11 +294,11 @@ counts_prot_all_wide <-
       # ) %>% 
       # relocate(starts_with("in_"), .after = "OrganismFirst") 
 
-write.csv_rawr(counts_prot_all_wide)
+write.csv_rawr(counts_prot_all_wide, folder = FolderResults, prefix = params$Subset)
 
 counts_prot_selected_wide <- 
   count_samples_patients(pep_short, "Protein") #%>% 
-write.csv_rawr(counts_prot_selected_wide)
+write.csv_rawr(counts_prot_selected_wide, folder = FolderResults, prefix = params$Subset)
 
 ```
 
@@ -474,7 +342,7 @@ for(j in 1:length(conditions)){
 ```
 
 
-# Selected peptides = `r paste0(params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs")`
+# Selected peptides = `r paste0(shortpep_range[1]," to ", shortpep_range[2], " AAs")`
 
 # Selected peptides - overlap between Conditions, per Sample_type {.tabset}
 

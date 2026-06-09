@@ -1,4 +1,4 @@
-name: HowMaHiCo main QC report
+name: 01_mhc_report
 description: >
   Parameterized LC-immunopeptidomics QC report: ID counts, replicate/condition
   overlap, peptide size distributions, identification QC, motifs, PTM profile,

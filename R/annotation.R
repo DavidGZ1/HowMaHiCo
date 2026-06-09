@@ -80,3 +80,114 @@ print_annot <- function(input){
                                  scientific = TRUE,
                                  fixedHeader = TRUE))
 }
+
+#' Auto-generate a skeleton annotation table from FragPipe psm.tsv files
+#'
+#' Scans `dir_data` recursively for `psm.tsv` files, reads the `Spectrum`
+#' column from each to derive unique `Source_file` names, and returns a
+#' data frame with one row per source file ready to fill in
+#' (`Condition`, `BioReplicate`, `TechReplicate`, `Sample`, `Sample_ID`
+#' are left blank).
+#'
+#' @param dir_data Path to the root data folder containing FragPipe output
+#'   subfolders (each with a `psm.tsv`).
+#'
+#' @return A data frame with columns `Source_file`, `Sample_fp`,
+#'   `Condition`, `BioReplicate`, `TechReplicate`, `Sample`, `Sample_ID`,
+#'   sorted by `Source_file`.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' get_annot_fragpipe("2_data")
+#' }
+get_annot_fragpipe <- function(dir_data){
+  data_files <- list.files(dir_data, recursive = TRUE)
+  psm_files <- data_files[grepl("psm.tsv", data_files)]
+  output_list <-
+    sapply(psm_files, USE.NAMES = TRUE, simplify = FALSE, function(x){
+      input <- paste0(dir_data, "/", x)
+      readr::read_tsv(input, col_select = "Spectrum", show_col_types = FALSE, progress = FALSE) %>%
+        dplyr::mutate(Source_file = sub("[.].*", "", Spectrum)) %>%
+        dplyr::pull(Source_file) %>%
+        unique()
+    })
+  stack(output_list) %>%
+    dplyr::rename(Source_file = values, Sample_fp = ind) %>%
+    dplyr::mutate(Sample_fp = gsub("/psm.tsv", "", Sample_fp, fixed = TRUE)) %>%
+    dplyr::mutate(Source_file = gsub("_diatracer", "", Source_file, fixed = TRUE)) %>%
+    dplyr::mutate(Condition = "", BioReplicate = "", TechReplicate = "", Sample = "", Sample_ID = "") %>%
+    dplyr::arrange(Source_file)
+}
+
+#' Auto-generate a skeleton annotation table from DIA-NN report.tsv files
+#'
+#' Scans `dir_data` recursively for `report.tsv` files, reads the `Run`
+#' column from each to derive unique `Source_file` names, and returns a
+#' data frame with one row per source file ready to fill in.
+#'
+#' @param dir_data Path to the root data folder containing DIA-NN output
+#'   subfolders (each with a `report.tsv`).
+#'
+#' @return A data frame with columns `Source_file`, `Sample_fp`,
+#'   `Condition`, `BioReplicate`, `TechReplicate`, `Sample`, `Sample_ID`,
+#'   sorted by `Source_file`.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' get_annot_diann("2_data")
+#' }
+get_annot_diann <- function(dir_data){
+  data_files <- list.files(dir_data, recursive = TRUE)
+  diann_files <- data_files[grepl("report.tsv", data_files)]
+  output_list <- sapply(diann_files, USE.NAMES = TRUE, simplify = FALSE, function(x){
+    input <- paste0(dir_data, "/", x)
+    readr::read_tsv(input, col_select = "Run", show_col_types = FALSE, progress = FALSE) %>%
+      dplyr::rename(Source_file = Run) %>%
+      dplyr::pull(Source_file) %>%
+      unique()
+  })
+  stack(output_list) %>%
+    dplyr::rename(Source_file = values, Sample_fp = ind) %>%
+    dplyr::mutate(Sample_fp = gsub("/report.tsv", "", Sample_fp, fixed = TRUE)) %>%
+    dplyr::mutate(Condition = "", BioReplicate = "", TechReplicate = "", Sample = "", Sample_ID = "") %>%
+    dplyr::arrange(Source_file)
+}
+
+#' Enrich an annotation table with Sample_ID from a Bruker HyStar sample list
+#'
+#' Reads a Bruker HyStar sample list (xlsx), extracts `Result.Path` and
+#' `Sample.Comment`, derives the run name from the path, and inner-joins to
+#' the annotation table on `Source_file`, replacing any existing `Sample_ID`.
+#'
+#' @param annotation Annotation data frame (e.g. from [get_annot_fragpipe()]
+#'   or [read_annot()]).
+#' @param file_sample_list Path to the Bruker HyStar sample list `.xlsx` file.
+#'
+#' @return `annotation` with the `Sample_ID` column filled from
+#'   `Sample.Comment` in the sample list. Rows without a match are dropped
+#'   (inner join).
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' annot <- get_annot_fragpipe("2_data")
+#' get_annot_sampleid(annot, "1_documentation/sample_list.xlsx")
+#' }
+get_annot_sampleid <- function(annotation, file_sample_list){
+  sample_list_all <- openxlsx::read.xlsx(file_sample_list, sheet = 1)
+  sample_list_simple <-
+    sample_list_all %>%
+    dplyr::select(Source_file = Result.Path, Sample_ID = Sample.Comment) %>%
+    dplyr::mutate(Source_file = sub(".*\\\\(.+).d.*", "\\1", Source_file))
+
+  dplyr::inner_join(dplyr::select(annotation, -Sample_ID),
+                    sample_list_simple, by = "Source_file")
+}

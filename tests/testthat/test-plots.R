@@ -6,14 +6,14 @@
 
 test_that("plot_peplength and plot_peplength_dens build boxplot-over-histogram figures", {
   pep_all <- make_pep_all()
-  expect_s3_class(plot_peplength(pep_all, title = "All peptides"), "gg")
-  expect_s3_class(plot_peplength_dens(pep_all, title = "All peptides"), "gg")
+  suppressWarnings(expect_s3_class(plot_peplength(pep_all, title = "All peptides"), "gg"))
+  suppressWarnings(expect_s3_class(plot_peplength_dens(pep_all, title = "All peptides"), "gg"))
 })
 
 test_that("plot_pepmass and plot_pepmz build apex-annotated mass/m_z distribution figures", {
   pep_all <- make_pep_all()
-  expect_s3_class(plot_pepmass(pep_all, title = "All peptides"), "gg")
-  expect_s3_class(plot_pepmz(pep_all, title = "All peptides"), "gg")
+  suppressWarnings(expect_s3_class(plot_pepmass(pep_all, title = "All peptides"), "gg"))
+  suppressWarnings(expect_s3_class(plot_pepmz(pep_all, title = "All peptides"), "gg"))
 })
 
 test_that("plot_bp_count_length builds a stacked-by-Length_range bar chart from a counts_size_total-shaped table", {
@@ -38,9 +38,9 @@ test_that("plot_venn4 builds a Venn diagram of a grouped variable (<= 4 groups)"
 
 test_that("plot_upset and plot_upset_batch build UpSet intersection plots", {
   pep_all <- make_pep_all()
-  expect_s3_class(plot_upset(pep_all, Sequence, Compare = "Condition"), "gg")
+  suppressWarnings(expect_s3_class(plot_upset(pep_all, Sequence, Compare = "Condition"), "gg"))
 
-  batch <- plot_upset_batch(pep_all, c("Peptide", "Sequence"), Compare = "Condition")
+  batch <- suppressWarnings(plot_upset_batch(pep_all, c("Peptide", "Sequence"), Compare = "Condition"))
   expect_type(batch, "list")
   expect_setequal(names(batch), c("Peptide_by_Condition", "Sequence_by_Condition"))
   expect_true(all(vapply(batch, inherits, logical(1), what = "gg")))
@@ -49,7 +49,7 @@ test_that("plot_upset and plot_upset_batch build UpSet intersection plots", {
 test_that("ggseqlogo_bylength builds a per-group motif logo for a given peptide length", {
   pep_all <- make_pep_all()
   # Length == 9 sequences (AAAVAAAAL/GILGFVFTL) appear in all three Conditions
-  expect_s3_class(ggseqlogo_bylength(pep_all, seq_length = 9, by = "Condition"), "gg")
+  suppressWarnings(expect_s3_class(ggseqlogo_bylength(pep_all, seq_length = 9, by = "Condition"), "gg"))
 })
 
 test_that("ggseqlogo_bylength prints about groups dropped for lacking sequences of the requested length", {
@@ -57,7 +57,7 @@ test_that("ggseqlogo_bylength prints about groups dropped for lacking sequences 
   # Length == 8 (SIINFEKL) only appears in JY_plasma -- JY_tissue/MM_plasma get dropped.
   # The notice is emitted via print(), not message(), so check stdout, not the
   # message condition.
-  expect_output(ggseqlogo_bylength(pep_all, seq_length = 8, by = "Condition"), "were droped")
+  suppressWarnings(expect_output(ggseqlogo_bylength(pep_all, seq_length = 8, by = "Condition"), "were droped"))
 })
 
 test_that("plot_prop_length_condition builds a stacked Length_range proportion bar chart", {
@@ -75,7 +75,7 @@ test_that("plot_charge_proportions builds a stacked charge-state proportion bar 
 test_that("plot_violin_areacv builds a violin/boxplot of Area %CV by group", {
   pep_all <- make_pep_all()
   areacv <- summarise_area(pep_all, Condition)
-  expect_s3_class(plot_violin_areacv(areacv, Condition), "gg")
+  suppressWarnings(expect_s3_class(plot_violin_areacv(areacv, Condition), "gg"))
 })
 
 test_that("plot_corr builds a correlation heatmap from a correlation matrix", {

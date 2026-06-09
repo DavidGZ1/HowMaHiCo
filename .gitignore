@@ -9,6 +9,9 @@
 /3_results/
 /4_figures/
 
+# Example folder (contains working data/results, not tracked)
+/example/
+
 # Rendered HTML reports
 *.html
 

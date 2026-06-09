@@ -330,8 +330,9 @@ plot_venn4 <- function(input, variable, group){
 #'   (becomes the upset's set membership axis), e.g. `"Condition"`.
 #' @param labels One of `"abs"` (absolute intersection counts, the default),
 #'   `"perc"` (percentage of the total), or any other value to omit the
-#'   per-bar count labels entirely.
+#'   per-bar count labels entirely. Defaults to `"perc"`.
 #' @param lab.size Text size of the per-bar count/percentage labels.
+#' @param plot.margin Plot margin, as unit.
 #'
 #' @return A ggplot2/`ggupset` object with an intersection-count bar chart and
 #'   a caption reporting the total unique count and intersections shown.
@@ -343,7 +344,9 @@ plot_venn4 <- function(input, variable, group){
 #' \dontrun{
 #' plot_upset(pep_all, Sequence, n_intersections = 10, Compare = "Condition")
 #' }
-plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition", labels = "abs", lab.size = 2){
+plot_upset <- 
+  function(df, vars, n_intersections = 10, Compare = "Condition", labels = "perc", lab.size = 2, 
+             plot.margin = ggplot2::unit(c(0.2,0.2,0.2,0.2), "cm")){
   ## prepare data
   df[, "Compare"] <- df[, Compare]
   df_distinct <- df %>%
@@ -357,12 +360,13 @@ plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition", la
     ggplot2::ggplot(ggplot2::aes(x = Compare)) +
     ggplot2::geom_bar(fill = "#39568CFF") +
     ggupset::scale_x_upset(n_intersections = n_intersections) +
+    ggplot2::scale_y_continuous(limits = ~range(.x*1.15, 0)) +
     ggplot2::theme_bw(base_size = 8) +
-    ggplot2::theme(plot.margin = ggplot2::unit(c(0.5, 0.5, 0.5, 3), "cm")) +
+    ggplot2::theme(plot.margin = plot.margin) +
     ggupset::theme_combmatrix(
       combmatrix.panel.point.color.fill = "#39568CFF",
       combmatrix.panel.line.size = 0,
-      combmatrix.label.make_space = FALSE) +
+      combmatrix.label.make_space = TRUE) +
     ggplot2::labs(caption = paste0("Total unique = ", df_distinct_total, "    Max. intersections shown = ", n_intersections))
   if(labels == "perc"){
     p_upset <- p_upset +
@@ -389,8 +393,9 @@ plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition", la
 #'   `c("Peptide", "Sequence", "Accession")`.
 #' @param n_intersections Maximum number of intersections to display per plot.
 #' @param Compare Name (string) of the column defining the groups compared.
-#' @param labels Forwarded to [plot_upset()] (`"abs"`, `"perc"`, or other).
+#' @param labels Forwarded to [plot_upset()] (`"abs"`, `"perc"`, or other). Defaults to `"perc"`.
 #' @param lab.size Forwarded to [plot_upset()].
+#' @param plot.margin Forwarded to [plot_upset()].
 #'
 #' @return A named list of ggplot2/`ggupset` objects, one per entry of `vars`,
 #'   named `"<var>_by_<Compare>"`.
@@ -402,13 +407,16 @@ plot_upset <- function(df, vars, n_intersections = 10, Compare = "Condition", la
 #' \dontrun{
 #' plot_upset_batch(pep_all, c("Peptide", "Sequence", "Accession"), Compare = "Condition")
 #' }
-plot_upset_batch <- function(df, vars, n_intersections = 20, Compare = "Condition", labels = "abs", lab.size = 2){
+plot_upset_batch <-   function(df, vars, n_intersections = 20, Compare = "Condition", labels = "perc", lab.size = 2,
+           plot.margin = ggplot2::unit(c(0.2,0.2,0.2,0.2), "cm")){
   output <-
     lapply(vars, function(x){
       df %>%
-        select_unique(var = x, Compare) %>%
+        dplyr::select(var = dplyr::all_of(x), dplyr::all_of(Compare)) %>%
+        unique() %>%
+        droplevels() %>%
         plot_upset(., var, n_intersections = n_intersections, Compare = Compare,
-                   labels = labels, lab.size = lab.size) +
+                   labels = labels, lab.size = lab.size, plot.margin = plot.margin) +
         ggplot2::ggtitle(paste0(x, " overlap by ", Compare))
     })
   names(output) <- paste0(vars, "_by_", Compare)

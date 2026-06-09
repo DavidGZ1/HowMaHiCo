@@ -2,66 +2,59 @@
 % Please edit documentation in R/loaders-peaks.R
 \name{read_peaks_batch}
 \alias{read_peaks_batch}
-\title{Batch-read and annotate every PEAKS export folder into \code{pep_all} format}
+\title{Batch-read PEAKS export folders and merge them into raw long format}
 \usage{
 read_peaks_batch(
   folder = NULL,
   annotation = NULL,
   files = NULL,
-  instrument = "tims_tof",
-  shortpep_range = c(8, 13)
+  instrument = "tims_tof"
 )
 }
 \arguments{
 \item{folder}{Top-level directory containing the PEAKS export subfolders.
-Required when using \code{annotation} mode; may be \code{NULL} when \code{files} is
-supplied.}
+Required when using \code{annotation} or scan-all modes; may be \code{NULL} when
+\code{files} is supplied.}
 
-\item{annotation}{Annotation data frame (output of \code{\link[=read_annot]{read_annot()}}, joined
-with \code{\link[=get_dirs_index_peaks]{get_dirs_index_peaks()}}'s \code{path_full} column for matching). Required
-for the metadata join in both modes.}
+\item{annotation}{Optional annotation data frame (output of \code{\link[=read_annot]{read_annot()}}).
+When provided without \code{files}, only subfolders whose \code{basename} is in
+\code{annotation$Sample_peaks} are read.}
 
-\item{files}{Optional character vector of PEAKS export folder paths
-(relative to \code{getwd()}). When provided, bypasses the directory index and
-reads those folders directly.}
+\item{files}{Optional character vector of PEAKS export folder paths to read
+directly, bypassing the directory index.}
 
 \item{instrument}{Passed to \code{\link[=read_peaks]{read_peaks()}}; one of \code{"tims_tof"},
 \code{"faims_orbi"}, \code{"orbi"}.}
-
-\item{shortpep_range}{Length 2 vector \code{c(min, max)} defining the
-\code{Length_range} classification window (8-13 AAs for HLA-I).}
 }
 \value{
-The unified \code{pep_all}-format long data frame for every matched
-PEAKS sample.
+The raw long-format PEAKS data frame across every matched subfolder,
+with \code{Sample_peaks} identifying the source subfolder of each row.
 }
 \description{
 Indexes the PEAKS export subfolders (via the vendored
-\code{\link[=get_dirs_index_peaks]{get_dirs_index_peaks()}}), selects which to read, then reads and joins each
-one with \code{\link[=read_peaks]{read_peaks()}}, derives the shared \code{pep_all} columns
-(\code{ProteinFirst}/\code{GeneFirst}/\code{OrganismFirst}, \code{PeptideID}, \code{Log2Area},
-\code{Length_range}), drops decoys, and warns about any unmatched samples.
+\code{\link[=get_dirs_index_peaks]{get_dirs_index_peaks()}}), selects which to read, then reads and row-binds
+each one with \code{\link[=read_peaks]{read_peaks()}}. Three input modes are supported (checked in
+priority order):
 }
 \details{
-Two input modes are supported for selecting which export folders to read
-(checked in priority order):
 \enumerate{
-\item \strong{\code{files}} — character vector of PEAKS export folder paths (relative to
-\code{getwd()}); uses those directly, bypassing the directory index.
-\item \strong{\code{annotation}} — filters the directory index to \code{path_full} entries
-present in \code{annotation} (original default behaviour).
+\item \strong{\code{files}} — character vector of PEAKS export folder paths; uses those
+directly, bypassing the directory index.
+\item \strong{\code{annotation}} — filters the directory index to subfolders whose
+\code{basename} is listed in \code{annotation$Sample_peaks}.
+\item \strong{neither} — all non-QC PEAKS subfolders under \code{folder} are read.
 }
 
-\code{annotation} is always required for the metadata join (adds \code{Condition},
-\code{BioReplicate}, \code{Sample}, etc. to the output).
+The metadata join (adding \code{Condition}, \code{BioReplicate}, \code{Sample}, etc.)
+happens in \code{\link[=annotate_peaks]{annotate_peaks()}}, not here. This function returns the raw
+long-format PEAKS data only.
 }
 \examples{
 \dontrun{
 read_peaks_batch(file.path("2_data", "peaks_xpro"), annotation,
-                 instrument = params$Instrument)
+                 instrument = "tims_tof")
 
 # explicit folder paths
-read_peaks_batch(files = c("peaks_xpro/JY_01", "peaks_xpro/JY_02"),
-                 annotation = annot)
+read_peaks_batch(files = c("peaks_xpro/JY_01", "peaks_xpro/JY_02"))
 }
 }

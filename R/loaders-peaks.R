@@ -147,125 +147,172 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 }
 
 
-#' Batch-read and annotate every PEAKS export folder into `pep_all` format
+#' Batch-read PEAKS export folders and merge them into raw long format
 #'
 #' Indexes the PEAKS export subfolders (via the vendored
-#' [get_dirs_index_peaks()]), selects which to read, then reads and joins each
-#' one with [read_peaks()], derives the shared `pep_all` columns
-#' (`ProteinFirst`/`GeneFirst`/`OrganismFirst`, `PeptideID`, `Log2Area`,
-#' `Length_range`), drops decoys, and warns about any unmatched samples.
+#' [get_dirs_index_peaks()]), selects which to read, then reads and row-binds
+#' each one with [read_peaks()]. Three input modes are supported (checked in
+#' priority order):
 #'
-#' Two input modes are supported for selecting which export folders to read
-#' (checked in priority order):
+#' 1. **`files`** — character vector of PEAKS export folder paths; uses those
+#'    directly, bypassing the directory index.
+#' 2. **`annotation`** — filters the directory index to subfolders whose
+#'    `basename` is listed in `annotation$Sample_peaks`.
+#' 3. **neither** — all non-QC PEAKS subfolders under `folder` are read.
 #'
-#' 1. **`files`** — character vector of PEAKS export folder paths (relative to
-#'    `getwd()`); uses those directly, bypassing the directory index.
-#' 2. **`annotation`** — filters the directory index to `path_full` entries
-#'    present in `annotation` (original default behaviour).
-#'
-#' `annotation` is always required for the metadata join (adds `Condition`,
-#' `BioReplicate`, `Sample`, etc. to the output).
+#' The metadata join (adding `Condition`, `BioReplicate`, `Sample`, etc.)
+#' happens in [annotate_peaks()], not here. This function returns the raw
+#' long-format PEAKS data only.
 #'
 #' @param folder Top-level directory containing the PEAKS export subfolders.
-#'   Required when using `annotation` mode; may be `NULL` when `files` is
-#'   supplied.
-#' @param annotation Annotation data frame (output of [read_annot()], joined
-#'   with [get_dirs_index_peaks()]'s `path_full` column for matching). Required
-#'   for the metadata join in both modes.
-#' @param files Optional character vector of PEAKS export folder paths
-#'   (relative to `getwd()`). When provided, bypasses the directory index and
-#'   reads those folders directly.
+#'   Required when using `annotation` or scan-all modes; may be `NULL` when
+#'   `files` is supplied.
+#' @param annotation Optional annotation data frame (output of [read_annot()]).
+#'   When provided without `files`, only subfolders whose `basename` is in
+#'   `annotation$Sample_peaks` are read.
+#' @param files Optional character vector of PEAKS export folder paths to read
+#'   directly, bypassing the directory index.
 #' @param instrument Passed to [read_peaks()]; one of `"tims_tof"`,
 #'   `"faims_orbi"`, `"orbi"`.
-#' @param shortpep_range Length 2 vector `c(min, max)` defining the
-#'   `Length_range` classification window (8-13 AAs for HLA-I).
 #'
-#' @return The unified `pep_all`-format long data frame for every matched
-#'   PEAKS sample.
+#' @return The raw long-format PEAKS data frame across every matched subfolder,
+#'   with `Sample_peaks` identifying the source subfolder of each row.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' read_peaks_batch(file.path("2_data", "peaks_xpro"), annotation,
-#'                  instrument = params$Instrument)
+#'                  instrument = "tims_tof")
 #'
 #' # explicit folder paths
-#' read_peaks_batch(files = c("peaks_xpro/JY_01", "peaks_xpro/JY_02"),
-#'                  annotation = annot)
+#' read_peaks_batch(files = c("peaks_xpro/JY_01", "peaks_xpro/JY_02"))
 #' }
 read_peaks_batch <- function(folder = NULL, annotation = NULL, files = NULL,
-                              instrument = "tims_tof", shortpep_range = c(8, 13)){
-
-  if (is.null(annotation)) stop("'annotation' is required for the metadata join in read_peaks_batch()")
+                              instrument = "tims_tof"){
 
   if (!is.null(files)) {
     paths_to_read <- files
   } else {
     if (is.null(folder)) stop("'folder' must be provided when 'files' is NULL")
-    # List files and filter to annotated samples
     files_peaks <- get_dirs_index_peaks(folder)
-    files_peaks <- files_peaks[gsub("QC_", "", files_peaks$path_full) %in% unique(annotation$path_full), ]
-    paths_to_read <- unique(files_peaks[files_peaks$QC == FALSE, "path_full"])
+    files_peaks_data <- files_peaks[files_peaks$QC == FALSE, ]
+    if (!is.null(annotation)) {
+      annotated <- unique(as.character(annotation$Sample_peaks))
+      files_peaks_data <- files_peaks_data[basename(files_peaks_data$path_full) %in% annotated, ]
+    }
+    paths_to_read <- unique(files_peaks_data$path_full)
   }
 
-  output <- lapply(paths_to_read,
-                   function(x){
-                     annot_x <- annotation %>%
-                       dplyr::filter(path_full == x)
+  lapply(paths_to_read, function(x) {
+    out <- read_peaks(filedir = getwd(), folder_peaks_db = x, instrument = instrument)
+    message("loaded ", x)
+    out
+  }) %>%
+    do.call(args = ., what = dplyr::bind_rows)
+}
 
-                     output_raw <- read_peaks(filedir = getwd(),
-                                              folder_peaks_db = x,
-                                              instrument = instrument)
-                     output <-
-                       output_raw %>%
-                       dplyr::rename(Source_File_ID = Source_File) %>%
-                       dplyr::inner_join(., annot_x, by = c("Sample_peaks"))
 
-                     if(nrow(output) > nrow(output_raw)) stop("Some samples may be duplicated in the annotation file")
-                     message("loaded ", x)
-                     return(output)
-                   }) %>%
-    do.call(args = ., what = dplyr::bind_rows) %>% # clasifier of expected MHC length
-    # Get first protein only
-    dplyr::mutate(AccessionFirst = sub("\\:.*", "", Accession)) %>%
-    dplyr::mutate(AccessionFirst = gsub("|", "_", AccessionFirst, fixed = TRUE)) %>%
+#' Parse raw PEAKS results into `pep_all` format
+#'
+#' Derives the shared `pep_all` columns (`ProteinFirst`/`GeneFirst`/
+#' `OrganismFirst`, `PeptideID`, `Log2Area`, `Length_range`, `Found_By`) from
+#' the output of [read_peaks_batch()] and selects/reorders columns to converge
+#' on the unified schema shared with the FragPipe and DIA-NN loaders.
+#'
+#' @param input Output of [read_peaks_batch()].
+#' @param shortpep_range Length 2 vector `c(min, max)` defining the
+#'   `Length_range` classification window (8-13 AAs for HLA-I).
+#'
+#' @return The input reshaped into `pep_all` long format (without annotation
+#'   columns — call [annotate_peaks()] next).
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' parse_peaks(read_peaks_batch(folder, annotation), shortpep_range = c(8, 13))
+#' }
+parse_peaks <- function(input, shortpep_range = c(8, 13)){
+  input %>%
+    dplyr::rename(dplyr::any_of(c(Source_File_ID = "Source_File"))) %>%
+    dplyr::mutate(
+      AccessionFirst = gsub("|", "_", sub("\\:.*", "", Accession), fixed = TRUE)
+    ) %>%
     tidyr::separate(AccessionFirst, sep = "_",
                     into = c("ProteinFirst", "GeneFirst", "OrganismFirst"),
                     fill = "right", extra = "drop") %>%
     dplyr::arrange(ProteinFirst, m_z) %>%
-    dplyr::mutate(PeptideID = paste0(ProteinFirst, "_", round(m_z, 1), "_", as.numeric(Charge)),
-                  Log2Area = ifelse(Area == 0, NA, log(Area, 2)),
-                  Length_range = dplyr::case_when(Length >= shortpep_range[1] & Length <= shortpep_range[2] ~
-                                                     paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"),
-                                                   Length < shortpep_range[1] | Length > shortpep_range[2] ~ "others"),
-                  Length_range = factor(Length_range)) %>%
-    dplyr::select(dplyr::any_of( # added any_of and condition names in "" for compatibility with DIA 12/12/2025
-      c("Condition", "BioReplicate", "TechReplicate", "Sample",
-        "Accession", "Peptide", "Sequence", "Length",
+    dplyr::mutate(
+      PeptideID = paste0(ProteinFirst, "_", round(m_z, 1), "_", as.numeric(Charge)),
+      Log2Area = ifelse(Area == 0, NA, log(Area, 2)),
+      Length_range = dplyr::case_when(
+        Length >= shortpep_range[1] & Length <= shortpep_range[2] ~
+          paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"),
+        Length < shortpep_range[1] | Length > shortpep_range[2] ~ "others"),
+      Length_range = factor(Length_range),
+      Found_By = "PEAKS"
+    ) %>%
+    dplyr::select(dplyr::any_of(
+      c("Accession", "Peptide", "Sequence", "Length",
         "Score",
         "Area", "Log2Area",
         "Length_range", "PTM", "AScore", "Charge", "Nter", "Cter",
         "RT", "invk0_start", "invk0", "invk0_end", "Mass", "ppm", "m_z",
-        "Sample_ID", "Sample_peaks", "Source_File", "File_peaks_nb",
-        "Source_File_ID", "Precursor_Id", "n_Feature", "Found_By", "PeptideID", "ProteinFirst", "GeneFirst", "OrganismFirst")
-    )) # removed: Fraction, Peptide_charge, path_full, Fraction_peaks
+        "Sample_peaks", "File_peaks_nb",
+        "Source_File_ID", "Precursor_Id", "n_Feature", "Found_By",
+        "PeptideID", "ProteinFirst", "GeneFirst", "OrganismFirst")
+    ))
+}
 
-  if(any(grepl("#DECOY#", output$Accession))){
+
+#' Join parsed PEAKS results to the sample annotation table
+#'
+#' Validates that the annotation table has the minimal required columns,
+#' inner-joins `input` with `annotation` on `Sample_peaks`, warns about any
+#' unmatched samples, and filters out decoy identifications.
+#'
+#' @param input Output of [parse_peaks()].
+#' @param annotation Annotation data frame; must contain at least `Condition`,
+#'   `BioReplicate`, `TechReplicate`, `Sample`, `Sample_peaks`.
+#'
+#' @return The inner join of `annotation` and `input`, with decoys removed.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' annotate_peaks(parse_peaks(read_peaks_batch(folder, annotation)), annotation)
+#' }
+annotate_peaks <- function(input, annotation){
+  minimal_columns <- c("Condition", "BioReplicate", "TechReplicate", "Sample", "Sample_peaks")
+  if (!all(minimal_columns %in% names(annotation))) {
+    stop(paste0("The following columns are missing from the annotation table, please add them:\n",
+                paste0(minimal_columns[!minimal_columns %in% names(annotation)], collapse = ", ")))
+  }
+
+  output <- dplyr::inner_join(annotation, input, by = "Sample_peaks")
+
+  if (nrow(output) > nrow(input)) {
+    stop("Some samples may be duplicated in the annotation file")
+  }
+
+  if (any(grepl("#DECOY#", output$Accession))) {
     output <- output %>% dplyr::filter(!grepl("#DECOY#", Accession))
     message("Decoys were included in the raw results. They have been filtered out")
   }
 
-  # Check if any non-matched sample
-  if(any(is.na(output$Condition))){
-    warning("The following samples were not matched with the annotation file and thus will be droped")
+  if (any(is.na(output$Condition))) {
+    warning("The following samples were not matched with the annotation file and thus will be dropped")
     output %>%
       dplyr::filter(is.na(Condition)) %>%
-      dplyr::select(Condition, Sample, Source_File, Sample_peaks, File_peaks_nb) %>% unique %>%
-      kableExtra::kable %>%
-      kableExtra::kable_paper("hover", full_width = F) %>%
+      dplyr::select(dplyr::any_of(c("Condition", "Sample", "Source_File_ID", "Sample_peaks", "File_peaks_nb"))) %>%
+      unique() %>%
+      kableExtra::kable() %>%
+      kableExtra::kable_paper("hover", full_width = FALSE) %>%
       print()
+    output <- output %>% dplyr::filter(!is.na(Condition))
   }
-  return(output)
 
+  return(output)
 }
