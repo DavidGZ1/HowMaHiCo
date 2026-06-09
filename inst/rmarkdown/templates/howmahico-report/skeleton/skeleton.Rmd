@@ -613,7 +613,7 @@ pep_overlap <-
              n_Total = sapply(comp_condition_replicated, 
                                 function(x) count_merged(pep_all, variable = "Peptide",
                                                             cond1 = x[1], cond2 = x[2]))) %>% 
-  rownames_to_column("Comparison") %>%
+  tibble::rownames_to_column("Comparison") %>%
   separate(Comparison, into = c("Cond1", "Cond2"), sep = "_vs_") %>% 
   mutate(prop_Overlap_Total = round(n_Overlap/n_Total, 3)) %>% 
   # Add total IDs per condition and the proportion of overlap
@@ -764,7 +764,7 @@ pep_all_unique_mz %>%
                                         median = ~median(.x, na.rm=TRUE),
                                         q3 = ~quantile(.x, na.rm=TRUE)[3],
                                         max = ~max(.x, na.rm=TRUE))),  .groups = "drop")  %>% 
-  column_to_rownames("Condition") %>% 
+  tibble::column_to_rownames("Condition") %>%
   t
 ```
 
