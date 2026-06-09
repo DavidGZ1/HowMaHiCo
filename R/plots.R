@@ -107,6 +107,71 @@ plot_peplength_dens <- function(input, title, ylimits = NULL, xlimits = NULL){
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 8))
 }
 
+#' Peptide length histogram faceted by Condition
+#'
+#' Faceted histogram of peptide lengths across conditions, with bars coloured by
+#' whether each length falls within `shortpep_range` ("X to Y AAs") or outside
+#' ("others"). Replaces the [plot_peplength_dens()] + `lapply` + `ggarrange`
+#' approach in the report with a single `facet_wrap` call.
+#'
+#' @param input A `pep_all`-shaped data frame with `Length` and `Condition`
+#'   columns. Typically `pep_all_unique` (one row per peptide–condition pair).
+#' @param shortpep_range Length-2 integer vector giving the inclusive range
+#'   `[min, max]` that defines the "in-range" fill category. Default `c(8, 13)`.
+#' @param type One of `"density"` (y-axis = relative frequency) or `"count"`
+#'   (y-axis = raw count). Matched via [match.arg()].
+#' @param palette Named character vector of length 2 mapping the range label
+#'   (`"X to Y AAs"`) and `"others"` to colours. When `NULL`, falls back to
+#'   [ggplot2::scale_fill_viridis_d()].
+#' @param xlimits Length-2 numeric vector for the x-axis limits. Default
+#'   `c(5, 25)`.
+#'
+#' @return A `ggplot` object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_peplength_hist(pep_all_unique, shortpep_range = c(8, 13),
+#'                     type = "density", palette = c("8 to 13 AAs" = "#fde725",
+#'                                                    others = "#440154"))
+#' }
+plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
+                                type = c("density", "count"),
+                                palette = NULL, xlimits = c(5, 25)) {
+  type <- match.arg(type)
+  range_label <- paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs")
+  p <- input %>%
+    dplyr::mutate(
+      in_range = factor(
+        ifelse(Length >= shortpep_range[1] & Length <= shortpep_range[2],
+               range_label, "others"),
+        levels = c(range_label, "others")
+      )
+    ) %>%
+    ggplot2::ggplot(ggplot2::aes(x = Length, fill = in_range))
+  if (type == "density") {
+    p <- p + ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density)),
+                                     binwidth = 1)
+  } else {
+    p <- p + ggplot2::geom_histogram(binwidth = 1)
+  }
+  p <- p +
+    ggplot2::facet_wrap(~Condition) +
+    ggplot2::scale_x_continuous(limits = xlimits,
+                                breaks = seq(xlimits[1], xlimits[2], 3)) +
+    ggplot2::xlab("Peptide length (AAs)") +
+    ggplot2::ylab(if (type == "density") "Density" else "Count") +
+    ggplot2::labs(fill = "Length") +
+    theme_howmahico()
+  if (!is.null(palette)) {
+    p <- p + ggplot2::scale_fill_manual(values = palette)
+  } else {
+    p <- p + ggplot2::scale_fill_viridis_d(end = 1)
+  }
+  p
+}
+
 #' Peptide mass distribution: boxplot + density histogram with apex annotation
 #'
 #' Finds the distribution apex (mode of the kernel density estimate, per

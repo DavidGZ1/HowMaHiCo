@@ -129,7 +129,7 @@ Below are shown the UpSet plots representing the overlap between the conditions 
 
 # Input
 
-```{r echo=FALSE}
+```{r load-pep-all, echo=FALSE}
 # load data from previous report
 # load(file.path(params$FolderData, "pep_all_patients.rda"))
 file_rda <- file.path( file.path(params$FolderData,paste0(suffix, "pep_all.rda")))
@@ -157,8 +157,8 @@ write.csv(unique(pep_all[names(pep_all)[c(1:8)]]),
 write_input_params(params, folder = FolderResults, prefix = params$Subset)
 ```
 
-```{r}
-pep_short <- pep_all %>% 
+```{r pep-short-data}
+pep_short <- pep_all %>%
     filter(Length >= shortpep_range[1], Length <= shortpep_range[2]) 
 
 #extract simplified info
@@ -176,7 +176,7 @@ plist <- list()
 ```
 
 
-```{r}
+```{r seq-unique-data}
 # simplifying info
 seq_all_sample <- 
   pep_all %>% 
@@ -213,7 +213,7 @@ var_levels <-  c("Peptide", "Sequence", "Accession")
 
 
 
-```{r}
+```{r pep-patient-summary}
 pep_patient_biorep_summary <-
   pep_all  %>% 
   mutate(Area_imputed = is.na(Log2Area)) %>% 
@@ -253,7 +253,7 @@ Note: protein groups are encoded in the "Accession".  "ProteinFirst" was not inc
 
 
 
-```{r}
+```{r counts-pep-wide}
 counts_pep_all_wide <- 
   count_samples_patients(pep_all, "Peptide") #%>% 
    ## Add easy tags #project-specific
@@ -283,7 +283,7 @@ write.csv_rawr(counts_pep_selected_wide, folder = FolderResults, prefix = params
 - Exported in 3_results/counts_prot_selected_wide (`r paste0("Proteins from selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")`)
 
 
-```{r}
+```{r counts-prot-wide}
 # counts_prot_all_wide <- count_samples_patients(pep_all, "Protein")
 counts_prot_all_wide <- 
   count_samples_patients(pep_all, "Protein")# %>% 
@@ -310,7 +310,7 @@ write.csv_rawr(counts_prot_selected_wide, folder = FolderResults, prefix = param
 
 # All peptides - overlap between Conditions, per Sample_type {.tabset}
 
-```{r echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
+```{r upset-all-by-sampletype, echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
 for(j in 1:length(sampletypes)){
   cat("\n## ", sampletypes[j],"{.tabset} \n")
   up_list_j <-
@@ -330,7 +330,7 @@ for(j in 1:length(sampletypes)){
 
 # All peptides - overlap between Sample replicates, per Condition {.tabset}
 
-```{r echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
+```{r upset-all-by-condition, echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
 for(j in 1:length(conditions)){
   cat("\n## ", conditions[j],"{.tabset} \n")
   up_list_j <-
@@ -351,7 +351,7 @@ for(j in 1:length(conditions)){
 
 # Selected peptides - overlap between Conditions, per Sample_type {.tabset}
 
-```{r echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
+```{r upset-short-by-sampletype, echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
 for(j in 1:length(sampletypes)){
   cat("\n## ", sampletypes[j],"{.tabset} \n")
   up_list_j <-
@@ -370,7 +370,7 @@ for(j in 1:length(sampletypes)){
 
 # Selected peptides - overlap between Sample replicates, per Condition {.tabset}
 
-```{r echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
+```{r upset-short-by-condition, echo=FALSE,  fig.height=3.0, fig.width=3.5, message=FALSE, warning=FALSE, results='asis'}
 for(j in 1:length(conditions)){
   cat("\n## ", conditions[j],"{.tabset} \n")
   up_list_j <-
