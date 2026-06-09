@@ -147,7 +147,7 @@ get_annot_diann <- function(dir_data){
   diann_files <- data_files[grepl("report.tsv", data_files)]
   output_list <- sapply(diann_files, USE.NAMES = TRUE, simplify = FALSE, function(x){
     input <- paste0(dir_data, "/", x)
-    readr::read_tsv(input, col_select = "Run", show_col_types = FALSE) %>%
+    readr::read_tsv(input, col_select = "Run", show_col_types = FALSE, progress = FALSE) %>%
       dplyr::rename(Source_file = Run) %>%
       dplyr::pull(Source_file) %>%
       unique()
