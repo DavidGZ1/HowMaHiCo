@@ -625,6 +625,8 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #'   the report's `PlotTextLabelSize` param.
 #' @param palette Optional named character vector mapping `Length_range` values
 #'   to fill colours. When `NULL` (default) `scale_fill_viridis_d()` is used.
+#' @param x_var Name of the column to map to the x-axis. Default `"Condition"`;
+#'   pass `"Sample"` for the sample-level proportion plot.
 #'
 #' @return A ggplot2 stacked bar chart.
 #'
@@ -634,14 +636,16 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #' @examples
 #' \dontrun{
 #' plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all))
+#' plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all, "Sample"),
+#'                            x_var = "Sample")
 #' }
 plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 1.6,
-                                        palette = NULL){
+                                        palette = NULL, x_var = "Condition"){
   p <- input %>%
     dplyr::filter(Length_range != "All peptides",
                   Level == level2plot) %>%
     droplevels %>%
-    ggplot2::ggplot(ggplot2::aes(x = Condition, y = Proportion, group = Length_range)) +
+    ggplot2::ggplot(ggplot2::aes(x = .data[[x_var]], y = Proportion, group = Length_range)) +
     ggplot2::geom_bar(stat = "identity",
                       ggplot2::aes(fill = Length_range),
                       position = ggplot2::position_stack()) +
@@ -649,6 +653,7 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
     theme_howmahico() +
     ggplot2::scale_y_continuous(breaks = seq(0, 1, 0.25), labels = c("0", "", "50", "", "100"), limits = c(0, 1.02)) +
     ggplot2::labs(fill = "Length") +
+    ggplot2::xlab(x_var) +
     ggplot2::ylab("% Peptides") +
     ggplot2::theme(legend.position = "right") +
     ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(size = 0.3)))

@@ -4,16 +4,21 @@
 \alias{count_ids_condition_bylengthrange}
 \title{ID counts and proportions by \code{Length_range} and \code{Condition}}
 \usage{
-count_ids_condition_bylengthrange(input)
+count_ids_condition_bylengthrange(input, group_var = "Condition")
 }
 \arguments{
-\item{input}{A \code{pep_all}-shaped data frame with \code{Condition}, \code{Length_range},
-\code{Peptide}, \code{Sequence}, \code{Accession} columns.}
+\item{input}{A \code{pep_all}-shaped data frame with \code{Condition} (or the column
+named by \code{group_var}), \code{Length_range}, \code{Peptide}, \code{Sequence}, \code{Accession}
+columns.}
+
+\item{group_var}{Name of the grouping column. Default \code{"Condition"}; pass
+\code{"Sample"} to compute per-sample proportions.}
 }
 \value{
 A long-format data frame of counts/proportions/percentages per
-\code{Condition} × \code{Length_range} × \code{Level} (\code{Peptides.Modified}/\code{Peptides}/
+\code{group_var} × \code{Length_range} × \code{Level} (\code{Peptides.Modified}/\code{Peptides}/
 \code{Proteins}), with \code{Length_range} factor-ordered for stacked-bar plotting.
+The grouping column retains the name supplied in \code{group_var}.
 }
 \description{
 Computes peptide/sequence/protein counts for each \code{Condition} ×
@@ -34,6 +39,7 @@ were kept distinct rather than unified, to stay faithful to the original
 \examples{
 \dontrun{
 count_ids_condition_bylengthrange(pep_all)
+count_ids_condition_bylengthrange(pep_all, group_var = "Sample")
 }
 }
 \keyword{internal}

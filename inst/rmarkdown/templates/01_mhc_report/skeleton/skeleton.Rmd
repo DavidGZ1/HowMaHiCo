@@ -447,6 +447,21 @@ for(i in 1:length(counts_levels)){
 }
 ```
 
+### Proportion by length
+
+```{r plot-prop-length-sample, echo=FALSE, fig.height=2.5, fig.width=8, warning=FALSE}
+count_all_sample_lengthrange <-
+  pep_all %>%
+  count_ids_condition_bylengthrange(group_var = "Sample")
+
+bp_prop_length_pep_sample <-
+  count_all_sample_lengthrange %>%
+  plot_prop_length_condition(x_var = "Sample", palette = shortpep_colors) +
+  rotate_x_text(70)
+
+bp_prop_length_pep_sample
+```
+
 
 ## Peptides identified per charge +1 to +4 {.tabset}
 

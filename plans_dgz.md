@@ -9,11 +9,9 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 ## To do
 
 
-
 ## In standby
 
 * one single parser function
-* adapt fig.width and fig.height in function of the number of the number of facets, or variables
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins
 * 2do by me,Identification counts, average +/-sd, split into individual plots for each length
 * reorder plots in a way that makes more sense
@@ -70,3 +68,4 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * homogenize fig.width across all the chunks to 8.
 * add names to chunks
 * peptide length distribution, create a simpler function without the boxplot on top. This should facilitate using facet instead of ggarrange, include the option to color bars using two colors, based on the MHCclass. Also include option to show density or absolute numbers. In report, include both versions as sub-sections within a .{tabset}
+* add Proportion by length at sample level to ## Total by Sample
