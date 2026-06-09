@@ -412,7 +412,9 @@ plot_upset_batch <-   function(df, vars, n_intersections = 20, Compare = "Condit
   output <-
     lapply(vars, function(x){
       df %>%
-        select_unique(var = x, Compare) %>%
+        dplyr::select(var = dplyr::all_of(x), dplyr::all_of(Compare)) %>%
+        unique() %>%
+        droplevels() %>%
         plot_upset(., var, n_intersections = n_intersections, Compare = Compare,
                    labels = labels, lab.size = lab.size, plot.margin = plot.margin) +
         ggplot2::ggtitle(paste0(x, " overlap by ", Compare))

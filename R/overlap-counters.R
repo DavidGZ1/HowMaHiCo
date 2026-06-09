@@ -126,7 +126,7 @@ count_uniqueby_ip <- function(input, var, by, level = "Peptide"){
     tidyr::pivot_wider(id_cols = dplyr::all_of(key_columns),
                        names_from = {{ by }}, values_from = dplyr::starts_with("n_"),
                        names_glue = "{.value}s.{.name}", values_fill = 0) %>%
-    dplyr::arrange(dplyr::pick(key_columns))
+    dplyr::arrange(dplyr::pick(dplyr::all_of(key_columns)))
 }
 
 #' Combined per-Patient/Sample_type/Condition sample-and-patient count summary
