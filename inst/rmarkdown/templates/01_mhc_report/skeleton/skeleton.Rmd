@@ -358,26 +358,44 @@ count_lim$Limit_sample <- c(
 ```
 
 
-## Average +/- sd{.tabset}
+```{r counts-size-short-prep, echo=FALSE}
+counts_size_short <- counts_size %>%
+  dplyr::filter(!Length_range %in% c("All peptides", "others")) %>%
+  droplevels()
+count_lim_short <- data.frame(
+  Level = c("Peptides", "Sequences", "Proteins"),
+  Limit_mean = c(
+    ceiling(max(counts_size_short$n_Peptides,  na.rm = TRUE) * 1.2 / 100) * 100,
+    ceiling(max(counts_size_short$n_Sequences, na.rm = TRUE) * 1.2 / 100) * 100,
+    ceiling(max(counts_size_short$n_Proteins,  na.rm = TRUE) * 1.2 / 100) * 100
+  )
+)
+```
 
-```{r plot-count-mean-sd, results='asis', echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
+## Average +/- sd {.tabset}
 
-bp_count_mean <- list()
+### All peptides {.tabset}
 
-#Generate plots
-for(i in 1:length(counts_levels)){
-  # print(i)
-  level = counts_levels[i]
-  nlevel = paste0("n_", level)
+```{r plot-count-mean-sd-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+counts_size_all <- counts_size %>% dplyr::filter(Length_range == "All peptides") %>% droplevels()
+for (i in seq_along(counts_levels)) {
+  level <- counts_levels[i]
   lim_level <- count_lim[count_lim$Level == level, "Limit_mean"]
+  cat("#### ", level, "\n")
+  print(plot_count_mean_sd(counts_size_all, level, lim_level))
+  cat("\n\n")
+}
+```
 
-  bp_count_mean[[i]] <- plot_count_mean_sd(counts_size, level, lim_level)
-  #rename
-  names(bp_count_mean)[i] <- level
-  #print
-  cat("### ",level,"\n")
-  print(bp_count_mean[[i]])
-  cat('\n\n')
+### Selected peptides {.tabset}
+
+```{r plot-count-mean-sd-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(counts_levels)) {
+  level <- counts_levels[i]
+  lim_level <- count_lim_short[count_lim_short$Level == level, "Limit_mean"]
+  cat("#### ", level, "\n")
+  print(plot_count_mean_sd(counts_size_short, level, lim_level))
+  cat("\n\n")
 }
 ```
 
@@ -798,72 +816,33 @@ pep_all_unique_mz %>%
 
 ### n_Peptides Vs RT (Pseudochromatograms)
 
-```{r plot-chromato-all, echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
-chromato_pep_all <-
-  pep_all %>% 
-  mutate(RT = round(RT, 0)) %>% 
-  group_by(Condition, RT) %>% 
-  summarise(Count = n_distinct(Peptide), .groups = "drop") %>% 
-  ggplot(aes(x = RT, y = Count, fill  = Condition)) + geom_bar(stat="identity", position = position_dodge2()) +
-  ylab("Peptides") + xlab("RT *min") + 
-  ggtitle("Peptide ID chromatogram: All peptides identified") +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_fill_viridis_d() +
-  theme(legend.position = "none")
-
+```{r plot-chromato-all, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+chromato_pep_all <- plot_pseudochromatogram(pep_all,
+  "Peptide ID chromatogram: All peptides identified", ncol = phis_ncol)
 chromato_pep_all
 ```
 
 ### 1/k0 VS m/z
 
-```{r plot-invk0-mz-all, echo=FALSE, fig.width=8, fig.height=6}
-hm_pep_invk0_mz_all <- 
-  pep_all %>% 
-  ggplot(aes(x = m_z, y = invk0)) +
-  geom_bin_2d(binwidth = c(10, 0.025) ) +
-  scale_fill_viridis_c(option = "plasma") +
-  ylab("1/k0") + xlab("m/z") + 
-  ggtitle("All peptides identified") +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_color_viridis_d()
-
+```{r plot-invk0-mz-all, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_mz_all <- plot_2d_distribution(pep_all, "m_z", "invk0", c(10, 0.025),
+  "All peptides identified", x_lab = "m/z", y_lab = "1/k0", ncol = phis_ncol)
 hm_pep_invk0_mz_all
 ```
 
 ### 1/k0 VS RT
 
-```{r plot-invk0-rt-all, echo=FALSE, fig.width=8, fig.height=6}
-hm_pep_invk0_rt_all <- 
-  pep_all %>% 
-  ggplot(aes(x = RT, y = invk0)) +
-  geom_bin_2d(binwidth = c(1, 0.025) ) +
-  scale_fill_viridis_c(option = "plasma") +
-  ylab("1/k0") + xlab("RT (min)") + 
-  ggtitle("All peptides identified") +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_color_viridis_d()
-
+```{r plot-invk0-rt-all, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_rt_all <- plot_2d_distribution(pep_all, "RT", "invk0", c(1, 0.025),
+  "All peptides identified", x_lab = "RT (min)", y_lab = "1/k0", ncol = phis_ncol)
 hm_pep_invk0_rt_all
 ```
 
-
 ### m/z VS RT
 
-```{r plot-mz-rt-all, echo=FALSE, fig.width=8, fig.height=6}
-hm_pep_mz_rt_all <- 
-  pep_all %>% 
-  ggplot(aes(x = RT, y = m_z)) +
-  geom_bin_2d(binwidth = c(1, 10) ) +
-  scale_fill_viridis_c(option = "plasma") +
-  ylab("m/z") + xlab("RT (min)") + 
-  ggtitle("All peptides identified") +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_color_viridis_d()
-
+```{r plot-mz-rt-all, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_mz_rt_all <- plot_2d_distribution(pep_all, "RT", "m_z", c(1, 10),
+  "All peptides identified", x_lab = "RT (min)", y_lab = "m/z", ncol = phis_ncol)
 hm_pep_mz_rt_all
 ```
 
@@ -871,72 +850,37 @@ hm_pep_mz_rt_all
 
 ### n_Peptides Vs RT (Pseudochromatograms)
 
-```{r plot-chromato-short, echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
-chromato_pep_short <-
-  pep_short %>% 
-  mutate(RT = round(RT, 0)) %>% 
-  group_by(Condition, RT) %>% 
-  summarise(Count = n_distinct(Peptide), .groups = "drop") %>% 
-  ggplot(aes(x = RT, y = Count, fill  =Condition)) + geom_bar(stat="identity", position = position_dodge2()) +
-  ylab("Peptides") + xlab("RT *min") + 
-  ggtitle(paste0("Peptide ID chromatogram: Selected peptides identified (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_fill_viridis_d() +
-  theme(legend.position = "none")
-
+```{r plot-chromato-short, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+chromato_pep_short <- plot_pseudochromatogram(pep_short,
+  paste0("Peptide ID chromatogram: Selected peptides (",
+         shortpep_range[1], " to ", shortpep_range[2], " AAs)"), ncol = phis_ncol)
 chromato_pep_short
 ```
 
 ### 1/k0 VS m/z
 
-```{r plot-invk0-mz-short, echo=FALSE, fig.width=8, fig.height=6}
-hm_pep_invk0_mz_short <- 
-  pep_short %>% 
-  ggplot(aes(x = m_z, y = invk0)) +
-  geom_bin_2d(binwidth = c(10, 0.025) ) +
-  scale_fill_viridis_c(option = "plasma") +
-  ylab("1/k0") + xlab("m/z") + 
-  ggtitle(paste0("Selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_color_viridis_d()
-
+```{r plot-invk0-mz-short, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_mz_short <- plot_2d_distribution(pep_short, "m_z", "invk0", c(10, 0.025),
+  paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  x_lab = "m/z", y_lab = "1/k0", ncol = phis_ncol)
 hm_pep_invk0_mz_short
 ```
 
 ### 1/k0 VS RT
 
-```{r plot-invk0-rt-short, echo=FALSE, fig.width=8, fig.height=6}
-hm_pep_invk0_rt_short <- 
-  pep_short %>% 
-  ggplot(aes(x = RT, y = invk0)) +
-  geom_bin_2d(binwidth = c(1, 0.025) ) +
-  scale_fill_viridis_c(option = "plasma") +
-  ylab("1/k0") + xlab("RT (min)") + 
-  ggtitle(paste0("Selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_color_viridis_d()
-
+```{r plot-invk0-rt-short, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_rt_short <- plot_2d_distribution(pep_short, "RT", "invk0", c(1, 0.025),
+  paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  x_lab = "RT (min)", y_lab = "1/k0", ncol = phis_ncol)
 hm_pep_invk0_rt_short
 ```
 
-
 ### m/z VS RT
 
-```{r plot-mz-rt-short, echo=FALSE, fig.width=8, fig.height=6}
-hm_pep_mz_rt_short <- 
-  pep_short %>% 
-  ggplot(aes(x = RT, y = m_z)) +
-  geom_bin_2d(binwidth = c(1, 10) ) +
-  scale_fill_viridis_c(option = "plasma") +
-  ylab("m/z") + xlab("RT (min)") + 
-  ggtitle(paste0("Selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) +
-  theme_howmahico() +
-  facet_wrap(~Condition, ncol = phis_ncol) +
-  scale_color_viridis_d()
-
+```{r plot-mz-rt-short, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_mz_rt_short <- plot_2d_distribution(pep_short, "RT", "m_z", c(1, 10),
+  paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  x_lab = "RT (min)", y_lab = "m/z", ncol = phis_ncol)
 hm_pep_mz_rt_short
 ```
 
@@ -1116,7 +1060,7 @@ Sequence logos are shown below, separated by sequence length, without any cluste
 
 ```{r plot-seqlogo, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 # seq_lengths_short <- sort(unique(pep_short$Length))
-seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) <= 22]) # this helps skiping lengths with 0 peptides to avoid errors
+seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) <= 24]) # this helps skiping lengths with 0 peptides to avoid errors
 
 motifs_pepshort <- lapply(seq_lengths_short, function(x){
   # print(x)
