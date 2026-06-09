@@ -137,7 +137,7 @@ check_file_exists(file_rda, overwrite =  params$ResultsOverwrite)
 
 # Input
 
-```{r echo=FALSE, warning=FALSE}
+```{r input-annot, echo=FALSE, warning=FALSE}
 if(params$Instrument == "faims_orbi"){
   message("**IMPORTANT:** faims_orbi is not fully suported yet. For now, the Compensation Voltage (CV) is renamed as invko (1/k0) in the tables and used as mobility dimension in the plots")
 }
@@ -166,12 +166,12 @@ if (length(missing_files) > 0) {
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r print-annot, echo=FALSE, message=FALSE, warning=FALSE}
 print_annot(annot)
 ```
 
 
-```{r echo=FALSE, message=TRUE, warning=TRUE}
+```{r load-pep-all, echo=FALSE, message=TRUE, warning=TRUE}
 #Loading files and calculating extra columns.
 
 
@@ -231,7 +231,7 @@ comp_condition <- combn(conditions, 2) %>%  as.data.frame %>%  as.list
 
 This evaluation includes all peptides identified, without filtering out peptides that were not assigned to any protein or peptides that could come from contaminant proteins (Accession labeled Cont_). These values are shown below. Some true peptides can be originated from proteins typically assigned as contaminant in proteomics experiments (e.g., actins, keratins, albumins, etc.).
 
-```{r echo=FALSE}
+```{r check-ids-global, echo=FALSE}
 check_ids_global(pep_all) %>% 
   kable() %>% 
   kable_paper("hover", full_width = F)
@@ -239,7 +239,7 @@ check_ids_global(pep_all) %>%
 
 # Identification counts
 
-```{r echo=FALSE}
+```{r counts-all, echo=FALSE}
 
 counts_levels <- c("Peptides", "Sequences", "Proteins")
 
@@ -360,7 +360,7 @@ count_lim$Limit_sample <- c(
 
 ## Average +/- sd{.tabset}
 
-```{r results='asis', echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
+```{r plot-count-mean-sd, results='asis', echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
 
 bp_count_mean <- list()
 
@@ -385,7 +385,7 @@ for(i in 1:length(counts_levels)){
 
 Total IDs by Condition in function of length range
 
-```{r results='asis', echo=FALSE, fig.height=3.5, fig.width=6, warning=FALSE}
+```{r plot-count-total-condition, results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE}
 
 bp_count_length <- list(plot_bp_count_length(df = counts_size_total, level = counts_levels[1],
                                               lim_level = count_lim[count_lim$Level == counts_levels[1], "Limit_total"],
@@ -409,7 +409,7 @@ for(i in 1:length(counts_levels)){
 
 ### Proportion by length
 
-```{r echo=FALSE,  fig.height=2.5, fig.width=6, warning=FALSE}
+```{r plot-prop-length-condition, echo=FALSE,  fig.height=2.5, fig.width=8, warning=FALSE}
 count_all_condition_lengthrange  <-
   pep_all %>%
   count_ids_condition_bylengthrange() 
@@ -432,7 +432,7 @@ bp_prop_length_pep_condition
 
 Total IDs by Sample in function of length range
 
-```{r results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE}
+```{r plot-count-total-sample, results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE}
 bp_count_length_sample <- list(
   plot_bp_count_length(df = counts_size, level = counts_levels[1],
                        lim_level = count_lim[count_lim$Level == counts_levels[1], "Limit_sample"],
@@ -456,7 +456,7 @@ for(i in 1:length(counts_levels)){
 
 ### charge proportion condition
 
-```{r results='asis', echo=FALSE, fig.height=3.5, fig.width=6, warning=TRUE}
+```{r plot-charge-proportion, results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=TRUE}
 count_all_condition_charge <- 
   bind_rows(
     pep_all %>% 
@@ -498,12 +498,12 @@ bp_prop_all_condition_charge
 
 ## Overlap intra-Condition (across replicates) {.tabset}
 
-```{r results='asis', echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
+```{r plot-overlap-intra-condition, results='asis', echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
 overlap_ids    <- c("Peptide", "Sequence", "Accession")
 overlap_labels <- c("Peptides", "Sequences", "Proteins")
 
 for (i in seq_along(overlap_ids)) {
-  cat("### ", overlap_labels[i], "\n")
+  cat("\n### ", overlap_labels[i], "\n")
   print(plot_overlap_intra_condition(pep_all, pep_short,
                                      id_col         = overlap_ids[i],
                                      shortpep_range = shortpep_range))
@@ -515,7 +515,7 @@ for (i in seq_along(overlap_ids)) {
 
 ## Unique identifications across BioReplicates
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r upset-tables, echo=FALSE, message=FALSE, warning=FALSE}
 upset_table_pep <-
   pep_all %>% 
   mutate(Condition = as.character(Condition)) %>% 
@@ -579,7 +579,7 @@ Below are shown the UpSet plots representing the overlap between the conditions 
 
 ## All peptides {.tabset}
 
-```{r echo=FALSE,  fig.height=3.5, fig.width=6, message=FALSE, warning=FALSE, results='asis'}
+```{r plot-upset-all, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 var_levels <-  c("Peptide", "Sequence", "Accession")
 up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
 for (i in 1:length(var_levels)) {
@@ -592,7 +592,7 @@ for (i in 1:length(var_levels)) {
 
 ## Selected peptides {.tabset}
 
-```{r echo=FALSE,  fig.height=3.5, fig.width=6, message=FALSE, warning=FALSE, results='asis'}
+```{r plot-upset-short, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
 for (i in 1:length(var_levels)) {
   cat("\n### ", var_levels[i],"\n")
@@ -605,7 +605,7 @@ for (i in 1:length(var_levels)) {
 # Condition pairwise overlap  {.tabset}
 
 
-```{r echo=FALSE, warning=FALSE, fig.width=6}
+```{r overlap-pairwise-data, echo=FALSE, warning=FALSE, fig.width=8}
 # calculations needed for Condition, Bioreplicate, and sample-wise overlap and uniqueness
 npep_all_overlap <- pep_all %>%
   dplyr::group_by(Condition) %>%
@@ -647,7 +647,7 @@ pep_overlap <-
 
 ## Pairwise overlap matrix (counts)
 
-```{r echo=FALSE, warning=FALSE, fig.width=6}
+```{r plot-overlap-matrix-counts, echo=FALSE, warning=FALSE, fig.width=8}
 hm_overlap_matrix_count <-
   rbind(pep_overlap, 
       # Get mirror numbers to complete the matrix 
@@ -667,7 +667,7 @@ hm_overlap_matrix_count
 
 ## Pairwise overlap matrix (proportion from total)
 
-```{r echo=FALSE, warning=FALSE, fig.width=6}
+```{r plot-overlap-matrix-prop, echo=FALSE, warning=FALSE, fig.width=8}
 hm_overlap_matrix_prop <-
   rbind(pep_overlap, 
       # Get mirror numbers to complete the matrix 
@@ -691,7 +691,7 @@ hm_overlap_matrix_prop
 - prop_Overlap_total = n_Overlap/n_Total
 - prop_Overlap_Cond1 and prop_Overlap_Cond2 are different because they are calculated based on the total for only that condition
 
-```{r echo=FALSE}
+```{r table-overlap-pairwise, echo=FALSE}
 pep_overlap %>%  kable() %>% kable_paper("hover", full_width = F) %>% 
   column_spec(6,  background = spec_color(pep_overlap$prop_Overlap_Cond1,
                                           alpha = 0.8,  begin = 0.2,
@@ -704,7 +704,7 @@ pep_overlap %>%  kable() %>% kable_paper("hover", full_width = F) %>%
 
 # Peptide size distribution {.tabset}
 
-```{r echo=FALSE, warning=FALSE}
+```{r pep-unique-data, echo=FALSE, warning=FALSE}
 # calculations for plots below
 pep_all_unique <- pep_all %>% 
   select(Peptide, Sequence, PTM, Condition, Length, Mass) %>% 
@@ -714,9 +714,9 @@ pep_all_unique_mz <- pep_all %>%
   unique
 ```
 
-## Peptide length (Nb AAs)
+## Peptide length (Nb AAs) {.tabset}
 
-```{r echo=FALSE, fig.height=7, fig.width=6, message=FALSE, warning=FALSE}
+```{r peplength-layout, echo=FALSE, message=FALSE, warning=FALSE}
 if(length(conditions) <= 3){
   phis_nrow <- 1
   phis_ncol <- length(conditions)
@@ -724,26 +724,26 @@ if(length(conditions) <= 3){
   phis_nrow <- 3
   phis_ncol <- ceiling(length(conditions)/3)
 }}
-# project-specific
-# phis_nrow <- 4
-# phis_ncol <- 5
-npep_ylim_length <- pep_all_unique %>%  group_by(Length, Condition) %>%  count %>%  pull(n) %>%  max(.)*1.2
+```
 
-phist_pep_length <-
-  lapply(conditions,
-       function(x) plot_peplength_dens(pep_all_unique[pep_all_unique$Condition == x, ], x, xlimits=c(5,25),  ylimits = c(0,npep_ylim_length))) 
-names(phist_pep_length) <- conditions
-phist_pep_length_merged <- ggarrange(plotlist=phist_pep_length, nrow=phis_nrow, ncol=phis_ncol)
+### Density
 
-phist_pep_length_merged
-# phist_pep_length[[2]] 
+```{r plot-peplength-density, echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+phist_peplength_density <- plot_peplength_hist(pep_all_unique, shortpep_range = shortpep_range,
+                                               type = "density", palette = shortpep_colors)
+phist_peplength_density
+```
 
+### Counts
 
+```{r plot-peplength-counts, echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+plot_peplength_hist(pep_all_unique, shortpep_range = shortpep_range,
+                   type = "count", palette = shortpep_colors)
 ```
 
 ## Peptide mass (Da)
 
-```{r echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+```{r plot-pepmass, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE}
 phist_pep_mass <- lapply(conditions,
        function(x) plot_pepmass(pep_all_unique[pep_all_unique$Condition == x, ], x, xlimits = c(0, 5500)))
 names(phist_pep_mass) <- conditions
@@ -755,7 +755,7 @@ phist_pep_mass_merged
 
 ## m/z
 
-```{r echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+```{r plot-pepmz, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE}
 phist_pep_mz <- lapply(conditions,
        function(x) plot_pepmz(pep_all_unique_mz[pep_all_unique_mz$Condition == x, ], x, xlimits = c(0, 1500)))
 names(phist_pep_mz) <- conditions
@@ -767,8 +767,8 @@ phist_pep_mz_merged
 
 ## Summary table
 
-```{r echo=FALSE, warning=FALSE}
-pep_all_unique_mz %>% 
+```{r table-pep-size-summary, echo=FALSE, warning=FALSE}
+pep_all_unique_mz %>%
   select(Condition, Length, Mass, m_z) %>% 
   group_by(Condition) %>%
   # summarise(Min = min(Length))
@@ -787,7 +787,7 @@ pep_all_unique_mz %>%
 
 ### n_Peptides Vs RT (Pseudochromatograms)
 
-```{r echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
+```{r plot-chromato-all, echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
 chromato_pep_all <-
   pep_all %>% 
   mutate(RT = round(RT, 0)) %>% 
@@ -806,7 +806,7 @@ chromato_pep_all
 
 ### 1/k0 VS m/z
 
-```{r echo=FALSE, fig.width=6, fig.height=6}
+```{r plot-invk0-mz-all, echo=FALSE, fig.width=8, fig.height=6}
 hm_pep_invk0_mz_all <- 
   pep_all %>% 
   ggplot(aes(x = m_z, y = invk0)) +
@@ -823,7 +823,7 @@ hm_pep_invk0_mz_all
 
 ### 1/k0 VS RT
 
-```{r echo=FALSE, fig.width=6, fig.height=6}
+```{r plot-invk0-rt-all, echo=FALSE, fig.width=8, fig.height=6}
 hm_pep_invk0_rt_all <- 
   pep_all %>% 
   ggplot(aes(x = RT, y = invk0)) +
@@ -841,7 +841,7 @@ hm_pep_invk0_rt_all
 
 ### m/z VS RT
 
-```{r echo=FALSE, fig.width=6, fig.height=6}
+```{r plot-mz-rt-all, echo=FALSE, fig.width=8, fig.height=6}
 hm_pep_mz_rt_all <- 
   pep_all %>% 
   ggplot(aes(x = RT, y = m_z)) +
@@ -860,7 +860,7 @@ hm_pep_mz_rt_all
 
 ### n_Peptides Vs RT (Pseudochromatograms)
 
-```{r echo=FALSE, fig.height=6, fig.width=6, warning=FALSE}
+```{r plot-chromato-short, echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
 chromato_pep_short <-
   pep_short %>% 
   mutate(RT = round(RT, 0)) %>% 
@@ -879,7 +879,7 @@ chromato_pep_short
 
 ### 1/k0 VS m/z
 
-```{r echo=FALSE, fig.width=6, fig.height=6}
+```{r plot-invk0-mz-short, echo=FALSE, fig.width=8, fig.height=6}
 hm_pep_invk0_mz_short <- 
   pep_short %>% 
   ggplot(aes(x = m_z, y = invk0)) +
@@ -896,7 +896,7 @@ hm_pep_invk0_mz_short
 
 ### 1/k0 VS RT
 
-```{r echo=FALSE, fig.width=6, fig.height=6}
+```{r plot-invk0-rt-short, echo=FALSE, fig.width=8, fig.height=6}
 hm_pep_invk0_rt_short <- 
   pep_short %>% 
   ggplot(aes(x = RT, y = invk0)) +
@@ -914,7 +914,7 @@ hm_pep_invk0_rt_short
 
 ### m/z VS RT
 
-```{r echo=FALSE, fig.width=6, fig.height=6}
+```{r plot-mz-rt-short, echo=FALSE, fig.width=8, fig.height=6}
 hm_pep_mz_rt_short <- 
   pep_short %>% 
   ggplot(aes(x = RT, y = m_z)) +
@@ -934,7 +934,7 @@ hm_pep_mz_rt_short
 
 Pearson correlation using pairwise complete-observations
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r corr-log2area-data, echo=FALSE, message=FALSE, warning=FALSE}
 # Get Log2Area matrices; NAs are kept as NA; mean is calculated if needed
 ## all peptides
 pep_all_log2area_tr  <- get_mat_log2area(pep_all, PeptideID, Sample)
@@ -951,7 +951,7 @@ prot_short_log2area_br <- get_mat_log2area(pep_short, ProteinFirst, BioReplicate
 
 ## All peptides
 
-```{r echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=TRUE}
+```{r plot-corr-all, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=TRUE}
 # Matrix of log2(Area)
 corr_log2area_all <-  cor(pep_all_log2area_tr, method = "pearson", use = "pairwise.complete.obs")
 
@@ -984,7 +984,7 @@ ggplotly(p_corr_log2area_all)
 
 ## Selected peptides `r paste0("(", shortpep_range[1]," to ", shortpep_range[2], " AAs)")`
 
-```{r echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+```{r plot-corr-short, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE}
 corr_log2area_short <-  cor(pep_short_log2area_tr, method = "pearson", use = "pairwise.complete.obs")
 #setup limits
 corrarea_lim <- c(floor(min(corr_log2area_short, na.rm = TRUE)),
@@ -1015,7 +1015,7 @@ ggplotly(p_corr_log2area_short)
 
 # Area CV violin plots {.tabset}
 
-```{r echo=FALSE, fig.width=6, fig.height=7}
+```{r areacv-data, echo=FALSE, fig.width=8, fig.height=7}
 pep_all_summ_area_cond <- summarise_area(pep_all, Condition)
 pep_all_summ_area_biorep <- summarise_area(pep_all,  BioReplicate)
 pep_short_summ_area_cond <- summarise_area(pep_short, Condition)
@@ -1038,13 +1038,13 @@ if(all(is.na(pep_all_summ_area_biorep$Area_CV))){
 
 ### Condition
 
-```{r}
+```{r plot-areacv-all-condition}
 ggprint_rawr(pviolin_areacv_cond_all)
 ```
 
 ### BioReplicate
 
-```{r}
+```{r plot-areacv-all-biorep}
 ggprint_rawr(pviolin_areacv_biorep_all)
 ```
 
@@ -1052,13 +1052,13 @@ ggprint_rawr(pviolin_areacv_biorep_all)
 
 ### Condition
 
-```{r}
+```{r plot-areacv-short-condition}
 ggprint_rawr(pviolin_areacv_cond_short)
 ```
 
 ### BioReplicate
 
-```{r}
+```{r plot-areacv-short-biorep}
 ggprint_rawr(pviolin_areacv_biorep_short)
 ```
 
@@ -1068,14 +1068,14 @@ ggprint_rawr(pviolin_areacv_biorep_short)
 
 ### Violin & boxplots
 
-```{r echo=FALSE, fig.width=6, fig.height=7}
+```{r plot-qc-score-violin, echo=FALSE, fig.width=8, fig.height=7}
 vp_score_score <- plot_qc_violin(pep_all, "Score", "Score distribution, and boxplot")
 vp_score_score
 ```
 
 ### Boxplots
 
-```{r echo=FALSE, fig.width=6, fig.height=7}
+```{r plot-qc-score-box, echo=FALSE, fig.width=8, fig.height=7}
 bp_score_score <- plot_qc_box(pep_all, "Score", "Score boxplot")
 bp_score_score
 ```
@@ -1084,14 +1084,14 @@ bp_score_score
 
 ### Violin & boxplots
 
-```{r echo=FALSE, fig.width=6, fig.height=7}
+```{r plot-qc-masserror-violin, echo=FALSE, fig.width=8, fig.height=7}
 vp_masserror_ppm <- plot_qc_violin(pep_all, "ppm", "Mass error distribution, and boxplot")
 vp_masserror_ppm
 ```
 
 ### Boxplots alone
 
-```{r echo=FALSE, fig.width=6, fig.height=7}
+```{r plot-qc-masserror-box, echo=FALSE, fig.width=8, fig.height=7}
 bp_masserror_ppm <- plot_qc_box(pep_all, "ppm", "Mass error boxplot")
 bp_masserror_ppm
 ```
@@ -1103,7 +1103,7 @@ bp_masserror_ppm
 Sequence logos are shown below, separated by sequence length, without any clustering or deconvolution. [Wagih, Omar. ggseqlogo: a versatile R package for drawing sequence logos. Bioinformatics (2017). https://doi.org/10.1093/bioinformatics/btx469]
 
 
-```{r echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, results='asis'}
+```{r plot-seqlogo, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 # seq_lengths_short <- sort(unique(pep_short$Length))
 seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) <= 22]) # this helps skiping lengths with 0 peptides to avoid errors
 
@@ -1131,20 +1131,20 @@ Note that numbers mean different things in function of the software
 
 ### Count
   
-```{r, echo = FALSE, fig.width=6, fig.height=3.5}
+```{r plot-ptm-count, echo = FALSE, fig.width=8, fig.height=3.5}
 hm_ptm_count_cond <- plot_ptm_heatmap(pep_short, type = "count", shortpep_range = shortpep_range)
 hm_ptm_count_cond
 ```
 
 ### Proportion
 
-```{r, echo = FALSE, fig.width=6, fig.height=3.5}
+```{r plot-ptm-prop, echo = FALSE, fig.width=8, fig.height=3.5}
 hm_ptm_prop_cond <- plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = shortpep_range)
 hm_ptm_prop_cond
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters, independent of CsvSave/PlotsSave
 write_input_params(params, folder = FolderResults)
 
@@ -1207,7 +1207,7 @@ if(params$CsvSave == TRUE){
 if(params$PlotsSave == TRUE){
   ggsave_rawr(pvenn_conditions, file = "pvenn_conditions", folder = FolderFigures, height = 18,width = 12)
   ggsave_rawr(hm_overlap_matrix, file = "hm_overlap_matrix", folder = FolderFigures, width = n_conditions + 5, height  = 12)
-  ggsave_rawr(phist_pep_length_merged, "phist_pep_length_merged", folder = FolderFigures, width = n_conditions*1.5 + 2, height=8)
+  ggsave_rawr(phist_peplength_density, "phist_peplength_density", folder = FolderFigures, width = n_conditions*1.5 + 2, height=8)
   ggsave_rawr(phist_pep_mass_merged, "phist_pep_mass_merged.tif", folder = FolderFigures, width =  n_conditions*1.5 + 2, height=10)
   ggsave_rawr(phist_pep_mz_merged, "phist_pep_mz_merged.tif", folder = FolderFigures, width = n_conditions*1.5 + 2, height=10)
   ggsave_rawr(chromato_pep_all, file = "chromato_pep_all", folder = FolderFigures, width = n_conditions + 10, height  = 12)

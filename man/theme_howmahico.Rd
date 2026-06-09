@@ -4,10 +4,10 @@
 \alias{theme_howmahico}
 \title{HowMaHiCo's unified ggplot theme}
 \usage{
-theme_howmahico(base_size = 10)
+theme_howmahico(base_size = 8)
 }
 \arguments{
-\item{base_size}{Base font size (points). Default 10.}
+\item{base_size}{Base font size (points). Default 8.}
 }
 \value{
 A ggplot2 theme object, addable to a plot with \code{+}.
