@@ -169,14 +169,14 @@ if(grepl("fragpipe_dda", params$Software)){
     }
   }
 
-pep_all <- read_fragpipe_batch(folder = params$FolderData, testmode = params$TestMode)  %>%
+pep_all <- read_fragpipe_batch(folder = params$FolderData, annotation = annot, testmode = params$TestMode)  %>%
   parse_fragpipe(., shortpep_range = shortpep_range) %>%
   annotate_fragpipe(annot, mode = annot_mode)
 warning("for Fragpipe, the psm file is currently beeing used. This means that FDR has not been applied at the peptide level, only at PSM level")
 }
 if(params$Software == "diann"){
   message("loading diann data")
-pep_all <- read_diann_batch(folder = params$FolderData, testmode = params$TestMode)  %>%
+pep_all <- read_diann_batch(folder = params$FolderData, annotation = annot, testmode = params$TestMode)  %>%
   parse_diann(., shortpep_range = shortpep_range) %>%
   annotate_diann(annot)
 warning("for DIA-NN, some columns are currently missing, including Mass and ppm (ppm = 0 as dummy)")
