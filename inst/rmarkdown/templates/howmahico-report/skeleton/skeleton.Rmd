@@ -9,10 +9,10 @@ output:
   editor_options: 
   chunk_output_type: inline
 params:
-  Title: "Report: MHC1p evaluation"
-  SampleSet: "KERU_002 PM"
-  DataAnalysisNames: "KR, DGZ"
-  WetLabNames: "MF, KR"
+  Title: "Report: Major Histocompatibility Complex (MaHiCo) immunopeptidomics evaluation"
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
   FolderDocumentation: "1_documentation" # ABSOLUTE path (or relative to the render-time working directory) containing AnnotationFile
   AnnotationFile: "samples_annotation.csv" # Samples Annotation file, in FolderDocumentation
   Subset: "" # subset name, is added as prefix to file names and used to creat subfolders for results and figures
@@ -21,7 +21,7 @@ params:
   FolderFigures: "4_figures" # ABSOLUTE path (or relative to the render-time working directory)
   ProjectDir: ~ # Optional: absolute path to the project root. Set when R's working directory is not the project root (e.g. running from a subfolder). Relative folder paths are resolved from here.
   Instrument: "tims_tof" #faims_orbi, orbi
-  Software: "peaks_xpro" # options: fragpipe_dda_individual, fragpipe_dda_combined, diann; to be added: peaks_xpro, peaks_11, fragpipe_diann
+  Software: "fragpipe_dda_combined" # options: fragpipe_dda_individual, fragpipe_dda_combined, diann, peaks_xpro; to be added: peaks_11, fragpipe_diann
   ShortPeptideLenghtMin: 8
   ShortPeptideLenghtMax: 13
   PlotTextLabelSize: 1.6
