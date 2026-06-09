@@ -11,10 +11,13 @@ reference:
   - derive_filtered_annotation
 
 - title: Annotation
-  desc: Read, validate, and display sample annotation tables
+  desc: Read, validate, display, and auto-generate sample annotation tables
   contents:
   - read_annot
   - print_annot
+  - get_annot_fragpipe
+  - get_annot_diann
+  - get_annot_sampleid
 
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema
