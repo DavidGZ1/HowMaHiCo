@@ -183,8 +183,12 @@ warning("for DIA-NN, some columns are currently missing, including Mass and ppm 
 
 }
 if(params$Software == "peaks_xpro"){
+  message("loading PEAKS data")
   pep_all <- read_peaks_batch(folder = params$FolderData,
-                              annotation = annot)
+                              annotation = annot,
+                              instrument = params$Instrument) %>%
+    parse_peaks(., shortpep_range = shortpep_range) %>%
+    annotate_peaks(annot)
 }
 
 
