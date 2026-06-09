@@ -18,8 +18,8 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 * one single parser function
 * adapt fig.width and fig.height in function of the number of the number of facets, or variables
-* \#2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins
-* \#2do by me,Identification counts, average +/-sd, split into individual plots for each length
+* 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins
+* 2do by me,Identification counts, average +/-sd, split into individual plots for each length
 * reorder plots in a way that makes more sense
 
 
