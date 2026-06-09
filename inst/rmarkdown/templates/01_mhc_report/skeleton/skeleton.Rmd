@@ -420,11 +420,6 @@ bp_prop_length_pep_condition <-
   plot_prop_length_condition(palette = shortpep_colors)  +
   rotate_x_text(70) 
     
-
-
-# save_thunder(bp_prop_length_pep)
-
-# ggsave_thunder(bp_prop_length_pep_condition, width = 8, height = 4)
 bp_prop_length_pep_condition
 ```
 
@@ -451,6 +446,22 @@ for(i in 1:length(counts_levels)){
   cat('\n\n')
 }
 ```
+
+### Proportion by length
+
+```{r plot-prop-length-sample, echo=FALSE, fig.height=2.5, fig.width=8, warning=FALSE}
+count_all_sample_lengthrange <-
+  pep_all %>%
+  count_ids_condition_bylengthrange(group_var = "Sample")
+
+bp_prop_length_pep_sample <-
+  count_all_sample_lengthrange %>%
+  plot_prop_length_condition(x_var = "Sample", palette = shortpep_colors) +
+  rotate_x_text(70)
+
+bp_prop_length_pep_sample
+```
+
 
 ## Peptides identified per charge +1 to +4 {.tabset}
 

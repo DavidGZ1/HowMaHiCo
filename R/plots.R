@@ -141,7 +141,9 @@ plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
                                 palette = NULL, xlimits = c(5, 25)) {
   type <- match.arg(type)
   range_label <- paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs")
-  p <- input %>%
+  # Pre-compute counts and normalise by condition total so density reflects the
+  # full distribution (not each fill group independently).
+  df <- input %>%
     dplyr::mutate(
       in_range = factor(
         ifelse(Length >= shortpep_range[1] & Length <= shortpep_range[2],
@@ -149,19 +151,20 @@ plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
         levels = c(range_label, "others")
       )
     ) %>%
-    ggplot2::ggplot(ggplot2::aes(x = Length, fill = in_range))
-  if (type == "density") {
-    p <- p + ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density)),
-                                     binwidth = 1)
-  } else {
-    p <- p + ggplot2::geom_histogram(binwidth = 1)
-  }
-  p <- p +
+    dplyr::count(Condition, Length, in_range) %>%
+    dplyr::group_by(Condition) %>%
+    dplyr::mutate(density = n / sum(n)) %>%
+    dplyr::ungroup()
+  y_var <- if (type == "density") "density" else "n"
+  y_lab <- if (type == "density") "Density" else "Count"
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = Length, y = .data[[y_var]],
+                                        fill = in_range)) +
+    ggplot2::geom_col(color = "black", alpha = 0.7) +
     ggplot2::facet_wrap(~Condition) +
     ggplot2::scale_x_continuous(limits = xlimits,
                                 breaks = seq(xlimits[1], xlimits[2], 3)) +
     ggplot2::xlab("Peptide length (AAs)") +
-    ggplot2::ylab(if (type == "density") "Density" else "Count") +
+    ggplot2::ylab(y_lab) +
     ggplot2::labs(fill = "Length") +
     theme_howmahico()
   if (!is.null(palette)) {
@@ -330,10 +333,8 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
   p <- df %>%
     dplyr::filter(Length_range != "All peptides") %>%
     droplevels() %>%
-    dplyr::mutate(Length_range = dplyr::recode(Length_range,
-                                                others = paste0("< ", shortpep_range[1], " OR > ", shortpep_range[2], " AAs"))) %>%
     ggpubr::ggbarplot(x = x_var, y = nlevel, fill = "Length_range", group = "Length_range",
-                      label = TRUE, alpha = 1,
+                      label = TRUE, alpha = 0.5,
                       lab.vjust = 1.5,
                       lab.nb.digits = 0, lab.size = 2.5) +
     ggplot2::geom_text(data = df %>% dplyr::filter(Length_range == "All peptides"),
@@ -624,6 +625,8 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #'   the report's `PlotTextLabelSize` param.
 #' @param palette Optional named character vector mapping `Length_range` values
 #'   to fill colours. When `NULL` (default) `scale_fill_viridis_d()` is used.
+#' @param x_var Name of the column to map to the x-axis. Default `"Condition"`;
+#'   pass `"Sample"` for the sample-level proportion plot.
 #'
 #' @return A ggplot2 stacked bar chart.
 #'
@@ -633,14 +636,16 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #' @examples
 #' \dontrun{
 #' plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all))
+#' plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all, "Sample"),
+#'                            x_var = "Sample")
 #' }
 plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 1.6,
-                                        palette = NULL){
+                                        palette = NULL, x_var = "Condition"){
   p <- input %>%
     dplyr::filter(Length_range != "All peptides",
                   Level == level2plot) %>%
     droplevels %>%
-    ggplot2::ggplot(ggplot2::aes(x = Condition, y = Proportion, group = Length_range)) +
+    ggplot2::ggplot(ggplot2::aes(x = .data[[x_var]], y = Proportion, group = Length_range)) +
     ggplot2::geom_bar(stat = "identity",
                       ggplot2::aes(fill = Length_range),
                       position = ggplot2::position_stack()) +
@@ -648,13 +653,14 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
     theme_howmahico() +
     ggplot2::scale_y_continuous(breaks = seq(0, 1, 0.25), labels = c("0", "", "50", "", "100"), limits = c(0, 1.02)) +
     ggplot2::labs(fill = "Length") +
+    ggplot2::xlab(x_var) +
     ggplot2::ylab("% Peptides") +
     ggplot2::theme(legend.position = "right") +
     ggplot2::guides(fill = ggplot2::guide_legend(override.aes = list(size = 0.3)))
   if (!is.null(palette)) {
     p <- p + ggplot2::scale_fill_manual(values = scales::alpha(palette, 1))
   } else {
-    p <- p + ggplot2::scale_fill_viridis_d(end = 1, alpha = 1)
+    p <- p + ggplot2::scale_fill_viridis_d(end = 1, alpha = 0.5)
   }
   p
 }

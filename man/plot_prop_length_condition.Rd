@@ -8,7 +8,8 @@ plot_prop_length_condition(
   input,
   level2plot = "Peptides",
   label_size = 1.6,
-  palette = NULL
+  palette = NULL,
+  x_var = "Condition"
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ the report's \code{PlotTextLabelSize} param.}
 
 \item{palette}{Optional named character vector mapping \code{Length_range} values
 to fill colours. When \code{NULL} (default) \code{scale_fill_viridis_d()} is used.}
+
+\item{x_var}{Name of the column to map to the x-axis. Default \code{"Condition"};
+pass \code{"Sample"} for the sample-level proportion plot.}
 }
 \value{
 A ggplot2 stacked bar chart.
@@ -33,6 +37,8 @@ stacked proportion bar chart per condition, with percentage labels.
 \examples{
 \dontrun{
 plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all))
+plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all, "Sample"),
+                           x_var = "Sample")
 }
 }
 \keyword{internal}

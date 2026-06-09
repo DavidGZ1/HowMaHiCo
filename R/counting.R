@@ -38,12 +38,16 @@ count_ids <- function(input){
 #' were kept distinct rather than unified, to stay faithful to the original
 #' "imported from functions_thunder" implementation.
 #'
-#' @param input A `pep_all`-shaped data frame with `Condition`, `Length_range`,
-#'   `Peptide`, `Sequence`, `Accession` columns.
+#' @param input A `pep_all`-shaped data frame with `Condition` (or the column
+#'   named by `group_var`), `Length_range`, `Peptide`, `Sequence`, `Accession`
+#'   columns.
+#' @param group_var Name of the grouping column. Default `"Condition"`; pass
+#'   `"Sample"` to compute per-sample proportions.
 #'
 #' @return A long-format data frame of counts/proportions/percentages per
-#'   `Condition` × `Length_range` × `Level` (`Peptides.Modified`/`Peptides`/
+#'   `group_var` × `Length_range` × `Level` (`Peptides.Modified`/`Peptides`/
 #'   `Proteins`), with `Length_range` factor-ordered for stacked-bar plotting.
+#'   The grouping column retains the name supplied in `group_var`.
 #'
 #' @keywords internal
 #' @export
@@ -51,8 +55,11 @@ count_ids <- function(input){
 #' @examples
 #' \dontrun{
 #' count_ids_condition_bylengthrange(pep_all)
+#' count_ids_condition_bylengthrange(pep_all, group_var = "Sample")
 #' }
-count_ids_condition_bylengthrange <- function(input){
+count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
+  if (group_var != "Condition")
+    input <- dplyr::rename(input, "Condition" = dplyr::all_of(group_var))
   # count_ids from thunder, works differently to the other one above
   count_ids <- function(input, ..., total = FALSE){
     # count distinct entries for Modified_Peptides.Modified, Peptides.Modified and Proteins
@@ -112,6 +119,10 @@ count_ids_condition_bylengthrange <- function(input){
                                     CumCount - Count[Length_range == "All peptides"],
                                     Count)) %>%
     dplyr::ungroup()
+
+  if (group_var != "Condition")
+    prop_by_length_total <- dplyr::rename(prop_by_length_total,
+                                          !!group_var := Condition)
 
   return(prop_by_length_total)
 }
