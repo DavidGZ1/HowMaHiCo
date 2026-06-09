@@ -141,33 +141,48 @@ Read, validate, and display sample annotation tables
 Software-specific loader families that converge on the unified `pep_all`
 schema
 
-- [`fp_read_psm_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/fp_read_psm_batch.md)
+- [`read_fragpipe()`](https://davidgz1.github.io/HowMaHiCo/reference/read_fragpipe.md)
   :
 
-  Batch-read every FragPipe `psm.tsv` under a folder and merge them
+  Read one FragPipe `psm.tsv` or DIA-NN `report.tsv` file
 
-- [`fp_parse_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/fp_parse_pep_all.md)
+- [`read_fragpipe_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_fragpipe_batch.md)
+  :
+
+  Batch-read FragPipe `psm.tsv` files and merge them
+
+- [`parse_fragpipe()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_fragpipe.md)
   :
 
   Parse raw FragPipe PSM results into `pep_all` format
 
-- [`fp_annotate()`](https://davidgz1.github.io/HowMaHiCo/reference/fp_annotate.md)
+- [`annotate_fragpipe()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_fragpipe.md)
   : Join parsed FragPipe results to the sample annotation table
 
-- [`diann_read_tsv_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/diann_read_tsv_batch.md)
+- [`read_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/read_diann.md)
   :
 
-  Batch-read every DIA-NN `report.tsv` under a folder and merge them
+  Read one DIA-NN `report.tsv` file
 
-- [`diann_parse_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/diann_parse_pep_all.md)
+- [`read_diann_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_diann_batch.md)
+  :
+
+  Batch-read DIA-NN `report.tsv` files and merge them
+
+- [`parse_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_diann.md)
   :
 
   Parse raw DIA-NN report results into `pep_all` format
 
-- [`diann_annotate()`](https://davidgz1.github.io/HowMaHiCo/reference/diann_annotate.md)
+- [`annotate_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_diann.md)
   : Join parsed DIA-NN results to the sample annotation table
 
-- [`peaks_read_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/peaks_read_batch.md)
+- [`read_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks.md)
+  :
+
+  Read one PEAKS `peptide.csv` export into long format
+
+- [`read_peaks_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks_batch.md)
   :
 
   Batch-read and annotate every PEAKS export folder into `pep_all`

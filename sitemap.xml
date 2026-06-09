@@ -7,6 +7,8 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/index.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/project-style-guide.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/HowMaHiCo-package.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/annotate_diann.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/annotate_fragpipe.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/check_file_exists.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/check_ids_global.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/check_output_exists.html</loc></url>
@@ -19,14 +21,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/count_uniqueby.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/count_uniqueby_ip.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/diann_annotate.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/diann_parse_pep_all.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/diann_read_tsv_batch.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/filter_unique.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/fp_annotate.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/fp_parse_pep_all.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/fp_read_psm.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/fp_read_psm_batch.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_charge_group.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_dirs_index_peaks.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_mat_log2area.html</loc></url>
@@ -36,7 +31,8 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/ggseqlogo_bylength.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/index.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/list_sequences.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/peaks_read_batch.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_diann.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_fragpipe.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_bp_count_length.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_charge_proportions.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_corr.html</loc></url>
@@ -57,7 +53,12 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_violin_areacv.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/print_annot.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_annot.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_pep_peaks.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_diann.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_diann_batch.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_fragpipe.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_fragpipe_batch.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_peaks.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_peaks_batch.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_qc_peaks.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_qc_peaks_single.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.html</loc></url>
