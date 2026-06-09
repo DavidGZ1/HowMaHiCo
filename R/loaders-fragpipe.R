@@ -1,10 +1,10 @@
-#' Read one FragPipe `psm.tsv`/DIA-NN `report.tsv` file
+#' Read one FragPipe `psm.tsv` or DIA-NN `report.tsv` file
 #'
 #' Reads a single search-engine tsv with [readr::read_tsv()] (optionally
 #' truncated to the first ~100 rows for fast iteration via `testmode`), and
-#' tags every row with `samplename`. Shared by both the FragPipe and DIA-NN
-#' batch readers — the two formats only diverge once the per-sample frames are
-#' parsed into `pep_all` shape.
+#' tags every row with `samplename`. Shared internally by both the FragPipe and
+#' DIA-NN batch readers — the two formats only diverge once the per-sample
+#' frames are parsed into `pep_all` shape.
 #'
 #' @param folder Path to the tsv file to read.
 #' @param samplename Sample identifier to record in the new `Sample_fp` column
@@ -15,13 +15,13 @@
 #' @return The tsv contents as a data frame, with `Sample_fp` added and
 #'   relocated to the first column.
 #'
-#' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
-#' fp_read_psm("2_data/fragpipe_dda_combined/JY/psm.tsv", "JY", testmode = FALSE)
+#' read_fragpipe("2_data/fragpipe_dda_combined/JY/psm.tsv", "JY", testmode = FALSE)
 #' }
-fp_read_psm <- function(folder, samplename, testmode = FALSE){
+read_fragpipe <- function(folder, samplename, testmode = FALSE){
   if(testmode == TRUE){
     input <- readr::read_tsv(folder, show_col_types = FALSE, progress = FALSE, n_max = 100)
     warning("Test mode ON: only the first 50 lines were loaded")
@@ -34,41 +34,79 @@ fp_read_psm <- function(folder, samplename, testmode = FALSE){
     dplyr::relocate(Sample_fp)
 }
 
-#' Batch-read every FragPipe `psm.tsv` under a folder and merge them
+#' Batch-read FragPipe `psm.tsv` files and merge them
 #'
-#' Recursively lists `folder` for `psm.tsv` files, derives each one's sample
-#' name from its parent subfolder, reads them all with [fp_read_psm()], and
-#' row-binds the result.
+#' Reads all FragPipe `psm.tsv` files and row-binds the result. Three input
+#' modes are supported (checked in priority order):
 #'
-#' @param folder Top-level directory to search recursively for `psm.tsv` files.
-#' @param testmode Logical; passed through to [fp_read_psm()] (loads only the
+#' 1. **`files`** — character vector of `psm.tsv` file paths or their parent
+#'    folder paths; sample names are taken from the immediate parent folder.
+#' 2. **`annotation`** — only the `Sample_fp` entries listed in the annotation
+#'    table are read from `folder`; warns about any annotated samples not found
+#'    on disk.
+#' 3. **neither** — `folder` is scanned recursively for every `psm.tsv`
+#'    (original default behaviour).
+#'
+#' @param folder Top-level directory. Required when using the `annotation` or
+#'   scan-all modes; unused when `files` is supplied.
+#' @param annotation Optional annotation data frame (output of [read_annot()]).
+#'   When provided without `files`, only `Sample_fp` entries present in
+#'   `annotation` are read.
+#' @param files Optional character vector of `psm.tsv` file paths or parent
+#'   folder paths to read directly.
+#' @param testmode Logical; passed through to [read_fragpipe()] (loads only the
 #'   first ~100 rows per file when `TRUE`, for fast iteration).
 #'
 #' @return The merged raw PSM data frame across every file found, with
 #'   `Sample_fp` identifying the source subfolder of each row.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' fp_read_psm_batch(file.path("2_data", "fragpipe_dda_combined"), testmode = FALSE)
+#' # scan entire folder
+#' read_fragpipe_batch(file.path("2_data", "fragpipe_dda_combined"), testmode = FALSE)
+#'
+#' # restrict to annotated samples only
+#' read_fragpipe_batch(folder = "2_data", annotation = annot)
+#'
+#' # provide paths explicitly
+#' read_fragpipe_batch(files = c("2_data/fragpipe/JY_1/psm.tsv", "2_data/fragpipe/JY_2"))
 #' }
-fp_read_psm_batch <- function(folder, testmode = FALSE){
-  ## get index of files in the folder
-  files_data_all <- list.files(folder, recursive = TRUE)
+read_fragpipe_batch <- function(folder = NULL, annotation = NULL, files = NULL,
+                                testmode = FALSE){
+  if (!is.null(files)) {
+    file_paths <- ifelse(
+      endsWith(files, "psm.tsv"), files,
+      file.path(files, "psm.tsv")
+    )
+    found <- file.exists(file_paths)
+    if (any(!found))
+      warning("The following paths were not found and will be skipped:\n",
+              paste(file_paths[!found], collapse = ", "))
+    file_paths   <- file_paths[found]
+    sample_names <- basename(dirname(file_paths))
+  } else if (!is.null(annotation)) {
+    if (is.null(folder)) stop("'folder' must be provided when 'annotation' is supplied")
+    sample_fps <- unique(as.character(annotation$Sample_fp))
+    file_paths  <- file.path(folder, sample_fps, "psm.tsv")
+    missing     <- !file.exists(file_paths)
+    if (any(missing))
+      warning("The following annotated samples were not found on disk and will be skipped:\n",
+              paste(sample_fps[missing], collapse = ", "))
+    file_paths   <- file_paths[!missing]
+    sample_names <- sample_fps[!missing]
+  } else {
+    if (is.null(folder)) stop("'folder' must be provided when 'annotation' and 'files' are both NULL")
+    files_data_all <- list.files(folder, recursive = TRUE)
+    file_paths   <- file.path(folder, files_data_all[grepl("psm.tsv", files_data_all, fixed = TRUE)])
+    sample_names <- stringr::str_match(file_paths, "[/]\\s*(.*?)\\s*[/]psm.tsv")[, 2]
+  }
 
-  files_data_psm <-
-    file.path(folder, files_data_all[grepl("psm.tsv", files_data_all, fixed = TRUE)])
-  ## get sample names
-  sample_names <- stringr::str_match(files_data_psm, "[/]\\s*(.*?)\\s*[/]psm.tsv")[, 2]
-
-  psm_raw_list <-
-    lapply(c(1:length(files_data_psm)), function(x){
-      fp_read_psm(file.path(files_data_psm[x]), sample_names[x], testmode = testmode)
-    })
-  psm_raw <- do.call(args = psm_raw_list, what = dplyr::bind_rows)
-  return(psm_raw)
+  psm_raw_list <- lapply(seq_along(file_paths), function(x){
+    read_fragpipe(file_paths[x], sample_names[x], testmode = testmode)
+  })
+  do.call(args = psm_raw_list, what = dplyr::bind_rows)
 }
 
 #' Parse raw FragPipe PSM results into `pep_all` format
@@ -82,20 +120,19 @@ fp_read_psm_batch <- function(folder, testmode = FALSE){
 #' — FDR is therefore applied only at the PSM level here; treat downstream
 #' FragPipe peptide counts with that caveat in mind.
 #'
-#' @param input Output of [fp_read_psm_batch()].
+#' @param input Output of [read_fragpipe_batch()].
 #' @param shortpep_range Length 2 vector `c(min, max)` defining the
 #'   `Length_range` classification window (8-13 AAs for HLA-I).
 #'
 #' @return The input reshaped into `pep_all` long format.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' fp_parse_pep_all(fp_read_psm_batch(folder), shortpep_range = c(8, 13))
+#' parse_fragpipe(read_fragpipe_batch(folder), shortpep_range = c(8, 13))
 #' }
-fp_parse_pep_all <- function(input, shortpep_range = c(8, 13)){
+parse_fragpipe <- function(input, shortpep_range = c(8, 13)){
   ## reformat column names, create new ones, then use select to select, rename and reorder columns
 
   if(all(input$Intensity == 0)){
@@ -170,7 +207,7 @@ fp_parse_pep_all <- function(input, shortpep_range = c(8, 13)){
 #' for `"individual_files"`, or `Sample_fp` + `Source_file` for
 #' `"combined_file"` (FragPipe combined PSM).
 #'
-#' @param input Output of [fp_parse_pep_all()].
+#' @param input Output of [parse_fragpipe()].
 #' @param annotation Annotation data frame; must contain at least `Condition`,
 #'   `BioReplicate`, `TechReplicate`, `Sample`, `Sample_fp` (and `Source_file`
 #'   when `mode = "combined_file"`).
@@ -182,14 +219,13 @@ fp_parse_pep_all <- function(input, shortpep_range = c(8, 13)){
 #'   relocated to the end and (for `"combined_file"` mode) empty factor levels
 #'   dropped.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' fp_annotate(pep_parsed, annotation, mode = "combined_file")
+#' annotate_fragpipe(pep_parsed, annotation, mode = "combined_file")
 #' }
-fp_annotate <- function(input, annotation, mode = "individual_files"){
+annotate_fragpipe <- function(input, annotation, mode = "individual_files"){
   ## check if annotation table has all the information needed
   minimal_columns <- c("Condition", "BioReplicate", "TechReplicate", "Sample", "Sample_fp")
 

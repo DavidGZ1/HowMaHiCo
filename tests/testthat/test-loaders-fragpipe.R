@@ -1,5 +1,5 @@
-test_that("fp_read_psm tags rows with Sample_fp and relocates it first", {
-  out <- fp_read_psm(test_path("fixtures", "fragpipe_dda", "JY_1", "psm.tsv"), "JY_1")
+test_that("read_fragpipe tags rows with Sample_fp and relocates it first", {
+  out <- read_fragpipe(test_path("fixtures", "fragpipe_dda", "JY_1", "psm.tsv"), "JY_1")
 
   expect_s3_class(out, "data.frame")
   expect_equal(names(out)[1], "Sample_fp")
@@ -7,16 +7,16 @@ test_that("fp_read_psm tags rows with Sample_fp and relocates it first", {
   expect_equal(nrow(out), 2)
 })
 
-test_that("fp_read_psm testmode truncates to ~100 rows and warns", {
+test_that("read_fragpipe testmode truncates to ~100 rows and warns", {
   expect_warning(
-    out <- fp_read_psm(test_path("fixtures", "fragpipe_dda", "JY_1", "psm.tsv"), "JY_1", testmode = TRUE),
+    out <- read_fragpipe(test_path("fixtures", "fragpipe_dda", "JY_1", "psm.tsv"), "JY_1", testmode = TRUE),
     "Test mode ON"
   )
   expect_equal(nrow(out), 2)
 })
 
-test_that("fp_read_psm_batch discovers every psm.tsv and derives Sample_fp from the parent folder", {
-  out <- fp_read_psm_batch(test_path("fixtures", "fragpipe_dda"))
+test_that("read_fragpipe_batch discovers every psm.tsv and derives Sample_fp from the parent folder", {
+  out <- read_fragpipe_batch(test_path("fixtures", "fragpipe_dda"))
 
   # Sample_fp is captured by regex from everything after the *first* path
   # separator in `folder` through the immediate parent dir (matches CLAUDE.md's
@@ -27,9 +27,9 @@ test_that("fp_read_psm_batch discovers every psm.tsv and derives Sample_fp from 
   expect_true(all(c("Spectrum", "Peptide", "Charge") %in% names(out)))
 })
 
-test_that("fp_parse_pep_all reshapes raw PSM rows into pep_all schema", {
+test_that("parse_fragpipe reshapes raw PSM rows into pep_all schema", {
   raw <- make_fp_psm_raw()
-  out <- suppressWarnings(fp_parse_pep_all(raw, shortpep_range = c(8, 13)))
+  out <- suppressWarnings(parse_fragpipe(raw, shortpep_range = c(8, 13)))
 
   expect_equal(nrow(out), 4)
   expect_true(all(c("Sample_fp", "Accession", "Peptide", "Sequence", "Length", "Score",
@@ -51,9 +51,9 @@ test_that("fp_parse_pep_all reshapes raw PSM rows into pep_all schema", {
   expect_equal(out$Source_file, rep("run1", 4))
 })
 
-test_that("fp_parse_pep_all maps zero-intensity rows to Log2Area = 1 and warns when all-zero", {
+test_that("parse_fragpipe maps zero-intensity rows to Log2Area = 1 and warns when all-zero", {
   raw <- make_fp_psm_raw()
-  out <- suppressWarnings(fp_parse_pep_all(raw))
+  out <- suppressWarnings(parse_fragpipe(raw))
   zero_row <- out[out$Area == 0, ]
 
   expect_equal(nrow(zero_row), 1)
@@ -61,23 +61,23 @@ test_that("fp_parse_pep_all maps zero-intensity rows to Log2Area = 1 and warns w
 
   all_zero <- raw
   all_zero$Intensity <- 0
-  expect_warning(fp_parse_pep_all(all_zero), "All Intensity \\(Area\\) values were 0")
+  expect_warning(parse_fragpipe(all_zero), "All Intensity \\(Area\\) values were 0")
 })
 
-test_that("fp_annotate joins parsed FragPipe results to the annotation table by Sample_fp", {
-  parsed <- suppressWarnings(fp_parse_pep_all(make_fp_psm_raw(samplename = "JY_1")))
+test_that("annotate_fragpipe joins parsed FragPipe results to the annotation table by Sample_fp", {
+  parsed <- suppressWarnings(parse_fragpipe(make_fp_psm_raw(samplename = "JY_1")))
   annot <- make_annot()
 
-  out <- suppressWarnings(suppressMessages(fp_annotate(parsed, annot, mode = "individual_files")))
+  out <- suppressWarnings(suppressMessages(annotate_fragpipe(parsed, annot, mode = "individual_files")))
 
   expect_equal(nrow(out), 4)
   expect_true(all(c("Condition", "BioReplicate", "TechReplicate", "Sample", "Sample_ID") %in% names(out)))
   expect_equal(unique(as.character(out$Sample)), "JY_1")
 })
 
-test_that("fp_annotate requires the minimal annotation columns", {
-  parsed <- suppressWarnings(fp_parse_pep_all(make_fp_psm_raw()))
+test_that("annotate_fragpipe requires the minimal annotation columns", {
+  parsed <- suppressWarnings(parse_fragpipe(make_fp_psm_raw()))
   bad_annot <- make_annot()[, setdiff(names(make_annot()), "Condition")]
 
-  expect_error(fp_annotate(parsed, bad_annot), "missing from the annotation table")
+  expect_error(annotate_fragpipe(parsed, bad_annot), "missing from the annotation table")
 })

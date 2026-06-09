@@ -1,5 +1,5 @@
-test_that("diann_read_tsv_batch discovers every report.tsv and derives Sample_fp from the parent folder", {
-  out <- diann_read_tsv_batch(test_path("fixtures", "diann"))
+test_that("read_diann_batch discovers every report.tsv and derives Sample_fp from the parent folder", {
+  out <- read_diann_batch(test_path("fixtures", "diann"))
 
   # see test-loaders-fragpipe.R for why only the basename is stable here
   expect_setequal(basename(unique(out$Sample_fp)), c("run1", "run2"))
@@ -7,9 +7,9 @@ test_that("diann_read_tsv_batch discovers every report.tsv and derives Sample_fp
   expect_true(all(c("File.Name", "Run", "Protein.Group", "Stripped.Sequence", "Precursor.Charge") %in% names(out)))
 })
 
-test_that("diann_parse_pep_all reshapes raw report rows into pep_all schema", {
+test_that("parse_diann reshapes raw report rows into pep_all schema", {
   raw <- make_diann_report_raw()
-  out <- diann_parse_pep_all(raw, shortpep_range = c(8, 13))
+  out <- parse_diann(raw, shortpep_range = c(8, 13))
 
   expect_equal(nrow(out), 3)
   expect_true(all(c("Sample_fp", "Accession", "Peptide", "Sequence", "Length", "Score",
@@ -30,30 +30,30 @@ test_that("diann_parse_pep_all reshapes raw report rows into pep_all schema", {
   expect_equal(out$Source_file, rep("run1", 3))
 })
 
-test_that("diann_parse_pep_all maps zero-area rows to Log2Area = 1", {
+test_that("parse_diann maps zero-area rows to Log2Area = 1", {
   raw <- make_diann_report_raw()
-  out <- diann_parse_pep_all(raw)
+  out <- parse_diann(raw)
   zero_row <- out[out$Area == 0, ]
 
   expect_equal(nrow(zero_row), 1)
   expect_equal(zero_row$Log2Area, 1)
 })
 
-test_that("diann_annotate joins parsed DIA-NN results to the annotation table by Sample_fp + Source_file", {
-  parsed <- diann_parse_pep_all(make_diann_report_raw(samplename = "JY_1"))
+test_that("annotate_diann joins parsed DIA-NN results to the annotation table by Sample_fp + Source_file", {
+  parsed <- parse_diann(make_diann_report_raw(samplename = "JY_1"))
   annot <- make_annot()
   annot$Source_file <- factor(ifelse(annot$Sample_fp == "JY_1", "run1", as.character(annot$Source_file)))
 
-  out <- suppressWarnings(suppressMessages(diann_annotate(parsed, annot)))
+  out <- suppressWarnings(suppressMessages(annotate_diann(parsed, annot)))
 
   expect_equal(nrow(out), 3)
   expect_true(all(c("Condition", "BioReplicate", "TechReplicate", "Sample", "Sample_ID") %in% names(out)))
   expect_equal(unique(as.character(out$Sample)), "JY_1")
 })
 
-test_that("diann_annotate requires the minimal annotation columns", {
-  parsed <- diann_parse_pep_all(make_diann_report_raw())
+test_that("annotate_diann requires the minimal annotation columns", {
+  parsed <- parse_diann(make_diann_report_raw())
   bad_annot <- make_annot()[, setdiff(names(make_annot()), "Condition")]
 
-  expect_error(diann_annotate(parsed, bad_annot), "missing from the annotation table")
+  expect_error(annotate_diann(parsed, bad_annot), "missing from the annotation table")
 })

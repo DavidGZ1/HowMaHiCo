@@ -1,41 +1,99 @@
-#' Batch-read every DIA-NN `report.tsv` under a folder and merge them
+#' Read one DIA-NN `report.tsv` file
 #'
-#' Recursively lists `folder` for `report.tsv` files, derives each one's
-#' sample name from its parent subfolder, reads them all with
-#' [fp_read_psm()] (the same generic tsv reader used by the FragPipe loader —
-#' the two formats only diverge once parsed into `pep_all` shape), and
-#' row-binds the result.
+#' Thin wrapper around [read_fragpipe()] for API symmetry — DIA-NN report files
+#' use the same generic TSV format as FragPipe PSM files; the two loaders only
+#' diverge during the parse step ([parse_diann()] vs [parse_fragpipe()]).
 #'
-#' @param folder Top-level directory to search recursively for `report.tsv`
-#'   files.
-#' @param testmode Logical; passed through to [fp_read_psm()] (loads only the
+#' @param folder Path to the `report.tsv` file to read.
+#' @param samplename Sample identifier to record in the new `Sample_fp` column.
+#' @param testmode Logical; if `TRUE`, reads only the first ~100 rows.
+#'
+#' @return The tsv contents as a data frame, with `Sample_fp` added and
+#'   relocated to the first column.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' read_diann("2_data/diann/JY/report.tsv", "JY", testmode = FALSE)
+#' }
+read_diann <- function(folder, samplename, testmode = FALSE) {
+  read_fragpipe(folder, samplename, testmode = testmode)
+}
+
+#' Batch-read DIA-NN `report.tsv` files and merge them
+#'
+#' Reads all DIA-NN `report.tsv` files and row-binds the result. Three input
+#' modes are supported (checked in priority order):
+#'
+#' 1. **`files`** — character vector of `report.tsv` file paths or their parent
+#'    folder paths; sample names are taken from the immediate parent folder.
+#' 2. **`annotation`** — only the `Sample_fp` entries listed in the annotation
+#'    table are read from `folder`; warns about any annotated samples not found
+#'    on disk.
+#' 3. **neither** — `folder` is scanned recursively for every `report.tsv`
+#'    (original default behaviour).
+#'
+#' @param folder Top-level directory. Required when using the `annotation` or
+#'   scan-all modes; unused when `files` is supplied.
+#' @param annotation Optional annotation data frame (output of [read_annot()]).
+#'   When provided without `files`, only `Sample_fp` entries present in
+#'   `annotation` are read.
+#' @param files Optional character vector of `report.tsv` file paths or parent
+#'   folder paths to read directly.
+#' @param testmode Logical; passed through to [read_diann()] (loads only the
 #'   first ~100 rows per file when `TRUE`, for fast iteration).
 #'
 #' @return The merged raw DIA-NN report data frame across every file found,
 #'   with `Sample_fp` identifying the source subfolder of each row.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' diann_read_tsv_batch(file.path("2_data", "diann"), testmode = FALSE)
+#' # scan entire folder
+#' read_diann_batch(file.path("2_data", "diann"), testmode = FALSE)
+#'
+#' # restrict to annotated samples only
+#' read_diann_batch(folder = "2_data", annotation = annot)
+#'
+#' # provide paths explicitly
+#' read_diann_batch(files = c("2_data/diann/JY_1/report.tsv", "2_data/diann/JY_2"))
 #' }
-diann_read_tsv_batch <- function(folder, testmode = FALSE){
-  ## get index of files in the folder
-  files_data_all <- list.files(folder, recursive = TRUE)
+read_diann_batch <- function(folder = NULL, annotation = NULL, files = NULL,
+                              testmode = FALSE){
+  if (!is.null(files)) {
+    file_paths <- ifelse(
+      endsWith(files, "report.tsv"), files,
+      file.path(files, "report.tsv")
+    )
+    found <- file.exists(file_paths)
+    if (any(!found))
+      warning("The following paths were not found and will be skipped:\n",
+              paste(file_paths[!found], collapse = ", "))
+    file_paths   <- file_paths[found]
+    sample_names <- basename(dirname(file_paths))
+  } else if (!is.null(annotation)) {
+    if (is.null(folder)) stop("'folder' must be provided when 'annotation' is supplied")
+    sample_fps <- unique(as.character(annotation$Sample_fp))
+    file_paths  <- file.path(folder, sample_fps, "report.tsv")
+    missing     <- !file.exists(file_paths)
+    if (any(missing))
+      warning("The following annotated samples were not found on disk and will be skipped:\n",
+              paste(sample_fps[missing], collapse = ", "))
+    file_paths   <- file_paths[!missing]
+    sample_names <- sample_fps[!missing]
+  } else {
+    if (is.null(folder)) stop("'folder' must be provided when 'annotation' and 'files' are both NULL")
+    files_data_all <- list.files(folder, recursive = TRUE)
+    file_paths   <- file.path(folder, files_data_all[grepl("report.tsv", files_data_all, fixed = TRUE)])
+    sample_names <- stringr::str_match(file_paths, "[/]\\s*(.*?)\\s*[/]report.tsv")[, 2]
+  }
 
-  files_data_psm <-
-    file.path(folder, files_data_all[grepl("report.tsv", files_data_all, fixed = TRUE)])
-  ## get sample names
-  sample_names <- stringr::str_match(files_data_psm, "[/]\\s*(.*?)\\s*[/]report.tsv")[, 2]
-
-  psm_raw_list <-
-    lapply(c(1:length(files_data_psm)), function(x){
-      fp_read_psm(file.path(files_data_psm[x]), sample_names[x], testmode = testmode)
-    })
-  psm_raw <- do.call(args = psm_raw_list, what = dplyr::bind_rows)
-  return(psm_raw)
+  psm_raw_list <- lapply(seq_along(file_paths), function(x){
+    read_diann(file_paths[x], sample_names[x], testmode = testmode)
+  })
+  do.call(args = psm_raw_list, what = dplyr::bind_rows)
 }
 
 #' Parse raw DIA-NN report results into `pep_all` format
@@ -51,20 +109,19 @@ diann_read_tsv_batch <- function(folder, testmode = FALSE){
 #' standard mass formula) but is **not** the calibrated/observed mass the
 #' other loaders report — check this function directly if precision matters.
 #'
-#' @param input Output of [diann_read_tsv_batch()].
+#' @param input Output of [read_diann_batch()].
 #' @param shortpep_range Length 2 vector `c(min, max)` defining the
 #'   `Length_range` classification window (8-13 AAs for HLA-I).
 #'
 #' @return The input reshaped into `pep_all` long format.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' diann_parse_pep_all(diann_read_tsv_batch(folder), shortpep_range = c(8, 13))
+#' parse_diann(read_diann_batch(folder), shortpep_range = c(8, 13))
 #' }
-diann_parse_pep_all <- function(input, shortpep_range = c(8, 13)){
+parse_diann <- function(input, shortpep_range = c(8, 13)){
   # mass and ppm not calculated
   input %>%
     dplyr::rename_with(~ gsub(patt = " ", rep = ".", .x), dplyr::everything()) %>%
@@ -168,28 +225,27 @@ diann_parse_pep_all <- function(input, shortpep_range = c(8, 13)){
 
 #' Join parsed DIA-NN results to the sample annotation table
 #'
-#' DIA-NN counterpart to [fp_annotate()] — always operates in
+#' DIA-NN counterpart to [annotate_fragpipe()] — always operates in
 #' `"combined_file"`-equivalent mode (DIA-NN's `report.tsv` always carries a
 #' `Source_file`/`Run` column), so the merge always matches on `Sample_fp` +
 #' `Source_file`. Validates the annotation table, compares matched
 #' (`Sample_fp`, `Source_file`) pairs and warns about any that will be
 #' dropped, then inner-joins and drops empty factor levels.
 #'
-#' @param input Output of [diann_parse_pep_all()].
+#' @param input Output of [parse_diann()].
 #' @param annotation Annotation data frame; must contain at least `Condition`,
 #'   `BioReplicate`, `TechReplicate`, `Sample`, `Sample_fp`, `Source_file`.
 #'
 #' @return The inner join of `annotation` and `input`, with `Sample_ID`
 #'   relocated to the end and empty factor levels dropped.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' diann_annotate(pep_parsed, annotation)
+#' annotate_diann(pep_parsed, annotation)
 #' }
-diann_annotate <- function(input, annotation){
+annotate_diann <- function(input, annotation){
   ## check if annotation table has all the information needed
   minimal_columns <- c("Condition", "BioReplicate", "TechReplicate", "Sample", "Sample_fp")
 

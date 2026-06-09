@@ -17,13 +17,13 @@
 #'   observation, including the parsed `invk0`/`invk0_start`/`invk0_end`
 #'   columns.
 #'
-#' @keywords internal
+#' @export
 #'
 #' @examples
 #' \dontrun{
-#' read_pep_peaks(getwd(), "JY_PEAKS_01", instrument = "tims_tof")
+#' read_peaks(getwd(), "JY_PEAKS_01", instrument = "tims_tof")
 #' }
-read_pep_peaks <- function(filedir, folder_peaks_db, instrument = "tims_tof"){
+read_peaks <- function(filedir, folder_peaks_db, instrument = "tims_tof"){
   pep_renamed <-
     read.csv(file.path(filedir, folder_peaks_db, "peptide.csv")) %>%
     dplyr::rename_with(~ gsub(patt = "[.]", rep = "_", .x), dplyr::everything()) %>%
@@ -149,17 +149,33 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 
 #' Batch-read and annotate every PEAKS export folder into `pep_all` format
 #'
-#' Indexes the PEAKS export subfolders under `folder` (via the vendored
-#' [get_dirs_index_peaks()]), filters to those present in `annotation`, reads
-#' and joins each one with [read_pep_peaks()], then derives the shared
-#' `pep_all` columns (`ProteinFirst`/`GeneFirst`/`OrganismFirst`, `PeptideID`,
-#' `Log2Area`, `Length_range`), drops decoys, and warns about any samples that
-#' could not be matched to the annotation table.
+#' Indexes the PEAKS export subfolders (via the vendored
+#' [get_dirs_index_peaks()]), selects which to read, then reads and joins each
+#' one with [read_peaks()], derives the shared `pep_all` columns
+#' (`ProteinFirst`/`GeneFirst`/`OrganismFirst`, `PeptideID`, `Log2Area`,
+#' `Length_range`), drops decoys, and warns about any unmatched samples.
+#'
+#' Two input modes are supported for selecting which export folders to read
+#' (checked in priority order):
+#'
+#' 1. **`files`** — character vector of PEAKS export folder paths (relative to
+#'    `getwd()`); uses those directly, bypassing the directory index.
+#' 2. **`annotation`** — filters the directory index to `path_full` entries
+#'    present in `annotation` (original default behaviour).
+#'
+#' `annotation` is always required for the metadata join (adds `Condition`,
+#' `BioReplicate`, `Sample`, etc. to the output).
 #'
 #' @param folder Top-level directory containing the PEAKS export subfolders.
+#'   Required when using `annotation` mode; may be `NULL` when `files` is
+#'   supplied.
 #' @param annotation Annotation data frame (output of [read_annot()], joined
-#'   with [get_dirs_index_peaks()]'s `path_full` column for matching).
-#' @param instrument Passed to [read_pep_peaks()]; one of `"tims_tof"`,
+#'   with [get_dirs_index_peaks()]'s `path_full` column for matching). Required
+#'   for the metadata join in both modes.
+#' @param files Optional character vector of PEAKS export folder paths
+#'   (relative to `getwd()`). When provided, bypasses the directory index and
+#'   reads those folders directly.
+#' @param instrument Passed to [read_peaks()]; one of `"tims_tof"`,
 #'   `"faims_orbi"`, `"orbi"`.
 #' @param shortpep_range Length 2 vector `c(min, max)` defining the
 #'   `Length_range` classification window (8-13 AAs for HLA-I).
@@ -167,31 +183,40 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 #' @return The unified `pep_all`-format long data frame for every matched
 #'   PEAKS sample.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' peaks_read_batch(file.path("2_data", "peaks_xpro"), annotation,
+#' read_peaks_batch(file.path("2_data", "peaks_xpro"), annotation,
 #'                  instrument = params$Instrument)
+#'
+#' # explicit folder paths
+#' read_peaks_batch(files = c("peaks_xpro/JY_01", "peaks_xpro/JY_02"),
+#'                  annotation = annot)
 #' }
-peaks_read_batch <- function(folder, annotation, instrument = "tims_tof", shortpep_range = c(8, 13)){
+read_peaks_batch <- function(folder = NULL, annotation = NULL, files = NULL,
+                              instrument = "tims_tof", shortpep_range = c(8, 13)){
 
-  # List files
-  files_peaks <- get_dirs_index_peaks(folder)
-  # filter to only data in the annotation
-  files_peaks <- files_peaks[gsub("QC_", "", files_peaks$path_full) %in% unique(annotation$path_full), ]
+  if (is.null(annotation)) stop("'annotation' is required for the metadata join in read_peaks_batch()")
 
-  output <- lapply(unique(files_peaks[files_peaks$QC == FALSE, "path_full"]),
+  if (!is.null(files)) {
+    paths_to_read <- files
+  } else {
+    if (is.null(folder)) stop("'folder' must be provided when 'files' is NULL")
+    # List files and filter to annotated samples
+    files_peaks <- get_dirs_index_peaks(folder)
+    files_peaks <- files_peaks[gsub("QC_", "", files_peaks$path_full) %in% unique(annotation$path_full), ]
+    paths_to_read <- unique(files_peaks[files_peaks$QC == FALSE, "path_full"])
+  }
+
+  output <- lapply(paths_to_read,
                    function(x){
-                     # x <- unique(files_peaks[files_peaks$QC == FALSE, "path_full"])[4] #for troubleshooting
-                     # filter in case there are same sample names across different peaks files
                      annot_x <- annotation %>%
-                       dplyr::filter(path_full == files_peaks[files_peaks$path_full == x, "path_full"]) # projectspecific, complete folder was needed here
+                       dplyr::filter(path_full == x)
 
-                     output_raw <- read_pep_peaks(filedir = getwd(),
-                                                  folder_peaks_db = x,
-                                                  instrument = instrument)
+                     output_raw <- read_peaks(filedir = getwd(),
+                                              folder_peaks_db = x,
+                                              instrument = instrument)
                      output <-
                        output_raw %>%
                        dplyr::rename(Source_File_ID = Source_File) %>%
