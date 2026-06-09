@@ -330,10 +330,8 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
   p <- df %>%
     dplyr::filter(Length_range != "All peptides") %>%
     droplevels() %>%
-    dplyr::mutate(Length_range = dplyr::recode(Length_range,
-                                                others = paste0("< ", shortpep_range[1], " OR > ", shortpep_range[2], " AAs"))) %>%
     ggpubr::ggbarplot(x = x_var, y = nlevel, fill = "Length_range", group = "Length_range",
-                      label = TRUE, alpha = 1,
+                      label = TRUE, alpha = 0.5,
                       lab.vjust = 1.5,
                       lab.nb.digits = 0, lab.size = 2.5) +
     ggplot2::geom_text(data = df %>% dplyr::filter(Length_range == "All peptides"),
@@ -654,7 +652,7 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
   if (!is.null(palette)) {
     p <- p + ggplot2::scale_fill_manual(values = scales::alpha(palette, 1))
   } else {
-    p <- p + ggplot2::scale_fill_viridis_d(end = 1, alpha = 1)
+    p <- p + ggplot2::scale_fill_viridis_d(end = 1, alpha = 0.5)
   }
   p
 }
