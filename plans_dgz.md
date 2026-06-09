@@ -7,7 +7,7 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
-* some plots use scale_y_continous with fixed breaks and labels. Change them to a more general one, with n.breaks = 5
+
 
 ## In standby
 
@@ -69,3 +69,7 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * add names to chunks
 * peptide length distribution, create a simpler function without the boxplot on top. This should facilitate using facet instead of ggarrange, include the option to color bars using two colors, based on the MHCclass. Also include option to show density or absolute numbers. In report, include both versions as sub-sections within a .{tabset}
 * add Proportion by length at sample level to ## Total by Sample
+* some plots use scale_y_continous with fixed breaks and labels. Changed to n.breaks = 5 in plot_bp_count_length, plot_count_mean_sd, plot_overlap_intra_condition
+* Peptide motifs: show up to length = 24 (was 22)
+* # Identification counts ## Average +/- sd: all peptides and selected peptides shown separately in nested tabsets
+* "# Peptide ID distribution across RT, 1/k0 and m/z": extracted to plot_pseudochromatogram() and plot_2d_distribution(); skeleton simplified to 1-2 lines per chunk

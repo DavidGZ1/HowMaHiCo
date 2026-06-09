@@ -343,8 +343,10 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
                        size = 2.5, alpha = 0.8,
                        parse = FALSE) +
     theme_howmahico() +
-    ggplot2::scale_y_continuous(limits = c(0, lim_level), breaks = seq(0, lim_level, 5000),
-                                labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+    ggplot2::scale_y_continuous(limits = c(0, lim_level), 
+                                # breaks = seq(0, lim_level, 5000),
+                                # labels = scales::label_number(suffix = " k", scale = 1e-3)
+                                n.breaks = 5) +
     ggplot2::ylab(paste0("Nb ", level)) +
     ggplot2::xlab(x_var) +
     ggpubr::rotate_x_text(70) +
@@ -749,6 +751,70 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
     ggpubr::rotate_x_text(70)
 }
 
+#' Peptide ID pseudochromatogram: count vs RT, faceted by Condition
+#'
+#' @param input A `pep_all`-shaped data frame with `RT`, `Peptide`, `Condition`.
+#' @param title Plot title string.
+#' @param ncol Number of facet columns.
+#'
+#' @return A ggplot2 bar chart.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_pseudochromatogram(pep_all, "All peptides identified", ncol = 3)
+#' }
+plot_pseudochromatogram <- function(input, title, ncol = 3) {
+  input %>%
+    dplyr::mutate(RT = round(RT, 0)) %>%
+    dplyr::group_by(Condition, RT) %>%
+    dplyr::summarise(Count = dplyr::n_distinct(Peptide), .groups = "drop") %>%
+    ggplot2::ggplot(ggplot2::aes(x = RT, y = Count, fill = Condition)) +
+    ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge2()) +
+    ggplot2::ylab("Peptides") +
+    ggplot2::xlab("RT (min)") +
+    ggplot2::ggtitle(title) +
+    theme_howmahico() +
+    ggplot2::facet_wrap(~Condition, ncol = ncol) +
+    ggplot2::scale_fill_viridis_d() +
+    ggplot2::theme(legend.position = "none")
+}
+
+#' 2D binned heatmap for any two continuous peptide properties
+#'
+#' @param input A `pep_all`-shaped data frame.
+#' @param x_var,y_var Column names (strings) for the x and y axes.
+#' @param binwidth Length-2 numeric `c(x_width, y_width)` passed to
+#'   [ggplot2::geom_bin_2d()].
+#' @param title Plot title string.
+#' @param x_lab,y_lab Axis labels; default to `x_var`/`y_var`.
+#' @param ncol Number of facet columns.
+#'
+#' @return A ggplot2 heatmap.
+#'
+#' @keywords internal
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_2d_distribution(pep_all, "m_z", "invk0", c(10, 0.025), "All peptides",
+#'                      x_lab = "m/z", y_lab = "1/k0", ncol = 3)
+#' }
+plot_2d_distribution <- function(input, x_var, y_var, binwidth, title,
+                                 x_lab = x_var, y_lab = y_var, ncol = 3) {
+  ggplot2::ggplot(input, ggplot2::aes(x = .data[[x_var]], y = .data[[y_var]])) +
+    ggplot2::geom_bin_2d(binwidth = binwidth) +
+    ggplot2::scale_fill_viridis_c(option = "plasma") +
+    ggplot2::ylab(y_lab) +
+    ggplot2::xlab(x_lab) +
+    ggplot2::ggtitle(title) +
+    theme_howmahico() +
+    ggplot2::facet_wrap(~Condition, ncol = ncol) +
+    ggplot2::scale_color_viridis_d()
+}
+
 #' Pearson correlation heatmap of log2(Area)
 #'
 #' Plots a correlation matrix (e.g. `cor(., method = "pearson")`) with
@@ -826,8 +892,9 @@ plot_count_mean_sd <- function(df, level, lim_level) {
                       lab.vjust = -2, lab.nb.digits = 0, lab.size = 2.5, nrow = 2) +
     theme_howmahico() +
     ggplot2::scale_y_continuous(limits = c(0, lim_level),
-                                breaks = seq(0, lim_level, 5000),
-                                labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+                                # breaks = seq(0, lim_level, 5000),
+                                # labels = scales::label_number(suffix = " k", scale = 1e-3)
+                                n.breaks = 5) +
     ggplot2::ylab(paste0("Nb ", level)) +
     ggplot2::xlab("Condition") +
     ggpubr::rotate_x_text(70) +
@@ -916,8 +983,9 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
       ggpubr::rotate_x_text(70) +
       ggplot2::scale_y_continuous(
         limits = c(0, ylim_ov),
-        breaks = seq(0, ylim_ov, 5000),
-        labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+        # breaks = seq(0, ylim_ov, 5000),
+        # labels = scales::label_number(suffix = " k", scale = 1e-3)
+        n.breaks = 5) +
       ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
       ggplot2::ggtitle(title)
   }
