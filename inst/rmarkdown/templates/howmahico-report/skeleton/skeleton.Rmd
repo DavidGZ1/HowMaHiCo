@@ -527,66 +527,27 @@ Below are shown the UpSet plots representing the overlap between the conditions 
 
 ## All peptides {.tabset}
 
-### Peptide
+```{r echo=FALSE,  fig.height=3.5, fig.width=6, message=FALSE, warning=FALSE, results='asis'}
+var_levels <-  c("Peptide", "Sequence", "Accession")
+up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
+for (i in 1:length(var_levels)) {
+  cat("\n### ", var_levels[i],"\n")
+  up_pep_all_list[i]  %>%  print()
+  cat('\n\n')
+}
 
-```{r echo=FALSE, fig.height=5, fig.width=6, message=FALSE, warning=FALSE}
-up_pep_all_overlap_condition <-
-  plot_upset(pep_all, Peptide, n_intersections = 20, Compare = "Condition") +
-  ggtitle("Peptide overlap across Conditions (all peptides)")
-
-up_pep_all_overlap_condition
-```
-
-### Sequence
-
-```{r echo=FALSE, fig.height=5, fig.width=6, message=FALSE, warning=FALSE}
-up_sep_all_overlap_condition <-
-  plot_upset(pep_all, Sequence, n_intersections = 20, Compare = "Condition") +
-  ggtitle("Sequence overlap across Conditions (all peptides)")
-
-up_sep_all_overlap_condition
-```
-
-### Protein
-
-```{r echo=FALSE, fig.height=5, fig.width=6, message=FALSE, warning=FALSE}
-up_prot_all_overlap_condition <-
-  plot_upset(pep_all, Accession, n_intersections = 20, Compare = "Condition") +
-  ggtitle("Protein overlap across Conditions (from all peptides)")
-
-up_prot_all_overlap_condition
 ```
 
 ## Selected peptides {.tabset}
 
-### Peptide
+```{r echo=FALSE,  fig.height=3.5, fig.width=6, message=FALSE, warning=FALSE, results='asis'}
+up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
+for (i in 1:length(var_levels)) {
+  cat("\n### ", var_levels[i],"\n")
+  up_pep_short_list[i]  %>%  print()
+  cat('\n\n')
+}
 
-```{r echo=FALSE, fig.height=5, fig.width=6, message=FALSE, warning=FALSE}
-up_pep_short_overlap_condition <-
-  plot_upset(pep_short, Peptide, n_intersections = 20, Compare = "Condition") +
-  ggtitle("Peptide overlap across Conditions (selected peptides)")
-
-up_pep_short_overlap_condition
-```
-
-### Sequence
-
-```{r echo=FALSE, fig.height=5, fig.width=6, message=FALSE, warning=FALSE}
-up_sep_short_overlap_condition <-
-  plot_upset(pep_short, Sequence, n_intersections = 20, Compare = "Condition") +
-  ggtitle("Sequence overlap across Conditions (selected peptides)")
-
-up_sep_short_overlap_condition
-```
-
-### Protein
-
-```{r echo=FALSE, fig.height=5, fig.width=6, message=FALSE, warning=FALSE}
-up_prot_short_overlap_condition <-
-  plot_upset(pep_short, Accession, n_intersections = 20, Compare = "Condition") +
-  ggtitle("Protein overlap across Conditions (from selected peptides)")
-
-up_prot_short_overlap_condition
 ```
 
 # Condition pairwise overlap  {.tabset}
