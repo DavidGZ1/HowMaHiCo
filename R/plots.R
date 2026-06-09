@@ -334,7 +334,7 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
     dplyr::filter(Length_range != "All peptides") %>%
     droplevels() %>%
     ggpubr::ggbarplot(x = x_var, y = nlevel, fill = "Length_range", group = "Length_range",
-                      label = TRUE, alpha = 0.5,
+                      label = TRUE, alpha = 0.7,
                       lab.vjust = 1.5,
                       lab.nb.digits = 0, lab.size = 2.5) +
     ggplot2::geom_text(data = df %>% dplyr::filter(Length_range == "All peptides"),
@@ -648,7 +648,9 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
     ggplot2::ggplot(ggplot2::aes(x = .data[[x_var]], y = Proportion, group = Length_range)) +
     ggplot2::geom_bar(stat = "identity",
                       ggplot2::aes(fill = Length_range),
-                      position = ggplot2::position_stack()) +
+                      position = ggplot2::position_stack(),
+                      alpha = 0.7, 
+                      color = "black") +
     ggplot2::geom_text(ggplot2::aes(label = Percentage, y = CumProportion - 0.015), size = label_size) +
     theme_howmahico() +
     ggplot2::scale_y_continuous(breaks = seq(0, 1, 0.25), labels = c("0", "", "50", "", "100"), limits = c(0, 1.02)) +
@@ -660,7 +662,7 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
   if (!is.null(palette)) {
     p <- p + ggplot2::scale_fill_manual(values = scales::alpha(palette, 1))
   } else {
-    p <- p + ggplot2::scale_fill_viridis_d(end = 1, alpha = 0.5)
+    p <- p + ggplot2::scale_fill_viridis_d(end = 1, alpha = 0.7)
   }
   p
 }
@@ -695,7 +697,7 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
                                                    Charge_group == "+ 2" ~ CumProportion * 0.9,
                                                    TRUE ~ CumProportion * 0.9)) %>%
     ggplot2::ggplot(ggplot2::aes(x = {{ variable }}, y = Proportion, fill = Charge_group, group = Charge_group)) +
-    ggplot2::geom_bar(stat = "identity", alpha = 0.5) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.7) +
     ggplot2::geom_text(ggplot2::aes(label = Percentage, y = Proportion),
                        size = label_size, position = ggplot2::position_stack(vjust = 0.8)) +
     ggplot2::scale_y_continuous(breaks = seq(0, 2, 0.25), labels = c("0", "", "50", "", "100", "", "150", "", "200")) + # removed since for fragpipe total may be 100%, due to multiple charges assigned
@@ -903,7 +905,7 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
     df_ov %>%
       ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
                         label = FALSE, lab.pos = "in",
-                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.8) +
+                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.7) +
       ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
                          size = 2.5, nudge_y = -nudge) +
       ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
