@@ -9,8 +9,9 @@ plot_upset(
   vars,
   n_intersections = 10,
   Compare = "Condition",
-  labels = "abs",
-  lab.size = 2
+  labels = "perc",
+  lab.size = 2,
+  plot.margin = ggplot2::unit(c(0.2, 0.2, 0.2, 0.2), "cm")
 )
 }
 \arguments{
@@ -26,9 +27,11 @@ being compared, e.g. \code{Sequence}.}
 
 \item{labels}{One of \code{"abs"} (absolute intersection counts, the default),
 \code{"perc"} (percentage of the total), or any other value to omit the
-per-bar count labels entirely.}
+per-bar count labels entirely. Defaults to \code{"perc"}.}
 
 \item{lab.size}{Text size of the per-bar count/percentage labels.}
+
+\item{plot.margin}{Plot margin, as unit.}
 }
 \value{
 A ggplot2/\code{ggupset} object with an intersection-count bar chart and

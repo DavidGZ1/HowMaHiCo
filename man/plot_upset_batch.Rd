@@ -9,8 +9,9 @@ plot_upset_batch(
   vars,
   n_intersections = 20,
   Compare = "Condition",
-  labels = "abs",
-  lab.size = 2
+  labels = "perc",
+  lab.size = 2,
+  plot.margin = ggplot2::unit(c(0.2, 0.2, 0.2, 0.2), "cm")
 )
 }
 \arguments{
@@ -23,9 +24,11 @@ plot_upset_batch(
 
 \item{Compare}{Name (string) of the column defining the groups compared.}
 
-\item{labels}{Forwarded to \code{\link[=plot_upset]{plot_upset()}} (\code{"abs"}, \code{"perc"}, or other).}
+\item{labels}{Forwarded to \code{\link[=plot_upset]{plot_upset()}} (\code{"abs"}, \code{"perc"}, or other). Defaults to \code{"perc"}.}
 
 \item{lab.size}{Forwarded to \code{\link[=plot_upset]{plot_upset()}}.}
+
+\item{plot.margin}{Forwarded to \code{\link[=plot_upset]{plot_upset()}}.}
 }
 \value{
 A named list of ggplot2/\code{ggupset} objects, one per entry of \code{vars},
