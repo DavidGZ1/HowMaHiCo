@@ -22,15 +22,12 @@ params:
   ProjectDir: ~ # Optional: absolute path to the project root. Set when R's working directory is not the project root (e.g. running from a subfolder). Relative folder paths are resolved from here.
   Instrument: "tims_tof" #faims_orbi, orbi
   Software: "diann" # options: fragpipe_dda_individual, fragpipe_dda_combined; to be added: peaks_xpro, peaks_11, fragpipe_diann
-  ShortPeptideLenghtMin: 8
-  ShortPeptideLenghtMax: 13
-  PlotTextLabelSize: 1.6
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
   TestMode: FALSE # if TRUE, only first 100 lines from each file will be loaded; Warning: may mess up correlation plots
-  PlotsInteractive: FALSE #TRUE = interactive in html, FALSE = static
   ResultsOverwrite: TRUE # FALSE throws error when output files already exist to avoid overwriting
   PlotsSave: FALSE #Saves all the plots as .png
   CsvSave: TRUE # TRUE = saves all intermediary csvs, FALSE = saves only essential
-  TestStats: FALSE #Performs Anova and T-test to compare conditions TRUE or FALSE
 title: "`r params$Title`"
 ---
 
@@ -82,7 +79,7 @@ library(DT)
 
 # handy settings
 
-shortpep_range <-  c(params$ShortPeptideLenghtMin, params$ShortPeptideLenghtMax)
+shortpep_range <-  c(params$ShortPeptideLengthMin, params$ShortPeptideLengthMax)
 
 if(params$Subset == ""){
   suffix <- params$Subset
@@ -116,7 +113,7 @@ Below are shown the UpSet plots representing the overlap between the conditions 
 * Peptides (e.g. in barplots): this includes possible peptidoforms (i.e. different PTMs); although the peptides are often detected only in one peptidoform.
 * Sequences (e.g. in Venn plots): this refers to the stripped peptide sequence regardless of the possible PTMs.
 * All peptides = all peptides detected
-* Selected peptides = `r paste0(params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs")`
+* Selected peptides = `r paste0(params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs")`
 
 
 # Input
@@ -237,7 +234,7 @@ pep_patient_condition_summary <-
 ## Peptide-level
 
 - Exported in 3_results/counts_pep_all_wide (all peptides)
-- Exported in 3_results/counts_pep_selected_wide (`r paste0("Selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")`)
+- Exported in 3_results/counts_pep_selected_wide (`r paste0("Selected peptides (", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")`)
 
 
 Note: protein groups are encoded in the "Accession".  "ProteinFirst" was not included in the table because some peptides were attributed to different ProteinFirst despite having the same Sequence and Accession (protein group). This was because files were processed in multiple processes. 
@@ -272,7 +269,7 @@ write.csv_rawr(counts_pep_selected_wide, folder = FolderResults, prefix = params
 
 
 - Exported in 3_results/counts_prot_all_wide (proteins from all proteins)
-- Exported in 3_results/counts_prot_selected_wide (`r paste0("Proteins from selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")`)
+- Exported in 3_results/counts_prot_selected_wide (`r paste0("Proteins from selected peptides (", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")`)
 
 
 ```{r}
@@ -339,7 +336,7 @@ for(j in 1:length(conditions)){
 ```
 
 
-# Selected peptides = `r paste0(params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs")`
+# Selected peptides = `r paste0(params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs")`
 
 # Selected peptides - overlap between Conditions, per Sample_type {.tabset}
 

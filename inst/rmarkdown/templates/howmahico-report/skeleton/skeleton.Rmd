@@ -22,15 +22,12 @@ params:
   ProjectDir: ~ # Optional: absolute path to the project root. Set when R's working directory is not the project root (e.g. running from a subfolder). Relative folder paths are resolved from here.
   Instrument: "tims_tof" #faims_orbi, orbi
   Software: "fragpipe_dda_combined" # options: fragpipe_dda_individual, fragpipe_dda_combined, diann, peaks_xpro; to be added: peaks_11, fragpipe_diann
-  ShortPeptideLenghtMin: 8
-  ShortPeptideLenghtMax: 13
-  PlotTextLabelSize: 1.6
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
   TestMode: FALSE # if TRUE, only first 100 lines from each file will be loaded; Warning: may mess up correlation plots
-  PlotsInteractive: FALSE #TRUE = interactive in html, FALSE = static
   ResultsOverwrite: TRUE # FALSE throws error when output files already exist to avoid overwriting
   PlotsSave: FALSE #Saves all the plots as .png
   CsvSave: FALSE # TRUE = saves all intermediary csvs, FALSE = saves only essential
-  TestStats: FALSE #Performs Anova and T-test to compare conditions TRUE or FALSE
 title: "`r params$Title`"
 ---
 
@@ -90,7 +87,7 @@ library(DT)
 
 # handy settings
 
-shortpep_range <-  c(params$ShortPeptideLenghtMin, params$ShortPeptideLenghtMax)
+shortpep_range <-  c(params$ShortPeptideLengthMin, params$ShortPeptideLengthMax)
 
 if(params$Subset == ""){
   subset <- params$Subset
@@ -825,7 +822,7 @@ chromato_pep_short <-
   summarise(Count = n_distinct(Peptide), .groups = "drop") %>% 
   ggplot(aes(x = RT, y = Count, fill  =Condition)) + geom_bar(stat="identity", position = position_dodge2()) +
   ylab("Peptides") + xlab("RT *min") + 
-  ggtitle(paste0("Peptide ID chromatogram: Selected peptides identified (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")) +
+  ggtitle(paste0("Peptide ID chromatogram: Selected peptides identified (", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")) +
   theme_minimal(base_size = 9) +
   facet_wrap(~Condition, ncol = phis_ncol)+
   theme(strip.background = element_blank(), strip.text = element_text(face = "bold"),
@@ -846,7 +843,7 @@ hm_pep_invk0_mz_short <-
   geom_bin_2d(binwidth = c(10, 0.025) ) +
   scale_fill_viridis_c(option = "plasma") +
   ylab("1/k0") + xlab("m/z") + 
-  ggtitle(paste0("Selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")) +
+  ggtitle(paste0("Selected peptides (", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")) +
   theme_minimal(base_size = 8) +
   facet_wrap(~Condition, ncol = phis_ncol)+
   theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
@@ -865,7 +862,7 @@ hm_pep_invk0_rt_short <-
   geom_bin_2d(binwidth = c(1, 0.025) ) +
   scale_fill_viridis_c(option = "plasma") +
   ylab("1/k0") + xlab("RT (min)") + 
-  ggtitle(paste0("Selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")) +
+  ggtitle(paste0("Selected peptides (", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")) +
   theme_minimal(base_size = 8) +
   facet_wrap(~Condition, ncol = phis_ncol)+
   theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
@@ -885,7 +882,7 @@ hm_pep_mz_rt_short <-
   geom_bin_2d(binwidth = c(1, 10) ) +
   scale_fill_viridis_c(option = "plasma") +
   ylab("m/z") + xlab("RT (min)") + 
-  ggtitle(paste0("Selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")) +
+  ggtitle(paste0("Selected peptides (", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")) +
   theme_minimal(base_size = 8) +
   facet_wrap(~Condition, ncol = phis_ncol)+
   theme(strip.background = element_blank(), strip.text = element_text(face = "bold")) +
@@ -948,7 +945,7 @@ ggplotly(p_corr_log2area_all)
 ```
 
 
-## Selected peptides `r paste0("(", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")`
+## Selected peptides `r paste0("(", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")`
 
 ```{r echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
 corr_log2area_short <-  cor(pep_short_log2area_tr, method = "pearson", use = "pairwise.complete.obs")
@@ -972,7 +969,7 @@ if(all(is.na(corr_log2area_short))){
 p_corr_log2area_short<-
   corr_log2area_short %>% 
   plot_corr() +
-    ggtitle(paste0("Log2Area correlation for selected peptides (", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")) 
+    ggtitle(paste0("Log2Area correlation for selected peptides (", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")) 
 
 ggplotly(p_corr_log2area_short)
 }
@@ -1088,7 +1085,7 @@ for (i in 1:length(motifs_pepshort)) {
 }
 ```
 
-## PTM profile selected Peptides `r paste0("(", params$ShortPeptideLenghtMin," to ", params$ShortPeptideLenghtMax, " AAs)")` {.tabset}
+## PTM profile selected Peptides `r paste0("(", params$ShortPeptideLengthMin," to ", params$ShortPeptideLengthMax, " AAs)")` {.tabset}
 
 Note that numbers mean different things in function of the software
 - in PEAKS the numbers between [] are the delta mass

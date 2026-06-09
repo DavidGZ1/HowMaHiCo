@@ -137,7 +137,7 @@ peptide-sample observation). Core columns: `Condition`, `BioReplicate`,
 `OrganismFirst`, `Peptide`/`Sequence`/`Length`/`Length_range`, `Score`,
 `Area`/`Log2Area`, `PTM`, `Charge`/`Nter`/`Cter`, `RT`/`invk0`/`Mass`/`ppm`/`m_z`,
 `Source_file`/`Source_File_ID`/`Precursor_Id`, `Found_By`, `PeptideID`. `pep_short` is
-the subset filtered to `Length` within `[ShortPeptideLenghtMin, ShortPeptideLenghtMax]`
+the subset filtered to `Length` within `[ShortPeptideLengthMin, ShortPeptideLengthMax]`
 (8–13 AAs for HLA-I, the biologically expected MHC-I ligand length window).
 
 `pep_all` is cached to `2_data/<suffix>pep_all.rda` (suffix = `<Subset>_` or empty) so
@@ -187,12 +187,10 @@ didn't need (they hardcoded `1_documentation/`):
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |
-| `ShortPeptideLenghtMin/Max` | Defines `pep_short` window (8–13 for HLA-I) |
-| `PlotsInteractive` | TRUE = plotly widgets in HTML, FALSE = static ggplots |
+| `ShortPeptideLengthMin/Max` | Defines `pep_short` window (8–13 for HLA-I) |
 | `ResultsOverwrite` | FALSE makes `check_output_exists`/`check_file_exists` abort if outputs already exist |
 | `TestMode` | TRUE = load only first ~100 lines per file (fast iteration; can break correlation plots) |
 | `CsvSave` / `PlotsSave` | TRUE = also export intermediary csvs / png plots |
-| `TestStats` | Toggles ANOVA/t-test comparisons (currently mostly commented out in the template) |
 
 `run_howmahico_report()` always writes `input_params.csv` (package version + render
 timestamp + every param, long-format, via `write_input_params()`/`write.csv_rawr()`)
