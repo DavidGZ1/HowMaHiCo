@@ -7,7 +7,7 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.1.4** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.2.0** — Phases 1–6 of the package conversion are complete.
 `project-style-guide.md` documents the target R-package + Docker + Shiny distribution
 pattern. The package layout is authoritative — `DESCRIPTION`, `LICENSE`/`LICENSE.md`,
 `NAMESPACE`, `R/` (~40 functions plus the report entry point),
