@@ -8,6 +8,10 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 * some plots use scale_y_continous with fixed breaks and labels. Change them to a more general one, with n.breaks = 5
+* Peptide motifs , show up to length = 24
+* # Identification counts ## Average +/- sd, show all peptides and selected peptides separetaly, for consistency with other modules.
+* "# Peptide ID distribution across RT, 1/k0 and m/z" extract repetitive code from chunks to functions, simplify code inside the markdown
+
 
 ## In standby
 

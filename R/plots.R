@@ -343,8 +343,10 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
                        size = 2.5, alpha = 0.8,
                        parse = FALSE) +
     theme_howmahico() +
-    ggplot2::scale_y_continuous(limits = c(0, lim_level), breaks = seq(0, lim_level, 5000),
-                                labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+    ggplot2::scale_y_continuous(limits = c(0, lim_level), 
+                                # breaks = seq(0, lim_level, 5000),
+                                # labels = scales::label_number(suffix = " k", scale = 1e-3)
+                                n.breaks = 5) +
     ggplot2::ylab(paste0("Nb ", level)) +
     ggplot2::xlab(x_var) +
     ggpubr::rotate_x_text(70) +
@@ -826,8 +828,9 @@ plot_count_mean_sd <- function(df, level, lim_level) {
                       lab.vjust = -2, lab.nb.digits = 0, lab.size = 2.5, nrow = 2) +
     theme_howmahico() +
     ggplot2::scale_y_continuous(limits = c(0, lim_level),
-                                breaks = seq(0, lim_level, 5000),
-                                labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+                                # breaks = seq(0, lim_level, 5000),
+                                # labels = scales::label_number(suffix = " k", scale = 1e-3)
+                                n.breaks = 5) +
     ggplot2::ylab(paste0("Nb ", level)) +
     ggplot2::xlab("Condition") +
     ggpubr::rotate_x_text(70) +
@@ -916,8 +919,9 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
       ggpubr::rotate_x_text(70) +
       ggplot2::scale_y_continuous(
         limits = c(0, ylim_ov),
-        breaks = seq(0, ylim_ov, 5000),
-        labels = scales::label_number(suffix = " k", scale = 1e-3)) +
+        # breaks = seq(0, ylim_ov, 5000),
+        # labels = scales::label_number(suffix = " k", scale = 1e-3)
+        n.breaks = 5) +
       ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
       ggplot2::ggtitle(title)
   }
