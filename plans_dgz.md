@@ -9,11 +9,16 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 ## To do
 
 
+
+
 ## In standby
 
+* 2do by me change purple color of length plots to a dimmer one
 * one single parser function
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins
 * reorder plots in a way that makes more sense
+* add functionality for peaks Xpro
+* homogenize sample annotation tables across software
 
 
 
@@ -68,8 +73,10 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * add names to chunks
 * peptide length distribution, create a simpler function without the boxplot on top. This should facilitate using facet instead of ggarrange, include the option to color bars using two colors, based on the MHCclass. Also include option to show density or absolute numbers. In report, include both versions as sub-sections within a .{tabset}
 * add Proportion by length at sample level to ## Total by Sample
-* some plots use scale_y_continous with fixed breaks and labels. Changed to n.breaks = 5 in plot_bp_count_length, plot_count_mean_sd, plot_overlap_intra_condition
+* some plots use scale\_y\_continous with fixed breaks and labels. Changed to n.breaks = 5 in plot\_bp\_count\_length, plot\_count\_mean\_sd, plot\_overlap\_intra\_condition
 * Peptide motifs: show up to length = 24 (was 22)
 * # Identification counts ## Average +/- sd: all peptides and selected peptides shown separately in nested tabsets
-* "# Peptide ID distribution across RT, 1/k0 and m/z": extracted to plot_pseudochromatogram() and plot_2d_distribution(); skeleton simplified to 1-2 lines per chunk
+* "# Peptide ID distribution across RT, 1/k0 and m/z": extracted to plot\_pseudochromatogram() and plot\_2d\_distribution(); skeleton simplified to 1-2 lines per chunk
 * 2do by me,Identification counts, average +/-sd, split into individual plots for each length
+* add to the readme as optional subpoint in complete the annotation csv: complete the annotation table with the Sample_ID from the Hystar sample list using get_annot_sampleid
+

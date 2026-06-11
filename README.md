@@ -96,6 +96,19 @@ Open the generated CSV and fill in the experimental metadata:
 `Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks` (PEAKS) matches the data
 subfolder names exactly, then save.
 
+*(Optional)* Instead of typing `Sample_ID` by hand, populate it from a
+Bruker HyStar sample list using `get_annot_sampleid()`:
+
+```r
+read.csv("1_documentation/sample_annotation.csv") |>
+  get_annot_sampleid(file_sample_list = "1_documentation/sample_list.xlsx") |>
+  write.csv(row.names = FALSE, file = "1_documentation/sample_annotation.csv")
+```
+
+`get_annot_sampleid()` inner-joins on `Source_file`, so only rows present in
+both the annotation table and the sample list are kept — check the row count
+afterwards.
+
 **4. (Optional) Get a local copy of the report template to customise**
 
 ```r
