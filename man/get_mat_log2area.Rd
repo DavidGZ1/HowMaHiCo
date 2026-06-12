@@ -32,4 +32,3 @@ ordering columns by the factor levels of \code{col}.
 get_mat_log2area(pep_all, PeptideID, Sample)
 }
 }
-\keyword{internal}

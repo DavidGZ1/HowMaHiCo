@@ -54,7 +54,7 @@ conditions and replicates.
 
 ## Requirements
 
-- R (>= 3.5.0) with [RStudio](https://posit.co/download/rstudio-desktop/) (project
+- R (>= 4.1.0) with [RStudio](https://posit.co/download/rstudio-desktop/) (project
   file: `HowMaHiCo.Rproj`)
 - Install the package (e.g. `devtools::install_github("DavidGZ1/HowMaHiCo")` or
   `devtools::load_all()` from a clone) — all dependencies are declared in

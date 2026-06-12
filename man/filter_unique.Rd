@@ -17,7 +17,7 @@ evaluation).}
 removed and unused factor levels dropped.
 }
 \description{
-Shorthand for \code{filter(...) \%>\% unique() \%>\% droplevels()} — the filtering
+Shorthand for \code{filter(...) |> unique() |> droplevels()} — the filtering
 counterpart to \code{\link[=select_unique]{select_unique()}}, used to restrict a \code{pep_all}-shaped data
 frame to one \code{Condition}/\code{Sample_type}/... before batch-plotting its
 overlap.
@@ -27,4 +27,3 @@ overlap.
 filter_unique(pep_all, Condition == "JY")
 }
 }
-\keyword{internal}

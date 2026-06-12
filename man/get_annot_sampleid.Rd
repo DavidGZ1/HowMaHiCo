@@ -28,4 +28,3 @@ annot <- get_annot_fragpipe("2_data")
 get_annot_sampleid(annot, "1_documentation/sample_list.xlsx")
 }
 }
-\keyword{internal}

@@ -7,7 +7,10 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.2.1** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.3.0** — Phases 1–6 of the package conversion are complete.
+v0.3.0 was a best-practices pass: base-package imports declared, all exports made
+public (no `@keywords internal`), `NEWS.md` added, internal code unified on the
+native `|>` pipe (R floor raised to 4.1.0).
 `project-style-guide.md` documents the target R-package + Docker + Shiny distribution
 pattern. The package layout is authoritative — `DESCRIPTION`, `LICENSE`/`LICENSE.md`,
 `NAMESPACE`, `R/` (~40 functions plus the report entry point),
@@ -242,8 +245,9 @@ function HowMaHiCo actually called from it (`get_dirs_index_peaks`) is vendored 
   `CsvSave`/`PlotsSave`.
 - **Code version** in the report header is `` `r packageVersion("HowMaHiCo")` `` —
   reads from `DESCRIPTION` automatically. When template logic changes meaningfully,
-  bump `DESCRIPTION`'s `Version:` field and update the "Current version" line at the
-  top of this file.
+  bump `DESCRIPTION`'s `Version:` field, add a matching entry to `NEWS.md`
+  (newest version first — pkgdown renders it as the Changelog), and update the
+  "Current version" line at the top of this file.
 - For the longer-term packaging conventions (R package structure, Docker, Shiny app,
   CI/release process) this project is expected to follow once matured into a
   distributable tool, see `project-style-guide.md`.

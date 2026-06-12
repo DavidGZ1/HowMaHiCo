@@ -27,4 +27,3 @@ plot_qc_box(pep_all, "Score", "Score boxplot")
 plot_qc_box(pep_all, "ppm",   "Mass error boxplot")
 }
 }
-\keyword{internal}

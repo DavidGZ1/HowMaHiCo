@@ -25,4 +25,3 @@ data frame with one row per source file ready to fill in.
 get_annot_diann("2_data")
 }
 }
-\keyword{internal}

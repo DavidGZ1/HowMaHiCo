@@ -8,7 +8,8 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
-
+* unify the two report templates (`inst/rmarkdown/templates/*/skeleton/skeleton.Rmd`) on the native `|>` pipe — the R/ package source was converted in v0.3.0, the Rmd templates (still `%>%`-heavy) were deferred
+* I am the author of the vendored file. The vendored status can be removed and %>% can be converted into |>
 
 
 ## In standby

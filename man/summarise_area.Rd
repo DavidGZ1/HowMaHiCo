@@ -26,4 +26,3 @@ Per-peptide Area mean/sd/\%CV summary by group
 summarise_area(pep_all, Condition)
 }
 }
-\keyword{internal}

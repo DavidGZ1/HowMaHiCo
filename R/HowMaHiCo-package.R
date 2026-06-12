@@ -8,7 +8,7 @@
 #' @import stringr
 #' @importFrom graphics par
 #' @importFrom stats cutree density dist hclust sd
-#' @importFrom utils read.csv write.csv
+#' @importFrom utils read.csv stack write.csv
 ## usethis namespace: end
 NULL
 
@@ -61,5 +61,6 @@ utils::globalVariables(c(
   "m_z",
   "n_Peptides", "n_Proteins", "n_Samples", "n_Sequences",
   "path_full", "ppm",
-  "res_file", "var"
+  "res_file", "var",
+  ":=", "Result.Path", "Sample.Comment", "in_range", "ind", "values"
 ))

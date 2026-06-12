@@ -29,4 +29,3 @@ so has no \code{ylimits}).
 plot_peplength_dens(pep_all, title = "All peptides")
 }
 }
-\keyword{internal}

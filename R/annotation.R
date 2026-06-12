@@ -15,7 +15,6 @@
 #'   `Sample_peaks` hyphens/spaces normalized to underscores, and every
 #'   character column converted to a factor ordered by first appearance.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -23,7 +22,7 @@
 #' read_annot(file.path("1_documentation", params$AnnotationFile))
 #' }
 read_annot <- function(file_annot){
-  annot <- read.csv(file_annot) %>%
+  annot <- read.csv(file_annot) |>
     dplyr::mutate(dplyr::across(dplyr::any_of("Source_file"), ~ gsub(".d|.raw", "", .x)))
 
   # check that it table contains the columns needed
@@ -37,18 +36,18 @@ read_annot <- function(file_annot){
   # rename Sample_peaks if necessary
   if("Sample_peaks" %in% names(annot)){
     if(any(grepl("-", annot$Sample_peaks))){
-      annot <- annot %>% dplyr::mutate(Sample_peaks = gsub("-", "_", Sample_peaks))
+      annot <- annot |> dplyr::mutate(Sample_peaks = gsub("-", "_", Sample_peaks))
       warning(" Hyphens ('-') in column Sample_peaks were replaced by underscores '_'
     as this is also done when exporting from PEAKS")
     }
     if(any(grepl(" ", annot$Sample_peaks))){
-      annot <- annot %>% dplyr::mutate(Sample_peaks = gsub(" ", "_", Sample_peaks))
+      annot <- annot |> dplyr::mutate(Sample_peaks = gsub(" ", "_", Sample_peaks))
       warning("Spaces (' ') in column Sample_peaks were replaced by underscores '_'
     as this is also done when exporting from PEAKS")
     }
   }
   # establish factor order with order from annot
-  annot <- annot %>%
+  annot <- annot |>
     dplyr::mutate(dplyr::across(dplyr::where(is.character), function(x) factor(x, levels = unique(x))))
   return(annot)
 }
@@ -62,7 +61,6 @@ read_annot <- function(file_annot){
 #'
 #' @return A `DT::datatable` htmlwidget.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -70,7 +68,7 @@ read_annot <- function(file_annot){
 #' print_annot(read_annot(file.path("1_documentation", params$AnnotationFile)))
 #' }
 print_annot <- function(input){
-  input %>%
+  input |>
     DT::datatable(filter = "top",
                   rownames = FALSE,
                   escape = FALSE, # needed for html link and widgets rendering
@@ -96,7 +94,6 @@ print_annot <- function(input){
 #'   `Condition`, `BioReplicate`, `TechReplicate`, `Sample`, `Sample_ID`,
 #'   sorted by `Source_file`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -109,16 +106,16 @@ get_annot_fragpipe <- function(dir_data){
   output_list <-
     sapply(psm_files, USE.NAMES = TRUE, simplify = FALSE, function(x){
       input <- paste0(dir_data, "/", x)
-      readr::read_tsv(input, col_select = "Spectrum", show_col_types = FALSE, progress = FALSE) %>%
-        dplyr::mutate(Source_file = sub("[.].*", "", Spectrum)) %>%
-        dplyr::pull(Source_file) %>%
+      readr::read_tsv(input, col_select = "Spectrum", show_col_types = FALSE, progress = FALSE) |>
+        dplyr::mutate(Source_file = sub("[.].*", "", Spectrum)) |>
+        dplyr::pull(Source_file) |>
         unique()
     })
-  stack(output_list) %>%
-    dplyr::rename(Source_file = values, Sample_fp = ind) %>%
-    dplyr::mutate(Sample_fp = gsub("/psm.tsv", "", Sample_fp, fixed = TRUE)) %>%
-    dplyr::mutate(Source_file = gsub("_diatracer", "", Source_file, fixed = TRUE)) %>%
-    dplyr::mutate(Condition = "", BioReplicate = "", TechReplicate = "", Sample = "", Sample_ID = "") %>%
+  stack(output_list) |>
+    dplyr::rename(Source_file = values, Sample_fp = ind) |>
+    dplyr::mutate(Sample_fp = gsub("/psm.tsv", "", Sample_fp, fixed = TRUE)) |>
+    dplyr::mutate(Source_file = gsub("_diatracer", "", Source_file, fixed = TRUE)) |>
+    dplyr::mutate(Condition = "", BioReplicate = "", TechReplicate = "", Sample = "", Sample_ID = "") |>
     dplyr::arrange(Source_file)
 }
 
@@ -135,7 +132,6 @@ get_annot_fragpipe <- function(dir_data){
 #'   `Condition`, `BioReplicate`, `TechReplicate`, `Sample`, `Sample_ID`,
 #'   sorted by `Source_file`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -147,15 +143,15 @@ get_annot_diann <- function(dir_data){
   diann_files <- data_files[grepl("report.tsv", data_files)]
   output_list <- sapply(diann_files, USE.NAMES = TRUE, simplify = FALSE, function(x){
     input <- paste0(dir_data, "/", x)
-    readr::read_tsv(input, col_select = "Run", show_col_types = FALSE, progress = FALSE) %>%
-      dplyr::rename(Source_file = Run) %>%
-      dplyr::pull(Source_file) %>%
+    readr::read_tsv(input, col_select = "Run", show_col_types = FALSE, progress = FALSE) |>
+      dplyr::rename(Source_file = Run) |>
+      dplyr::pull(Source_file) |>
       unique()
   })
-  stack(output_list) %>%
-    dplyr::rename(Source_file = values, Sample_fp = ind) %>%
-    dplyr::mutate(Sample_fp = gsub("/report.tsv", "", Sample_fp, fixed = TRUE)) %>%
-    dplyr::mutate(Condition = "", BioReplicate = "", TechReplicate = "", Sample = "", Sample_ID = "") %>%
+  stack(output_list) |>
+    dplyr::rename(Source_file = values, Sample_fp = ind) |>
+    dplyr::mutate(Sample_fp = gsub("/report.tsv", "", Sample_fp, fixed = TRUE)) |>
+    dplyr::mutate(Condition = "", BioReplicate = "", TechReplicate = "", Sample = "", Sample_ID = "") |>
     dplyr::arrange(Source_file)
 }
 
@@ -173,7 +169,6 @@ get_annot_diann <- function(dir_data){
 #'   `Sample.Comment` in the sample list. Rows without a match are dropped
 #'   (inner join).
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -184,8 +179,8 @@ get_annot_diann <- function(dir_data){
 get_annot_sampleid <- function(annotation, file_sample_list){
   sample_list_all <- openxlsx::read.xlsx(file_sample_list, sheet = 1)
   sample_list_simple <-
-    sample_list_all %>%
-    dplyr::select(Source_file = Result.Path, Sample_ID = Sample.Comment) %>%
+    sample_list_all |>
+    dplyr::select(Source_file = Result.Path, Sample_ID = Sample.Comment) |>
     dplyr::mutate(Source_file = sub(".*\\\\(.+).d.*", "\\1", Source_file))
 
   dplyr::inner_join(dplyr::select(annotation, -Sample_ID),

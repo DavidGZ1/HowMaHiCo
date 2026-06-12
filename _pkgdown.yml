@@ -33,6 +33,8 @@ reference:
   - annotate_diann
   - read_peaks
   - read_peaks_batch
+  - parse_peaks
+  - annotate_peaks
 
 - title: Checks
   desc: Guard against clobbering existing output and summarise global ID composition
@@ -62,17 +64,26 @@ reference:
   desc: QC plots covering ID size/charge distributions, overlaps, motifs, and correlation
   contents:
   - plot_peplength_dens
+  - plot_peplength_hist
   - plot_pepmass
   - plot_pepmz
   - plot_bp_count_length
-  - plot_upset
-  - plot_upset_batch
-  - ggseqlogo_bylength
+  - plot_count_mean_sd
   - plot_prop_length_condition
   - plot_charge_proportions
+  - plot_overlap_intra_condition
+  - plot_upset
+  - plot_upset_batch
+  - plot_pseudochromatogram
+  - plot_2d_distribution
   - plot_violin_areacv
+  - plot_qc_box
+  - plot_qc_violin
   - plot_corr
+  - plot_ptm_heatmap
+  - ggseqlogo_bylength
   - theme_rawr
+  - theme_howmahico
 
 - title: Export & I/O helpers
   desc: Write report outputs (plots, csvs, render parameters) to disk

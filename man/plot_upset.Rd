@@ -48,4 +48,3 @@ percentage intersection-size labels.
 plot_upset(pep_all, Sequence, n_intersections = 10, Compare = "Condition")
 }
 }
-\keyword{internal}

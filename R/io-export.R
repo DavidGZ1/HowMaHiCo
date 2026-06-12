@@ -23,7 +23,6 @@
 #' @return Invisible `NULL`; called for its side effect of writing a png (or
 #'   warning that it was skipped).
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -31,7 +30,7 @@
 #' ggsave_rawr(p_peplength_all, "peplength_all", folder = FolderFigures)
 #' }
 ggsave_rawr <- function(input, file, folder, width = 8, height = 10) {
-  if(exists(deparse(substitute(input))) == TRUE){
+  if(exists(deparse(substitute(input)))){
     ggplot2::ggsave(file.path(folder, paste0(file, ".png")), input, device = "png",
                     scale = 1, width = width, height = height, units = "cm")
   }else{
@@ -61,7 +60,6 @@ ggsave_rawr <- function(input, file, folder, width = 8, height = 10) {
 #'
 #' @return Invisible `NULL`; called for its side effect of writing a csv.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -102,7 +100,6 @@ write.csv_rawr <- function(input, folder, prefix = NULL){
 #' @return Invisible `NULL`; called for its side effect of writing
 #'   `input_params.csv`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples

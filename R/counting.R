@@ -6,7 +6,6 @@
 #' @return A one-row (or one-row-per-group, if `input` is grouped) data frame
 #'   with `n_Peptides`, `n_Sequences`, `n_Proteins`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -14,7 +13,7 @@
 #' count_ids(pep_all)
 #' }
 count_ids <- function(input){
-  input %>%
+  input |>
     dplyr::summarise(n_Peptides = dplyr::n_distinct(Peptide, na.rm = TRUE),
                      n_Sequences = dplyr::n_distinct(Sequence, na.rm = TRUE),
                      n_Proteins = dplyr::n_distinct(Accession, na.rm = TRUE),
@@ -49,7 +48,6 @@ count_ids <- function(input){
 #'   `Proteins`), with `Length_range` factor-ordered for stacked-bar plotting.
 #'   The grouping column retains the name supplied in `group_var`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -59,8 +57,8 @@ count_ids <- function(input){
 #' }
 count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
   if (group_var != "Condition")
-    input <- input %>%
-      dplyr::select(-dplyr::any_of("Condition")) %>%
+    input <- input |>
+      dplyr::select(-dplyr::any_of("Condition")) |>
       dplyr::rename("Condition" = dplyr::all_of(group_var))
   # count_ids from thunder, works differently to the other one above
   count_ids <- function(input, ..., total = FALSE){
@@ -68,18 +66,18 @@ count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
     # input = a dataframe of PEAKS formated peptide result
     # total = logical, if TRUE a row with totals is included
     # ... = variable(s) to be used for grouping
-    counts_ids <- input %>%
-      dplyr::group_by(...) %>%
+    counts_ids <- input |>
+      dplyr::group_by(...) |>
       dplyr::summarise(n_Peptides.Modified = dplyr::n_distinct(Peptide, na.rm = TRUE),
                        n_Peptides = dplyr::n_distinct(Sequence, na.rm = TRUE),
                        n_Proteins = dplyr::n_distinct(Accession, na.rm = TRUE),
                        .groups = "drop")
 
-    if(total == TRUE){
+    if(total){
       count_total <-
-        input %>%
-        dplyr::mutate(dplyr::across(c(...), ~ sub(.x, pattern = ".*", replacement = "Total"))) %>%
-        dplyr::group_by(...) %>%
+        input |>
+        dplyr::mutate(dplyr::across(c(...), ~ sub(.x, pattern = ".*", replacement = "Total"))) |>
+        dplyr::group_by(...) |>
         dplyr::summarise(n_Peptides.Modified = dplyr::n_distinct(Peptide, na.rm = TRUE),
                          n_Peptides = dplyr::n_distinct(Sequence, na.rm = TRUE),
                          n_Proteins = dplyr::n_distinct(Accession, na.rm = TRUE),
@@ -100,26 +98,26 @@ count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
 
   ## Condition total
   counts_by_length_total <-
-    dplyr::bind_rows(count_ids(input, Condition) %>%
+    dplyr::bind_rows(count_ids(input, Condition) |>
                        dplyr::mutate(Length_range = "All peptides"),
-                     count_ids(input, Condition, Length_range)) %>%
+                     count_ids(input, Condition, Length_range)) |>
     # arrange factors in a logical way
     dplyr::mutate(Length_range = factor(Length_range,
                                         levels = c("All peptides", rev(levels_length))))
 
   ## Proportion in absolute numbers
   prop_by_length_total <-
-    counts_by_length_total %>%
-    tidyr::pivot_longer(cols = dplyr::starts_with("n_"), names_to = "Level", values_to = "Count", names_prefix = "n_") %>%
-    dplyr::group_by(Condition, Level) %>%
+    counts_by_length_total |>
+    tidyr::pivot_longer(cols = dplyr::starts_with("n_"), names_to = "Level", values_to = "Count", names_prefix = "n_") |>
+    dplyr::group_by(Condition, Level) |>
     dplyr::mutate(Proportion = round(Count / Count[Length_range == "All peptides"], 2),
-                  Percentage = paste0(Proportion * 100, "%")) %>%
-    dplyr::arrange(Condition, Level, dplyr::desc(Length_range)) %>% # this may messup with order for plots
+                  Percentage = paste0(Proportion * 100, "%")) |>
+    dplyr::arrange(Condition, Level, dplyr::desc(Length_range)) |> # this may messup with order for plots
     dplyr::mutate(CumProportion = cumsum(Proportion), # this may messup with order for plots
                   CumCount = cumsum(Count),
                   CumCount = ifelse(Length_range != "All peptides",
                                     CumCount - Count[Length_range == "All peptides"],
-                                    Count)) %>%
+                                    Count)) |>
     dplyr::ungroup()
 
   if (group_var != "Condition")
@@ -138,7 +136,6 @@ count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
 #' @return `input` with `Charge` coerced to numeric and a new `Charge_group`
 #'   factor column (`"+ 1"`, `"+ 2"`, `">= +3"`).
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -146,8 +143,8 @@ count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
 #' get_charge_group(pep_all)
 #' }
 get_charge_group <- function(input){
-  input %>%
-    dplyr::mutate(Charge = as.numeric(Charge)) %>%
+  input |>
+    dplyr::mutate(Charge = as.numeric(Charge)) |>
     dplyr::mutate(Charge_group = factor(dplyr::case_when(Charge < 3 ~ paste0("+ ", Charge),
                                                           TRUE ~ "\u2265 +3"),
                                         c("+ 1", "+ 2", "\u2265 +3")))
@@ -167,7 +164,6 @@ get_charge_group <- function(input){
 #' @return `df` reshaped to long format with added `Level`, `Count`,
 #'   `Proportion`, `Percentage`, `CumProportion` columns.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -175,13 +171,13 @@ get_charge_group <- function(input){
 #' get_proportion_charge(counts_charge_condition)
 #' }
 get_proportion_charge <- function(df){
-  df %>%
-    tidyr::pivot_longer(cols = dplyr::starts_with("n_"), names_to = "Level", values_to = "Count", names_prefix = "n_") %>%
-    dplyr::group_by(Condition, Level) %>%
+  df |>
+    tidyr::pivot_longer(cols = dplyr::starts_with("n_"), names_to = "Level", values_to = "Count", names_prefix = "n_") |>
+    dplyr::group_by(Condition, Level) |>
     dplyr::mutate(Proportion = round(Count / Count[Charge_group == "Total"], 3),
-                  Percentage = paste0(Proportion * 100, "%")) %>%
-    dplyr::arrange(Condition, Level, dplyr::desc(Charge_group)) %>%
-    dplyr::mutate(CumProportion = cumsum(Proportion) - 1) %>%
+                  Percentage = paste0(Proportion * 100, "%")) |>
+    dplyr::arrange(Condition, Level, dplyr::desc(Charge_group)) |>
+    dplyr::mutate(CumProportion = cumsum(Proportion) - 1) |>
     dplyr::ungroup()
 }
 
@@ -199,7 +195,6 @@ get_proportion_charge <- function(df){
 #' @return A wide data frame, one row per peptide, with `n_Samples.<Condition>`
 #'   columns giving the number of samples it was seen in for each condition.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -207,13 +202,13 @@ get_proportion_charge <- function(df){
 #' count_ids_by(pep_all, BioReplicate)
 #' }
 count_ids_by <- function(input, ...){
-  input %>%
-    dplyr::group_by(..., Accession, ProteinFirst, GeneFirst, Length, Peptide, Sequence) %>%
+  input |>
+    dplyr::group_by(..., Accession, ProteinFirst, GeneFirst, Length, Peptide, Sequence) |>
     dplyr::summarise(n_Samples = dplyr::n_distinct(Sample),
-                     .groups = "drop") %>%
+                     .groups = "drop") |>
     tidyr::pivot_wider(id_cols = c(Accession, ProteinFirst, GeneFirst, Length, Peptide, Sequence),
                        names_from = Condition, values_from = c(n_Samples),
-                       names_prefix = "n_Samples.", names_sep = ".", values_fill = 0) %>%
+                       names_prefix = "n_Samples.", names_sep = ".", values_fill = 0) |>
     dplyr::arrange(Accession, ProteinFirst, GeneFirst, Length, Peptide, Sequence)
 }
 
@@ -228,7 +223,6 @@ count_ids_by <- function(input, ...){
 #'   group and columns `Count`, `Area_mean`, `Area_sd`, `Area_CV`,
 #'   `Area_CV_perc`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -236,14 +230,14 @@ count_ids_by <- function(input, ...){
 #' summarise_area(pep_all, Condition)
 #' }
 summarise_area <- function(input, by){
-  input %>%
-    dplyr::group_by(Accession, Peptide, Charge, {{ by }}) %>%
+  input |>
+    dplyr::group_by(Accession, Peptide, Charge, {{ by }}) |>
     dplyr::summarise(Count = sum(!is.na(Area)),
                      Area_mean = mean(Area, na.rm = TRUE),
                      Area_sd = sd(Area, na.rm = TRUE),
                      Area_CV = Area_sd / Area_mean,
                      Area_CV_perc = Area_CV * 100,
-                     .groups = "drop") %>%
+                     .groups = "drop") |>
     dplyr::ungroup()
 }
 
@@ -255,7 +249,6 @@ summarise_area <- function(input, by){
 #' @return A named list of character vectors, one per level of `by`, each
 #'   containing that group's unique non-empty sequences.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -263,8 +256,8 @@ summarise_area <- function(input, by){
 #' list_sequences(pep_all, "Condition")
 #' }
 list_sequences <- function(input, by){
-  input_min <- input %>% dplyr::select(dplyr::all_of(by), Sequence) %>%
-    unique %>% droplevels # we need only the unique sequences
+  input_min <- input |> dplyr::select(dplyr::all_of(by), Sequence) |>
+    unique() |> droplevels() # we need only the unique sequences
   lapply(split(input_min[-1], input_min[, by]), function(x) x[x != ""])
 }
 
@@ -286,7 +279,6 @@ list_sequences <- function(input, by){
 #' @return A numeric matrix with `NA`s preserved, rows named by `row` and
 #'   columns ordered by the factor levels of `col`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -294,15 +286,15 @@ list_sequences <- function(input, by){
 #' get_mat_log2area(pep_all, PeptideID, Sample)
 #' }
 get_mat_log2area <- function(input, row, col){
-  ordered_columns <- input %>% dplyr::pull({{ col }}) %>% levels() # get order from factor levels
+  ordered_columns <- input |> dplyr::pull({{ col }}) |> levels() # get order from factor levels
   col_for_row_names <- deparse(substitute(row)) # needs to be declared first
-  input %>% # using mean of Log2area
-    dplyr::group_by({{ row }}) %>%
-    dplyr::filter(!all(is.na(Log2Area))) %>% # avoid phantom IDs
-    dplyr::ungroup() %>%
-    tidyr::pivot_wider(id_cols = {{ row }}, values_from = Log2Area, names_from = {{ col }}, values_fn = function(x) mean(x, na.rm = TRUE)) %>%
-    tibble::column_to_rownames(col_for_row_names) %>%
-    dplyr::select(dplyr::all_of(ordered_columns)) %>% # order in function of levels
+  input |> # using mean of Log2area
+    dplyr::group_by({{ row }}) |>
+    dplyr::filter(!all(is.na(Log2Area))) |> # avoid phantom IDs
+    dplyr::ungroup() |>
+    tidyr::pivot_wider(id_cols = {{ row }}, values_from = Log2Area, names_from = {{ col }}, values_fn = function(x) mean(x, na.rm = TRUE)) |>
+    tibble::column_to_rownames(col_for_row_names) |>
+    dplyr::select(dplyr::all_of(ordered_columns)) |> # order in function of levels
     as.matrix()
 }
 
@@ -320,7 +312,6 @@ get_mat_log2area <- function(input, row, col){
 #'   columns `n_Peptides`/`n_Sequences`/`n_Proteins` and their `prop_*`
 #'   proportions of the total.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -328,16 +319,16 @@ get_mat_log2area <- function(input, row, col){
 #' check_ids_global(pep_all)
 #' }
 check_ids_global <- function(input){
-  input %>%
+  input |>
     dplyr::mutate(ProteinType = dplyr::case_when(ProteinFirst == "" ~ "Not Assigned",
                                                   grepl("#DECOY#", ProteinFirst, fixed = TRUE) ~ "Decoy",
                                                   grepl("_CONTA|CONTA_|Cont_", Accession, fixed = FALSE) ~ "Contaminant",
-                                                  TRUE ~ "Assigned to Protein")) %>%
-    dplyr::group_by(ProteinType) %>%
-    count_ids() %>%
-    rbind(input %>% dplyr::mutate(ProteinType = "Total") %>%
-            dplyr::group_by(ProteinType) %>%
-            count_ids()) %>%
+                                                  TRUE ~ "Assigned to Protein")) |>
+    dplyr::group_by(ProteinType) |>
+    count_ids() |>
+    rbind(input |> dplyr::mutate(ProteinType = "Total") |>
+            dplyr::group_by(ProteinType) |>
+            count_ids()) |>
     dplyr::mutate(prop_Peptides = round(n_Peptides / n_Peptides[ProteinType == "Total"], 3),
                   prop_Sequences = round(n_Sequences / n_Sequences[ProteinType == "Total"], 3),
                   prop_Proteins = round(n_Proteins / n_Proteins[ProteinType == "Total"], 3))

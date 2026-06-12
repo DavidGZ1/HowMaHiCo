@@ -29,4 +29,3 @@ their condition/sample ordering.
 read_annot(file.path("1_documentation", params$AnnotationFile))
 }
 }
-\keyword{internal}

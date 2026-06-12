@@ -5,8 +5,9 @@ test_that("check_file_exists errors when overwrite = FALSE, warns when overwrite
   on.exit({ unlink(f); setwd(old_wd) })
   writeLines("a,b", f)
 
-  expect_error(check_file_exists(f, overwrite = FALSE), "already exists")
-  expect_warning(check_file_exists(f, overwrite = TRUE), "already exists")
+  # the conflicting filename must appear in both the error and the warning
+  expect_error(check_file_exists(f, overwrite = FALSE), f, fixed = TRUE)
+  expect_warning(check_file_exists(f, overwrite = TRUE), f, fixed = TRUE)
   expect_silent(check_file_exists("check_file_exists_does_not_exist.csv", overwrite = FALSE))
 })
 

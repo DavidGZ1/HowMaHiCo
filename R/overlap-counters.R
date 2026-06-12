@@ -9,7 +9,6 @@
 #' @return The number of distinct `variable` values present in both `cond1`
 #'   and `cond2`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -32,7 +31,6 @@ count_intersect <- function(input, variable, cond1, cond2){
 #' @return The number of distinct `variable` values present in `cond1` and/or
 #'   `cond2` combined.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -60,22 +58,22 @@ count_merged <- function(input, variable, cond1, cond2){
 #' @return A data frame with one row per `by`-group (plus, if `total = TRUE`,
 #'   one `"Total"` row) and `n_<vars>`-named columns of distinct counts.
 #'
-#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
 #' count_uniqueby(pep_all, vars = Sample, by = Condition, total = TRUE)
 #' }
+#' @keywords internal
 count_uniqueby <- function(df, vars, by, total = FALSE, sep = "_"){
-  count_by <- df %>%
-    dplyr::group_by(dplyr::across({{ by }})) %>%
+  count_by <- df |>
+    dplyr::group_by(dplyr::across({{ by }})) |>
     dplyr::summarise(dplyr::across({{ vars }}, list(n = dplyr::n_distinct),
                                    .names = paste0("{fn}", sep, "{col}")),
                      .groups = "drop")
-  if(total == TRUE){
-    count_total <- df %>%
-      dplyr::mutate(dplyr::across({{ by }}, ~ sub(.x, pattern = ".*", replacement = "Total"))) %>%
-      dplyr::group_by(dplyr::across({{ by }})) %>%
+  if(total){
+    count_total <- df |>
+      dplyr::mutate(dplyr::across({{ by }}, ~ sub(.x, pattern = ".*", replacement = "Total"))) |>
+      dplyr::group_by(dplyr::across({{ by }})) |>
       dplyr::summarise(dplyr::across({{ vars }}, list(n = dplyr::n_distinct),
                                      .names = paste0("{fn}", sep, "{col}")),
                        .groups = "drop")
@@ -107,12 +105,12 @@ count_uniqueby <- function(df, vars, by, total = FALSE, sep = "_"){
 #' @return A wide data frame, one row per `level`-appropriate identity group,
 #'   with `n_<var>s.<by level>` count columns (zero-filled where absent).
 #'
-#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
 #' count_uniqueby_ip(pep_all, var = Sample, by = Condition, level = "Peptide")
 #' }
+#' @keywords internal
 count_uniqueby_ip <- function(input, var, by, level = "Peptide"){
   if(level == "Peptide"){
     key_columns <- c("Accession", "ProteinFirst", "GeneFirst", "OrganismFirst", "Length", "Peptide", "Sequence")
@@ -120,12 +118,12 @@ count_uniqueby_ip <- function(input, var, by, level = "Peptide"){
   if(level == "Protein"){
     key_columns <- c("Accession", "ProteinFirst", "GeneFirst", "OrganismFirst")
   }
-  input %>%
+  input |>
     count_uniqueby(vars = {{ var }},
-                   by = c({{ by }}, dplyr::all_of(key_columns))) %>%
+                   by = c({{ by }}, dplyr::all_of(key_columns))) |>
     tidyr::pivot_wider(id_cols = dplyr::all_of(key_columns),
                        names_from = {{ by }}, values_from = dplyr::starts_with("n_"),
-                       names_glue = "{.value}s.{.name}", values_fill = 0) %>%
+                       names_glue = "{.value}s.{.name}", values_fill = 0) |>
     dplyr::arrange(dplyr::pick(dplyr::all_of(key_columns)))
 }
 
@@ -146,7 +144,6 @@ count_uniqueby_ip <- function(input, var, by, level = "Peptide"){
 #' @return A wide data frame: identity columns (per `level`) followed by every
 #'   `n_*` count column from each of the five summaries.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -176,11 +173,11 @@ count_samples_patients <- function(input, level){
     output <-
       cbind(
         key_info,
-        counts_total_samples %>% dplyr::select(dplyr::starts_with("n_")),
-        counts_total_patients %>% dplyr::select(dplyr::starts_with("n_")),
-        counts_type %>% dplyr::select(dplyr::starts_with("n_")),
-        counts_patient %>% dplyr::select(dplyr::starts_with("n_")),
-        counts_condition %>% dplyr::select(dplyr::starts_with("n_"))
+        counts_total_samples |> dplyr::select(dplyr::starts_with("n_")),
+        counts_total_patients |> dplyr::select(dplyr::starts_with("n_")),
+        counts_type |> dplyr::select(dplyr::starts_with("n_")),
+        counts_patient |> dplyr::select(dplyr::starts_with("n_")),
+        counts_condition |> dplyr::select(dplyr::starts_with("n_"))
       )
   }else{
     stop("data in key_columns is not the same, check if they were ordered correctly")

@@ -123,8 +123,8 @@ read_diann_batch <- function(folder = NULL, annotation = NULL, files = NULL,
 #' }
 parse_diann <- function(input, shortpep_range = c(8, 13)){
   # mass and ppm not calculated
-  input %>%
-    dplyr::rename_with(~ gsub(patt = " ", rep = ".", .x), dplyr::everything()) %>%
+  input |>
+    dplyr::rename_with(~ gsub(patt = " ", rep = ".", .x), dplyr::everything()) |>
     dplyr::mutate(
       PeptideID = paste0(All.Mapped.Proteins, "_", round(Precursor.Mz, 1), "_", as.numeric(Precursor.Charge)),
       OrganismFirst = gsub(".*_(.+).*", "\\1", All.Mapped.Proteins),
@@ -144,7 +144,7 @@ parse_diann <- function(input, shortpep_range = c(8, 13)){
       ppm = 0, # DIA-NN does not give a calculated mz
       Source_file = gsub(".*\\\\(.+)[.].*", "\\1", File.Name),
       Found_By = "DIA-NN"
-    ) %>%
+    ) |>
     dplyr::select(Sample_fp,
                   Accession = All.Mapped.Proteins,
                   Peptide = Modified.Sequence,
@@ -256,19 +256,19 @@ annotate_diann <- function(input, annotation){
   ## throw a warning if some samples will be dropped
   ### need to use both Sample_fp and Source_file in case of multiple results per sample
   input_samples <-
-    input %>%
-    dplyr::select(Sample_fp, Source_file) %>%
-    unique() %>%
-    dplyr::arrange(Sample_fp, Source_file) %>%
-    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) %>%
+    input |>
+    dplyr::select(Sample_fp, Source_file) |>
+    unique() |>
+    dplyr::arrange(Sample_fp, Source_file) |>
+    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) |>
     dplyr::pull(Sample)
 
   annotation_samples <-
-    annotation %>%
-    dplyr::select(Sample_fp, Source_file) %>%
-    unique() %>%
-    dplyr::arrange(Sample_fp, Source_file) %>%
-    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) %>%
+    annotation |>
+    dplyr::select(Sample_fp, Source_file) |>
+    unique() |>
+    dplyr::arrange(Sample_fp, Source_file) |>
+    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) |>
     dplyr::pull(Sample)
 
   if(all(input_samples %in% annotation_samples) & all(annotation_samples %in% input_samples)){
@@ -292,9 +292,9 @@ annotate_diann <- function(input, annotation){
   if(!all(c("Source_file") %in% names(annotation))){
     stop("combined_file mode was activated, but the Source_file column is missing from the annotation table, please add it")
   }
-  output <- input %>%
-    dplyr::inner_join(annotation, ., by = c("Source_file", "Sample_fp")) %>%
-    dplyr::relocate(Sample_ID, .after = "All.Mapped.Genes") %>%
+  output <- input |>
+    (\(x) dplyr::inner_join(annotation, x, by = c("Source_file", "Sample_fp")))() |>
+    dplyr::relocate(Sample_ID, .after = "All.Mapped.Genes") |>
     droplevels() # necessary to avoid dragging empty factors that create errors
   return(output)
 }

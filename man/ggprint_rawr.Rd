@@ -25,4 +25,3 @@ conditionally skipped upstream.
 ggprint_rawr(p_corr_log2area_all)
 }
 }
-\keyword{internal}

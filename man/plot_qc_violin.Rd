@@ -28,4 +28,3 @@ plot_qc_violin(pep_all, "Score", "Score distribution, and boxplot")
 plot_qc_violin(pep_all, "ppm",   "Mass error distribution, and boxplot")
 }
 }
-\keyword{internal}
