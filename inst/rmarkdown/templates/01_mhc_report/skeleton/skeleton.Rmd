@@ -188,15 +188,15 @@ if(grepl("fragpipe_dda", params$Software)){
     }
   }
 
-pep_all <- read_fragpipe_batch(folder = params$FolderData, annotation = annot, testmode = params$TestMode)  %>%
-  parse_fragpipe(., shortpep_range = shortpep_range) %>%
+pep_all <- read_fragpipe_batch(folder = params$FolderData, annotation = annot, testmode = params$TestMode)  |>
+  parse_fragpipe(shortpep_range = shortpep_range) |>
   annotate_fragpipe(annot, mode = annot_mode)
 warning("for Fragpipe, the psm file is currently beeing used. This means that FDR has not been applied at the peptide level, only at PSM level")
 }
 if(params$Software == "diann"){
   message("loading diann data")
-pep_all <- read_diann_batch(folder = params$FolderData, annotation = annot, testmode = params$TestMode)  %>%
-  parse_diann(., shortpep_range = shortpep_range) %>%
+pep_all <- read_diann_batch(folder = params$FolderData, annotation = annot, testmode = params$TestMode)  |>
+  parse_diann(shortpep_range = shortpep_range) |>
   annotate_diann(annot)
 warning("for DIA-NN, some columns are currently missing, including Mass and ppm (ppm = 0 as dummy)")
 
@@ -205,8 +205,8 @@ if(params$Software == "peaks_xpro"){
   message("loading PEAKS data")
   pep_all <- read_peaks_batch(folder = params$FolderData,
                               annotation = annot,
-                              instrument = params$Instrument) %>%
-    parse_peaks(., shortpep_range = shortpep_range) %>%
+                              instrument = params$Instrument) |>
+    parse_peaks(shortpep_range = shortpep_range) |>
     annotate_peaks(annot)
 }
 
@@ -215,7 +215,7 @@ if(params$Software == "peaks_xpro"){
 
 
 save(pep_all, file = file_rda)
-pep_short <- pep_all %>% 
+pep_short <- pep_all |> 
     filter(Length >= shortpep_range[1], Length <= shortpep_range[2]) 
 
 #extract simplified info
@@ -223,7 +223,7 @@ samples <- levels(pep_all$Sample)
 conditions <- levels(pep_all$Condition)
 n_conditions <- length(conditions)
 bioreplicates <- levels(pep_all$BioReplicate)
-comp_condition <- combn(conditions, 2) %>%  as.data.frame %>%  as.list
+comp_condition <- combn(conditions, 2) |>  as.data.frame() |>  as.list()
 ```
 
 
@@ -232,8 +232,8 @@ comp_condition <- combn(conditions, 2) %>%  as.data.frame %>%  as.list
 This evaluation includes all peptides identified, without filtering out peptides that were not assigned to any protein or peptides that could come from contaminant proteins (Accession labeled Cont_). These values are shown below. Some true peptides can be originated from proteins typically assigned as contaminant in proteomics experiments (e.g., actins, keratins, albumins, etc.).
 
 ```{r check-ids-global, echo=FALSE}
-check_ids_global(pep_all) %>% 
-  kable() %>% 
+check_ids_global(pep_all) |> 
+  kable() |> 
   kable_paper("hover", full_width = F)
 ```
 
@@ -245,8 +245,8 @@ counts_levels <- c("Peptides", "Sequences", "Proteins")
 
 # Counts all peptides
 ## Sample 
-counts_all <- pep_all %>%  
-  group_by(Condition, BioReplicate, Sample) %>%
+counts_all <- pep_all |>  
+  group_by(Condition, BioReplicate, Sample) |>
   summarise(n_Peptides = n_distinct(Peptide), 
             n_Sequences = n_distinct(Sequence),
             n_Proteins = n_distinct(Accession),
@@ -254,16 +254,16 @@ counts_all <- pep_all %>%
 
 ## Condition average
 counts_all_mean <-
-  counts_all %>% 
-  group_by(Condition) %>% 
+  counts_all |> 
+  group_by(Condition) |> 
   summarise(across(where(is.numeric),
                    list(mean = ~mean(.x, na.rm = TRUE),
                    sd = ~sd(.x, na.rm = TRUE))), 
-            .groups = "drop") %>% 
+            .groups = "drop") |> 
   mutate(across(where(is.numeric), ~ round(.x, 2)))
 ## Condition total
-counts_all_total <- pep_all %>%  
-  group_by(Condition) %>% 
+counts_all_total <- pep_all |>  
+  group_by(Condition) |> 
   summarise(n_Peptides = n_distinct(Peptide), 
             n_Sequences = n_distinct(Sequence),
             n_Proteins = n_distinct(Accession),
@@ -271,23 +271,23 @@ counts_all_total <- pep_all %>%
 
 ## BioReplicate per TechReplicate
 counts_all_overlap <-
-  pep_all %>% 
-  filter(Area != 0) %>%
-  count(Condition,  Accession, Peptide, Sequence, name = "n_Samples") %>% 
-  mutate(n_Samples = factor(paste0(n_Samples, " Rep."))) %>% 
-  group_by(Condition, n_Samples) %>% 
+  pep_all |> 
+  filter(Area != 0) |>
+  count(Condition,  Accession, Peptide, Sequence, name = "n_Samples") |> 
+  mutate(n_Samples = factor(paste0(n_Samples, " Rep."))) |> 
+  group_by(Condition, n_Samples) |> 
   summarise(n_Peptides = n_distinct(Peptide), 
             n_Sequences = n_distinct(Sequence),
             n_Proteins = n_distinct(Accession),
-            .groups = "drop") %>%  
-  full_join(rename_with(counts_all_total, ~gsub("n_", "total_", .x)), by = "Condition") %>% 
-  pivot_longer(cols = -c(Condition, n_Samples), names_to = "Type_Level", values_to = "n") %>% 
-  separate(Type_Level, sep = "_", into = c("Type", "Level")) %>% 
-  pivot_wider(id_cols = c(Condition, n_Samples, Level), values_from = "n", names_from = "Type") %>% 
-  arrange(Condition, Level, desc(n_Samples)) %>% 
-  group_by(Condition, Level) %>% 
+            .groups = "drop") |>  
+  full_join(rename_with(counts_all_total, ~gsub("n_", "total_", .x)), by = "Condition") |> 
+  pivot_longer(cols = -c(Condition, n_Samples), names_to = "Type_Level", values_to = "n") |> 
+  separate(Type_Level, sep = "_", into = c("Type", "Level")) |> 
+  pivot_wider(id_cols = c(Condition, n_Samples, Level), values_from = "n", names_from = "Type") |> 
+  arrange(Condition, Level, desc(n_Samples)) |> 
+  group_by(Condition, Level) |> 
   mutate(perc = paste0("", round(100*(n/total), 1), "%"),
-         cum = cumsum(n)) %>% 
+         cum = cumsum(n)) |> 
   pivot_wider(id_cols = c(Condition, n_Samples), names_from = Level, values_from = all_of(c("n", "perc", "cum",  "total")))
 
 ## Limits for plots
@@ -312,44 +312,44 @@ nprot_ylim_total <- count_lim[count_lim$Level == "Proteins", "Limit_total"]
 # By LengthRange
 ## Sample 
 counts_size <- 
-  bind_rows(counts_all %>% 
+  bind_rows(counts_all |> 
               mutate(Length_range =  "All peptides"),
-            pep_all %>% 
-              group_by(Condition, BioReplicate, Sample, Length_range) %>%
+            pep_all |> 
+              group_by(Condition, BioReplicate, Sample, Length_range) |>
               summarise(n_Peptides = n_distinct(Peptide), 
                         n_Sequences = n_distinct(Sequence),
                         n_Proteins = n_distinct(Accession),
-                        .groups = "drop") %>% 
-              arrange(Sample))  %>% 
+                        .groups = "drop") |> 
+              arrange(Sample))  |> 
   #arrange factors in a logical way
   mutate(Length_range = factor(Length_range, 
                                levels = c("All peptides", "others", paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"))))
 
 ## Condition average
 counts_size_mean <-
-  counts_size %>% 
-  group_by(Condition, Length_range) %>% 
+  counts_size |> 
+  group_by(Condition, Length_range) |> 
   summarise(across(where(is.numeric),
                    list(mean = ~mean(.x, na.rm = TRUE),
                         sd = ~sd(.x, na.rm = TRUE))), 
-            .groups = "drop") %>% 
+            .groups = "drop") |> 
   mutate(across(where(is.numeric), ~ round(.x, 2)))
 ## Condition total
 counts_size_total <-
-  bind_rows(counts_all_total %>%
+  bind_rows(counts_all_total |>
               mutate(Length_range =  "All peptides"),
-            pep_all %>%
-              group_by(Condition, Length_range) %>%
+            pep_all |>
+              group_by(Condition, Length_range) |>
               summarise(n_Peptides = n_distinct(Peptide),
                         n_Sequences = n_distinct(Sequence),
                         n_Proteins = n_distinct(Accession),
-                        .groups = "drop")) %>%
+                        .groups = "drop")) |>
   #arrange factors in a logical way
   mutate(Length_range = factor(Length_range,
                                levels = c("All peptides", "others", paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"))))
 
 # Per-sample y-axis limits
-counts_all_sample <- counts_size %>% dplyr::filter(Length_range == "All peptides")
+counts_all_sample <- counts_size |> dplyr::filter(Length_range == "All peptides")
 count_lim$Limit_sample <- c(
   ceiling(max(counts_all_sample$n_Peptides)  * 1.2 / 100) * 100,
   ceiling(max(counts_all_sample$n_Sequences) * 1.2 / 100) * 100,
@@ -359,8 +359,8 @@ count_lim$Limit_sample <- c(
 
 
 ```{r counts-size-short-prep, echo=FALSE}
-counts_size_short <- counts_size %>%
-  dplyr::filter(!Length_range %in% c("All peptides", "others")) %>%
+counts_size_short <- counts_size |>
+  dplyr::filter(!Length_range %in% c("All peptides", "others")) |>
   droplevels()
 count_lim_short <- data.frame(
   Level = c("Peptides", "Sequences", "Proteins"),
@@ -377,7 +377,7 @@ count_lim_short <- data.frame(
 ### All peptides {.tabset}
 
 ```{r plot-count-mean-sd-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
-counts_size_all <- counts_size %>% dplyr::filter(Length_range == "All peptides") %>% droplevels()
+counts_size_all <- counts_size |> dplyr::filter(Length_range == "All peptides") |> droplevels()
 for (i in seq_along(counts_levels)) {
   level <- counts_levels[i]
   lim_level <- count_lim[count_lim$Level == level, "Limit_mean"]
@@ -429,12 +429,12 @@ for(i in 1:length(counts_levels)){
 
 ```{r plot-prop-length-condition, echo=FALSE,  fig.height=2.5, fig.width=8, warning=FALSE}
 count_all_condition_lengthrange  <-
-  pep_all %>%
+  pep_all |>
   count_ids_condition_bylengthrange() 
 
 
 bp_prop_length_pep_condition <-
-  count_all_condition_lengthrange   %>%  
+  count_all_condition_lengthrange   |>  
   plot_prop_length_condition(palette = shortpep_colors)  +
   rotate_x_text(70) 
     
@@ -469,11 +469,11 @@ for(i in 1:length(counts_levels)){
 
 ```{r plot-prop-length-sample, echo=FALSE, fig.height=2.5, fig.width=8, warning=FALSE}
 count_all_sample_lengthrange <-
-  pep_all %>%
+  pep_all |>
   count_ids_condition_bylengthrange(group_var = "Sample")
 
 bp_prop_length_pep_sample <-
-  count_all_sample_lengthrange %>%
+  count_all_sample_lengthrange |>
   plot_prop_length_condition(x_var = "Sample", palette = shortpep_colors) +
   rotate_x_text(70)
 
@@ -488,32 +488,32 @@ bp_prop_length_pep_sample
 ```{r plot-charge-proportion, results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=TRUE}
 count_all_condition_charge <- 
   bind_rows(
-    pep_all %>% 
-      get_charge_group() %>% 
-      group_by(Condition, Charge_group) %>% 
-      count_ids() %>% 
+    pep_all |> 
+      get_charge_group() |> 
+      group_by(Condition, Charge_group) |> 
+      count_ids() |> 
         arrange(Condition, Charge_group),
-    pep_all %>% 
-      get_charge_group() %>% 
-      group_by(Condition) %>% 
-      count_ids() %>% 
+    pep_all |> 
+      get_charge_group() |> 
+      group_by(Condition) |> 
+      count_ids() |> 
       mutate(Charge_group = "Total")
-  ) %>% 
+  ) |> 
   mutate(Charge_group = factor(Charge_group, rev(unique(Charge_group))) )
   
 prop_all_condition_charge <- 
-  count_all_condition_charge %>%
+  count_all_condition_charge |>
   get_proportion_charge()
 bp_prop_all_condition_charge <- 
-  prop_all_condition_charge %>% 
+  prop_all_condition_charge |> 
   plot_charge_proportions(Condition) +
   rotate_x_text(70) +
   ggtitle("Charge proportion all peptides")
 # check if % > 100
 tmp_prop_total <- 
-  prop_all_condition_charge %>% 
-  filter(Charge_group != "Total") %>% 
-  group_by(Condition, Level) %>% 
+  prop_all_condition_charge |> 
+  filter(Charge_group != "Total") |> 
+  group_by(Condition, Level) |> 
   summarise(Proportion_Total = sum(Proportion), .groups = "drop")  
 if(any(tmp_prop_total$Proportion_Total > 1)){
   warning("The total percentage is > 100% in some cases. This may be because some peptides can be reported with multiple charge states (e.g. in Fragpipe)")
@@ -546,59 +546,59 @@ for (i in seq_along(overlap_ids)) {
 
 ```{r upset-tables, echo=FALSE, message=FALSE, warning=FALSE}
 upset_table_pep <-
-  pep_all %>% 
-  mutate(Condition = as.character(Condition)) %>% 
-  distinct(Condition, Peptide, .keep_all= FALSE) %>% 
-  nest(Condition = Condition) %>% 
-  group_by(Condition)  %>% 
-  summarize(n_Peptide = n_distinct(Peptide), .groups = "drop") %>% 
-  rowwise() %>%
-  mutate(n_Condition = nrow(Condition)) %>% 
-  mutate(Conditions= paste(Condition, collapse = ", ")) %>% 
-  select(Conditions, n_Condition, n_Peptide) %>% 
-  rbind(pep_all %>% 
-          group_by(BioReplicate) %>% 
+  pep_all |> 
+  mutate(Condition = as.character(Condition)) |> 
+  distinct(Condition, Peptide, .keep_all= FALSE) |> 
+  nest(Condition = Condition) |> 
+  group_by(Condition)  |> 
+  summarize(n_Peptide = n_distinct(Peptide), .groups = "drop") |> 
+  rowwise() |>
+  mutate(n_Condition = nrow(Condition)) |> 
+  mutate(Conditions= paste(Condition, collapse = ", ")) |> 
+  select(Conditions, n_Condition, n_Peptide) |> 
+  rbind(pep_all |> 
+          group_by(BioReplicate) |> 
           summarize(Conditions = paste("Total", unique(BioReplicate)),
                     n_Peptide = n_distinct(Peptide), .groups = "drop",
-                    n_Condition = 1) %>% 
-          select(-BioReplicate)) %>% 
-  rbind(pep_all %>% 
+                    n_Condition = 1) |> 
+          select(-BioReplicate)) |> 
+  rbind(pep_all |> 
           summarize(Conditions = "Total",
                     n_Peptide = n_distinct(Peptide), .groups = "drop",
                     n_Condition = 1) ) 
 
 upset_table_prot <-
-  pep_all %>% 
-  mutate(Condition = as.character(Condition)) %>% 
-  distinct(Condition, Accession, .keep_all= FALSE) %>% 
-  nest(Condition = Condition) %>% 
-  group_by(Condition)  %>% 
-  summarize(n_ProteinGroup = n_distinct(Accession), .groups = "drop") %>% 
-  rowwise() %>%
-  mutate(n_Condition = nrow(Condition)) %>% 
-  mutate(Conditions = paste(Condition, collapse = ", ")) %>% 
-  select(Conditions, n_Condition, n_ProteinGroup) %>% 
-  rbind(pep_all %>% 
-          group_by(BioReplicate) %>% 
+  pep_all |> 
+  mutate(Condition = as.character(Condition)) |> 
+  distinct(Condition, Accession, .keep_all= FALSE) |> 
+  nest(Condition = Condition) |> 
+  group_by(Condition)  |> 
+  summarize(n_ProteinGroup = n_distinct(Accession), .groups = "drop") |> 
+  rowwise() |>
+  mutate(n_Condition = nrow(Condition)) |> 
+  mutate(Conditions = paste(Condition, collapse = ", ")) |> 
+  select(Conditions, n_Condition, n_ProteinGroup) |> 
+  rbind(pep_all |> 
+          group_by(BioReplicate) |> 
           summarize(Conditions = paste("Total", unique(BioReplicate)),
                     n_ProteinGroup = n_distinct(Accession), .groups = "drop",
-                    n_Condition = 1) %>% 
-          select(-BioReplicate)) %>% 
-  rbind(pep_all %>% 
+                    n_Condition = 1) |> 
+          select(-BioReplicate)) |> 
+  rbind(pep_all |> 
           summarize(Conditions = "Total",
                     n_ProteinGroup = n_distinct(Accession), .groups = "drop",
                     n_Condition = 1)) 
 
 upset_table_unique <-
-  full_join(upset_table_pep[upset_table_pep$n_Condition == 1, ] %>% 
+  full_join(upset_table_pep[upset_table_pep$n_Condition == 1, ] |> 
                select(-n_Condition), 
-            upset_table_prot[upset_table_prot$n_Condition == 1, ]  %>% 
+            upset_table_prot[upset_table_prot$n_Condition == 1, ]  |> 
                select(-n_Condition), 
-             by = "Conditions") %>% 
-  rename_with(.fn =function(x) gsub("n_", "Unique_", x)) %>% 
+             by = "Conditions") |> 
+  rename_with(.fn =function(x) gsub("n_", "Unique_", x)) |> 
   rename(Condition = Conditions)
 
-upset_table_unique %>%  kable %>%   kable_paper("hover", full_width = F)
+upset_table_unique |>  kable() |>   kable_paper("hover", full_width = F)
 ```
 
 
@@ -613,7 +613,7 @@ var_levels <-  c("Peptide", "Sequence", "Accession")
 up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
 for (i in 1:length(var_levels)) {
   cat("\n### ", var_levels[i],"\n")
-  up_pep_all_list[i]  %>%  print()
+  up_pep_all_list[i]  |>  print()
   cat('\n\n')
 }
 
@@ -625,7 +625,7 @@ for (i in 1:length(var_levels)) {
 up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
 for (i in 1:length(var_levels)) {
   cat("\n### ", var_levels[i],"\n")
-  up_pep_short_list[i]  %>%  print()
+  up_pep_short_list[i]  |>  print()
   cat('\n\n')
 }
 
@@ -636,8 +636,8 @@ for (i in 1:length(var_levels)) {
 
 ```{r overlap-pairwise-data, echo=FALSE, warning=FALSE, fig.width=8}
 # calculations needed for Condition, Bioreplicate, and sample-wise overlap and uniqueness
-npep_all_overlap <- pep_all %>%
-  dplyr::group_by(Condition) %>%
+npep_all_overlap <- pep_all |>
+  dplyr::group_by(Condition) |>
   dplyr::summarise(total_Peptides = dplyr::n_distinct(Peptide), .groups = "drop")
 
 #complete condition comparison with same condition in each side
@@ -654,21 +654,21 @@ pep_overlap <-
                                                             cond1 = x[1], cond2 = x[2])),
              n_Total = sapply(comp_condition_replicated, 
                                 function(x) count_merged(pep_all, variable = "Peptide",
-                                                            cond1 = x[1], cond2 = x[2]))) %>% 
-  tibble::rownames_to_column("Comparison") %>%
-  separate(Comparison, into = c("Cond1", "Cond2"), sep = "_vs_") %>% 
-  mutate(prop_Overlap_Total = round(n_Overlap/n_Total, 3)) %>% 
+                                                            cond1 = x[1], cond2 = x[2]))) |> 
+  tibble::rownames_to_column("Comparison") |>
+  separate(Comparison, into = c("Cond1", "Cond2"), sep = "_vs_") |> 
+  mutate(prop_Overlap_Total = round(n_Overlap/n_Total, 3)) |> 
   # Add total IDs per condition and the proportion of overlap
-  full_join(npep_all_overlap %>%  select(Condition, total_Peptides) %>% 
-              unique %>% 
+  full_join(npep_all_overlap |>  select(Condition, total_Peptides) |>
+              unique() |>
               rename(n_Peptides_Cond1 = total_Peptides),
-            by = c("Cond1" = "Condition")) %>% 
-  full_join(npep_all_overlap %>%  select(Condition, total_Peptides) %>% 
-              unique %>% 
+            by = c("Cond1" = "Condition")) |> 
+  full_join(npep_all_overlap |>  select(Condition, total_Peptides) |>
+              unique() |>
               rename(n_Peptides_Cond2 = total_Peptides),
-            by = c("Cond2" = "Condition")) %>% 
+            by = c("Cond2" = "Condition")) |> 
   mutate(prop_Overlap_Cond1 = round(n_Overlap / n_Peptides_Cond1, 3),
-         prop_Overlap_Cond2 = round(n_Overlap / n_Peptides_Cond2, 3))  %>% 
+         prop_Overlap_Cond2 = round(n_Overlap / n_Peptides_Cond2, 3))  |> 
   mutate(Cond1 = factor(Cond1, levels = conditions), #reorder levels
          Cond2 = factor(Cond2, levels = conditions))
 ```
@@ -680,9 +680,9 @@ pep_overlap <-
 hm_overlap_matrix_count <-
   rbind(pep_overlap, 
       # Get mirror numbers to complete the matrix 
-      pep_overlap %>% mutate(Cond1_temp = Cond1) %>% 
-        mutate(Cond1 = Cond2, Cond2 = Cond1_temp) %>%  
-        select(-Cond1_temp)) %>% 
+      pep_overlap |> mutate(Cond1_temp = Cond1) |> 
+        mutate(Cond1 = Cond2, Cond2 = Cond1_temp) |>  
+        select(-Cond1_temp)) |> 
   ggplot(aes(y = Cond1, x = Cond2, fill = n_Overlap)) +
   geom_tile() +
   geom_text(aes(label = n_Overlap), size = 2) +
@@ -700,9 +700,9 @@ hm_overlap_matrix_count
 hm_overlap_matrix_prop <-
   rbind(pep_overlap, 
       # Get mirror numbers to complete the matrix 
-      pep_overlap %>% mutate(Cond1_temp = Cond1) %>% 
-        mutate(Cond1 = Cond2, Cond2 = Cond1_temp) %>%  
-        select(-Cond1_temp)) %>% 
+      pep_overlap |> mutate(Cond1_temp = Cond1) |> 
+        mutate(Cond1 = Cond2, Cond2 = Cond1_temp) |>  
+        select(-Cond1_temp)) |> 
   ggplot(aes(y = Cond1, x = Cond2, fill = prop_Overlap_Total)) +
   geom_tile() +
   geom_text(aes(label = prop_Overlap_Total), size = 2) +
@@ -721,10 +721,10 @@ hm_overlap_matrix_prop
 - prop_Overlap_Cond1 and prop_Overlap_Cond2 are different because they are calculated based on the total for only that condition
 
 ```{r table-overlap-pairwise, echo=FALSE}
-pep_overlap %>%  kable() %>% kable_paper("hover", full_width = F) %>% 
+pep_overlap |>  kable() |> kable_paper("hover", full_width = F) |> 
   column_spec(6,  background = spec_color(pep_overlap$prop_Overlap_Cond1,
                                           alpha = 0.8,  begin = 0.2,
-                                          direction = -1, scale_from = c(0,1))) %>% 
+                                          direction = -1, scale_from = c(0,1))) |> 
   column_spec(7,  background = spec_color(pep_overlap$prop_Overlap_Cond2,
                                           alpha = 0.8,  begin = 0.2,
                                           direction = -1, scale_from = c(0,1)))
@@ -735,12 +735,12 @@ pep_overlap %>%  kable() %>% kable_paper("hover", full_width = F) %>%
 
 ```{r pep-unique-data, echo=FALSE, warning=FALSE}
 # calculations for plots below
-pep_all_unique <- pep_all %>% 
-  select(Peptide, Sequence, PTM, Condition, Length, Mass) %>% 
-  unique
-pep_all_unique_mz <- pep_all %>% 
-  select(Peptide, Sequence, PTM, Condition, Length, Mass, m_z, Charge) %>% 
-  unique
+pep_all_unique <- pep_all |>
+  select(Peptide, Sequence, PTM, Condition, Length, Mass) |>
+  unique()
+pep_all_unique_mz <- pep_all |>
+  select(Peptide, Sequence, PTM, Condition, Length, Mass, m_z, Charge) |>
+  unique()
 ```
 
 ## Peptide length (Nb AAs) {.tabset}
@@ -797,17 +797,17 @@ phist_pep_mz_merged
 ## Summary table
 
 ```{r table-pep-size-summary, echo=FALSE, warning=FALSE}
-pep_all_unique_mz %>%
-  select(Condition, Length, Mass, m_z) %>% 
-  group_by(Condition) %>%
+pep_all_unique_mz |>
+  select(Condition, Length, Mass, m_z) |> 
+  group_by(Condition) |>
   # summarise(Min = min(Length))
   summarise(across(where(is.numeric), c(min = ~min(.x, na.rm=TRUE),
                                         q1 = ~quantile(.x, na.rm=TRUE)[2], 
                                         median = ~median(.x, na.rm=TRUE),
                                         q3 = ~quantile(.x, na.rm=TRUE)[3],
-                                        max = ~max(.x, na.rm=TRUE))),  .groups = "drop")  %>% 
-  tibble::column_to_rownames("Condition") %>%
-  t
+                                        max = ~max(.x, na.rm=TRUE))),  .groups = "drop")  |> 
+  tibble::column_to_rownames("Condition") |>
+  t()
 ```
 
 # Peptide ID distribution across RT, 1/k0 and m/z {.tabset}
@@ -926,7 +926,7 @@ if(all(is.na(corr_log2area_all))){
   warning("Correlation plot cannot be generated because there is no non-na correlation. Maybe the Areas were not included.")
 }else{
   p_corr_log2area_all <-
-  corr_log2area_all %>% 
+  corr_log2area_all |> 
   plot_corr() + 
   ggtitle("Log2Area correlation for all peptides")
 
@@ -959,7 +959,7 @@ if(all(is.na(corr_log2area_short))){
   warning("Correlation plot cannot be generated because there is no non-na correlation. Maybe the Areas were not included.")
 }else{
 p_corr_log2area_short<-
-  corr_log2area_short %>% 
+  corr_log2area_short |> 
   plot_corr() +
     ggtitle(paste0("Log2Area correlation for selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) 
 
@@ -1072,7 +1072,7 @@ names(motifs_pepshort) <- seq_lengths_short
 
 for (i in 1:length(motifs_pepshort)) {
   cat("\n### Length = ", names(motifs_pepshort)[i],"\n")
-  motifs_pepshort[i]  %>%  print()
+  motifs_pepshort[i]  |>  print()
   cat('\n\n')
 }
 ```
@@ -1109,9 +1109,9 @@ seq_by_condition <- list_sequences(by = "Condition", input = pep_all)
 # Lists of sequences in function of overlap
 
 seq_overlap_condition <- 
-  pep_all %>% 
-  distinct(Condition, Sequence, .keep_all= FALSE) %>% 
-  group_by(Sequence) %>% 
+  pep_all |> 
+  distinct(Condition, Sequence, .keep_all= FALSE) |> 
+  group_by(Sequence) |> 
   summarise(Condition = paste0(Condition, collapse = "; "))
 
 write.xlsx(seq_by_condition, file.path(FolderResults, "seq_by_condition.xlsx"), overwrite = params$ResultsOverwrite)
@@ -1119,11 +1119,11 @@ write.xlsx(seq_by_condition, file.path(FolderResults, "seq_by_condition.xlsx"), 
 
 # get a wide-format table with IDs per condition
 counts_pep_all_condition <-  
-  pep_all  %>% 
+  pep_all  |> 
   count_ids_by(Condition) 
 
 # counts_pep_filtered_condition <-  
-#   counts_pep_all_condition  %>% 
+#   counts_pep_all_condition  |> 
 #   filter(!is.na(Accession),
 #          Accession != "",
 #          !grepl("Cont_", Accession))

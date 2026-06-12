@@ -8,8 +8,10 @@
   `@keywords internal` from every exported function (the package-overview page
   and the non-exported helpers stay internal), and listed every export
   in `_pkgdown.yml`.
-* Internal code now uses the native R pipe (`|>`) throughout instead of magrittr
-  `%>%`. **This raises the minimum R version to 4.1.0** (`Depends: R (>= 4.1.0)`).
+* All package R code — both the `R/` source and the two report templates
+  (`inst/rmarkdown/templates/*/skeleton/skeleton.Rmd`) — now uses the native R
+  pipe (`|>`) throughout instead of magrittr `%>%`. **This raises the minimum R
+  version to 4.1.0** (`Depends: R (>= 4.1.0)`).
 * De-vendored `get_dirs_index_peaks()`: the helper (originally adapted from
   `deltaProtR`) is now native HowMaHiCo code in `R/loaders-peaks-dirs.R`
   (was `R/vendored-deltaprotr.R`).
