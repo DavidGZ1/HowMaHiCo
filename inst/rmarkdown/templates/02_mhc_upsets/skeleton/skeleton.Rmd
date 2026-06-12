@@ -138,15 +138,15 @@ file_rda <- file.path( file.path(params$FolderData,paste0(suffix, "pep_all.rda")
 load(file_rda)
 
 pep_all <-
-  pep_all %>% 
-  filter(Condition != "JY_QC") %>% 
-  droplevels() %>% 
-  mutate(ProteinFirst = gsub("Cont_|cont_", "", ProteinFirst)) %>% 
-  mutate(Condition = fct_relabel(.f = Condition, .fun = ~ gsub("_DIA", "", .x))) %>% 
-  separate_wider_delim(., cols = Condition , delim = "_", cols_remove = FALSE, 
-                       names = c("Patient", "Sample_type")) %>% 
-  mutate(Sample_type = factor(Sample_type, levels = c("tissue", "plasma", "PBMCs"))) %>%
-  mutate(Sample = sub("_1$", "", Sample) ) %>% 
+  pep_all |> 
+  filter(Condition != "JY_QC") |> 
+  droplevels() |> 
+  mutate(ProteinFirst = gsub("Cont_|cont_", "", ProteinFirst)) |> 
+  mutate(Condition = fct_relabel(.f = Condition, .fun = ~ gsub("_DIA", "", .x))) |> 
+  separate_wider_delim(cols = Condition , delim = "_", cols_remove = FALSE,
+                       names = c("Patient", "Sample_type")) |> 
+  mutate(Sample_type = factor(Sample_type, levels = c("tissue", "plasma", "PBMCs"))) |>
+  mutate(Sample = sub("_1$", "", Sample) ) |> 
   relocate(Sample_type,.before = "Condition") 
 
 write.csv(unique(pep_all[names(pep_all)[c(1:8)]]),
@@ -158,7 +158,7 @@ write_input_params(params, folder = FolderResults, prefix = params$Subset)
 ```
 
 ```{r pep-short-data}
-pep_short <- pep_all %>%
+pep_short <- pep_all |>
     filter(Length >= shortpep_range[1], Length <= shortpep_range[2]) 
 
 #extract simplified info
@@ -168,7 +168,7 @@ samples <- levels(pep_all$Sample)
 conditions <- levels(pep_all$Condition)
 n_conditions <- length(conditions)
 bioreplicates <- levels(pep_all$BioReplicate)
-comp_condition <- combn(conditions, 2) %>%  as.data.frame %>%  as.list
+comp_condition <- combn(conditions, 2) |>  as.data.frame() |>  as.list()
 lengthranges <- c("all", levels(pep_all$Length_range))
 # lists to drop results and plots
 res <- list()
@@ -179,22 +179,22 @@ plist <- list()
 ```{r seq-unique-data}
 # simplifying info
 seq_all_sample <- 
-  pep_all %>% 
+  pep_all |> 
   select_unique(Sample_type, Patient, Condition, BioReplicate, TechReplicate, Sample, Accession, ProteinFirst,GeneFirst, OrganismFirst, 
            Peptide, Sequence, Length_range) 
 
 seq_all_condition <-
-  pep_all %>% 
+  pep_all |> 
   select_unique(Sample_type, Patient, Condition, Accession, ProteinFirst,GeneFirst, OrganismFirst, 
            Peptide, Sequence, Length_range) 
 
 seq_short_sample <- 
-  pep_short %>% 
+  pep_short |> 
   select_unique(Sample_type, Patient, Condition, BioReplicate, TechReplicate, Sample, Accession, ProteinFirst,GeneFirst, OrganismFirst, 
            Peptide, Sequence, Length_range) 
 
 seq_short_condition <-
-  pep_short %>% 
+  pep_short |> 
   select_unique(Sample_type, Patient, Condition, Accession, ProteinFirst,GeneFirst, OrganismFirst, 
            Peptide, Sequence, Length_range) 
 
@@ -215,29 +215,29 @@ var_levels <-  c("Peptide", "Sequence", "Accession")
 
 ```{r pep-patient-summary}
 pep_patient_biorep_summary <-
-  pep_all  %>% 
-  mutate(Area_imputed = is.na(Log2Area)) %>% 
-  mutate(Log2Area = replace_na(Log2Area, 6.5)) %>% 
+  pep_all  |> 
+  mutate(Area_imputed = is.na(Log2Area)) |> 
+  mutate(Log2Area = replace_na(Log2Area, 6.5)) |> 
    group_by(Sample_type, Patient, Condition, BioReplicate, Accession, ProteinFirst,GeneFirst, OrganismFirst, 
-           Peptide, Sequence, Length_range) %>% 
+           Peptide, Sequence, Length_range) |> 
   summarise(n_Samples = n_distinct(Sample),
             Area_mean = mean(Area),
             Area_max = max(Area),
-            .groups = "drop") %>% 
+            .groups = "drop") |> 
   ungroup() 
 
 
 
 pep_patient_condition_summary <-
-  pep_all  %>% 
-  mutate(Area_imputed = is.na(Log2Area)) %>% 
-  mutate(Log2Area = replace_na(Log2Area, 6.5)) %>% 
+  pep_all  |> 
+  mutate(Area_imputed = is.na(Log2Area)) |> 
+  mutate(Log2Area = replace_na(Log2Area, 6.5)) |> 
   group_by(Sample_type, Patient, Condition, BioReplicate, Accession, ProteinFirst,GeneFirst, OrganismFirst, 
-           Peptide, Sequence, Length_range) %>% 
+           Peptide, Sequence, Length_range) |> 
   summarise(n_Samples = n_distinct(Sample),
             Area_mean = mean(Area),
             Area_max = max(Area),
-            .groups = "drop") %>% 
+            .groups = "drop") |> 
   ungroup() 
 ```
 
@@ -255,7 +255,7 @@ Note: protein groups are encoded in the "Accession".  "ProteinFirst" was not inc
 
 ```{r counts-pep-wide}
 counts_pep_all_wide <- 
-  count_samples_patients(pep_all, "Peptide") #%>% 
+  count_samples_patients(pep_all, "Peptide") #|> 
    ## Add easy tags #project-specific
       # mutate(in_Blank = n_Samples.Blank >0,
       #        in_QC = n_Patients.QC >0,
@@ -264,14 +264,14 @@ counts_pep_all_wide <-
       #        in_CSF = n_Patients.CSF > 0,
       #        in_Plasma_in_CSF = n_Patients.Plasma >0 & n_Patients.CSF >0,
       #        in_Soluble_any =  n_Patients.Plasma >0 | n_Patients.CSF >0
-      # ) %>% 
+      # ) |> 
       # relocate(starts_with("in_"), .after = "Sequence") 
 
 # counts_pep_all_wide
 write.csv_rawr(counts_pep_all_wide, folder = FolderResults, prefix = params$Subset)
 
 counts_pep_selected_wide <- 
-  count_samples_patients(pep_short, "Peptide") #%>% 
+  count_samples_patients(pep_short, "Peptide") #|> 
 write.csv_rawr(counts_pep_selected_wide, folder = FolderResults, prefix = params$Subset)
 
 ```
@@ -286,7 +286,7 @@ write.csv_rawr(counts_pep_selected_wide, folder = FolderResults, prefix = params
 ```{r counts-prot-wide}
 # counts_prot_all_wide <- count_samples_patients(pep_all, "Protein")
 counts_prot_all_wide <- 
-  count_samples_patients(pep_all, "Protein")# %>% 
+  count_samples_patients(pep_all, "Protein")# |> 
    ## Add easy tags #project-specific
       # mutate(in_Blank = n_Samples.Blank >0,
       #        in_QC = n_Patients.QC >0,
@@ -296,13 +296,13 @@ counts_prot_all_wide <-
       #        in_Plasma_in_CSF = n_Patients.Plasma >0 & n_Patients.CSF >0,
       #        in_Soluble_any =  n_Patients.Plasma >0 | n_Patients.CSF >0
              # in_all_patient_type = n_Patients.Tumour >0 &   n_Patients.Plasma >0 & n_Patients.CSF >0,
-      # ) %>% 
+      # ) |> 
       # relocate(starts_with("in_"), .after = "OrganismFirst") 
 
 write.csv_rawr(counts_prot_all_wide, folder = FolderResults, prefix = params$Subset)
 
 counts_prot_selected_wide <- 
-  count_samples_patients(pep_short, "Protein") #%>% 
+  count_samples_patients(pep_short, "Protein") #|> 
 write.csv_rawr(counts_prot_selected_wide, folder = FolderResults, prefix = params$Subset)
 
 ```
@@ -314,12 +314,12 @@ write.csv_rawr(counts_prot_selected_wide, folder = FolderResults, prefix = param
 for(j in 1:length(sampletypes)){
   cat("\n## ", sampletypes[j],"{.tabset} \n")
   up_list_j <-
-     seq_all_condition %>% 
-    filter_unique(Sample_type ==  sampletypes[j]) %>% 
+     seq_all_condition |> 
+    filter_unique(Sample_type ==  sampletypes[j]) |> 
     plot_upset_batch(vars = var_levels, Compare = "Condition")
   for (i in 1:length(var_levels)) {
     cat("\n### ", var_levels[i],"\n")
-    up_list_j[i]  %>%  print()
+    up_list_j[i]  |>  print()
     cat('\n\n')
   }
   cat('\n')
@@ -334,12 +334,12 @@ for(j in 1:length(sampletypes)){
 for(j in 1:length(conditions)){
   cat("\n## ", conditions[j],"{.tabset} \n")
   up_list_j <-
-     seq_all_sample %>% 
-    filter_unique(Condition ==  conditions[j]) %>% 
+     seq_all_sample |> 
+    filter_unique(Condition ==  conditions[j]) |> 
     plot_upset_batch(vars = var_levels, Compare = "Sample")
   for (i in 1:length(var_levels)) {
     cat("\n### ", var_levels[i],"\n")
-    up_list_j[i]  %>%  print()
+    up_list_j[i]  |>  print()
     cat('\n\n')
   }
   cat('\n')
@@ -355,12 +355,12 @@ for(j in 1:length(conditions)){
 for(j in 1:length(sampletypes)){
   cat("\n## ", sampletypes[j],"{.tabset} \n")
   up_list_j <-
-     seq_short_condition %>% 
-    filter_unique(Sample_type ==  sampletypes[j]) %>% 
+     seq_short_condition |> 
+    filter_unique(Sample_type ==  sampletypes[j]) |> 
     plot_upset_batch(vars = var_levels, Compare = "Condition")
   for (i in 1:length(var_levels)) {
     cat("\n### ", var_levels[i],"\n")
-    up_list_j[i]  %>%  print()
+    up_list_j[i]  |>  print()
     cat('\n\n')
   }
   cat('\n')
@@ -374,12 +374,12 @@ for(j in 1:length(sampletypes)){
 for(j in 1:length(conditions)){
   cat("\n## ", conditions[j],"{.tabset} \n")
   up_list_j <-
-     seq_short_sample %>% 
-    filter_unique(Condition ==  conditions[j]) %>% 
+     seq_short_sample |> 
+    filter_unique(Condition ==  conditions[j]) |> 
     plot_upset_batch(vars = var_levels, Compare = "Sample")
   for (i in 1:length(var_levels)) {
     cat("\n### ", var_levels[i],"\n")
-    up_list_j[i]  %>%  print()
+    up_list_j[i]  |>  print()
     cat('\n\n')
   }
   cat('\n')

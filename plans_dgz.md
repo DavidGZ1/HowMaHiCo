@@ -8,8 +8,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
-* unify the two report templates (`inst/rmarkdown/templates/*/skeleton/skeleton.Rmd`) on the native `|>` pipe — the R/ package source was converted in v0.3.0, the Rmd templates (still `%>%`-heavy) were deferred
-
 
 ## In standby
 
@@ -80,4 +78,5 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * 2do by me,Identification counts, average +/-sd, split into individual plots for each length
 * add to the readme as optional subpoint in complete the annotation csv: complete the annotation table with the Sample_ID from the Hystar sample list using get_annot_sampleid
 * de-vendor get_dirs_index_peaks: removed the vendored/deltaProtR provenance, renamed R/vendored-deltaprotr.R to R/loaders-peaks-dirs.R, converted its pipes to |> (v0.3.0)
+* unify the two report templates (01_mhc_report, 02_mhc_upsets skeleton.Rmd) on the native |> pipe (181 %>% converted; verified via knitr::purl + parse) (v0.3.0)
 
