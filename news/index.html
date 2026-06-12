@@ -38,7 +38,7 @@
 <h3 id="packaging--best-practices-cleanup-0-3-0">Packaging &amp; best-practices cleanup<a class="anchor" aria-label="anchor" href="#packaging--best-practices-cleanup-0-3-0"></a></h3>
 <ul><li>Declared the previously-undeclared base-package dependencies (<code>grDevices</code>, <code>graphics</code>, <code>stats</code>, <code>utils</code>) in <code>DESCRIPTION</code> <code>Imports</code>.</li>
 <li>The full exported function set is now part of the public reference: removed <code>@keywords internal</code> from every exported function (the package-overview page and the non-exported helpers stay internal), and listed every export in <code>_pkgdown.yml</code>.</li>
-<li>Internal code now uses the native R pipe (<code>|&gt;</code>) throughout instead of magrittr <code>%&gt;%</code>. <strong>This raises the minimum R version to 4.1.0</strong> (<code>Depends: R (&gt;= 4.1.0)</code>).</li>
+<li>All package R code — both the <code>R/</code> source and the two report templates (<code>inst/rmarkdown/templates/*/skeleton/skeleton.Rmd</code>) — now uses the native R pipe (<code>|&gt;</code>) throughout instead of magrittr <code>%&gt;%</code>. <strong>This raises the minimum R version to 4.1.0</strong> (<code>Depends: R (&gt;= 4.1.0)</code>).</li>
 <li>De-vendored <code><a href="../reference/get_dirs_index_peaks.html">get_dirs_index_peaks()</a></code>: the helper (originally adapted from <code>deltaProtR</code>) is now native HowMaHiCo code in <code>R/loaders-peaks-dirs.R</code> (was <code>R/vendored-deltaprotr.R</code>).</li>
 <li>Added this <code>NEWS.md</code> changelog.</li>
 </ul></div>

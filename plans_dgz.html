@@ -41,8 +41,7 @@
 </div>
 <div class="section level2">
 <h2 id="to-do">To do<a class="anchor" aria-label="anchor" href="#to-do"></a></h2>
-<ul><li>unify the two report templates (<code>inst/rmarkdown/templates/*/skeleton/skeleton.Rmd</code>) on the native <code>|&gt;</code> pipe — the R/ package source was converted in v0.3.0, the Rmd templates (still <code>%&gt;%</code>-heavy) were deferred</li>
-</ul></div>
+</div>
 <div class="section level2">
 <h2 id="in-standby">In standby<a class="anchor" aria-label="anchor" href="#in-standby"></a></h2>
 <ul><li>2do by me change purple color of length plots to a dimmer one</li>
@@ -101,6 +100,7 @@
 <li><p>2do by me,Identification counts, average +/-sd, split into individual plots for each length</p></li>
 <li><p>add to the readme as optional subpoint in complete the annotation csv: complete the annotation table with the Sample_ID from the Hystar sample list using get_annot_sampleid</p></li>
 <li><p>de-vendor get_dirs_index_peaks: removed the vendored/deltaProtR provenance, renamed R/vendored-deltaprotr.R to R/loaders-peaks-dirs.R, converted its pipes to |&gt; (v0.3.0)</p></li>
+<li><p>unify the two report templates (01_mhc_report, 02_mhc_upsets skeleton.Rmd) on the native |&gt; pipe (181 %&gt;% converted; verified via knitr::purl + parse) (v0.3.0)</p></li>
 </ul></div>
 </div>
 

@@ -11,11 +11,6 @@ they are moved to “to do”
 
 ## To do
 
-- unify the two report templates
-  (`inst/rmarkdown/templates/*/skeleton/skeleton.Rmd`) on the native
-  `|>` pipe — the R/ package source was converted in v0.3.0, the Rmd
-  templates (still `%>%`-heavy) were deferred
-
 ## In standby
 
 - 2do by me change purple color of length plots to a dimmer one
@@ -149,3 +144,7 @@ create_dir = create_dir)
 - de-vendor get_dirs_index_peaks: removed the vendored/deltaProtR
   provenance, renamed R/vendored-deltaprotr.R to R/loaders-peaks-dirs.R,
   converted its pipes to \|\> (v0.3.0)
+
+- unify the two report templates (01_mhc_report, 02_mhc_upsets
+  skeleton.Rmd) on the native \|\> pipe (181 %\>% converted; verified
+  via knitr::purl + parse) (v0.3.0)
