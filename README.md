@@ -59,9 +59,7 @@ conditions and replicates.
 - Install the package (e.g. `devtools::install_github("DavidGZ1/HowMaHiCo")` or
   `devtools::load_all()` from a clone) — all dependencies are declared in
   `DESCRIPTION` (`Imports`/`Suggests`) and resolved automatically; no manual
-  library list or companion-package install required (the one `deltaProtR` function
-  HowMaHiCo needs, `get_dirs_index_peaks()`, is vendored into
-  `R/vendored-deltaprotr.R`)
+  library list or companion-package install required
 
 ## How to run
 

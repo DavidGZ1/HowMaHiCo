@@ -31,7 +31,7 @@ The raw long-format PEAKS data frame across every matched subfolder,
 with \code{Sample_peaks} identifying the source subfolder of each row.
 }
 \description{
-Indexes the PEAKS export subfolders (via the vendored
+Indexes the PEAKS export subfolders (via
 \code{\link[=get_dirs_index_peaks]{get_dirs_index_peaks()}}), selects which to read, then reads and row-binds
 each one with \code{\link[=read_peaks]{read_peaks()}}. Three input modes are supported (checked in
 priority order):

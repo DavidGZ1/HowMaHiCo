@@ -1,17 +1,3 @@
-# Vendored from deltaProtR (https://github.com/DavidGZ1/deltaProtR,
-# version 0.0.0.9000, packaged 2024-06-21) — copied rather than imported so
-# HowMaHiCo does not depend on a GitHub-only package (no `Remotes:` entry, no
-# install-time dependency on deltaProtR's availability/version). deltaProtR is
-# the same author's (David Gomez-Zepeda's) MIT-licensed package, so vendoring
-# carries no licensing obstacle — just keep this provenance note so the
-# vendored code stays distinguishable from HowMaHiCo-native code, and re-sync
-# manually if the upstream function changes in a way that matters here.
-#
-# Only `get_dirs_index_peaks()` is actually called by HowMaHiCo (from
-# `peaks_read_batch()`, to index PEAKS export subfolders) — confirmed via a
-# full grep audit of every `deltaProtR::`/bare-`library(deltaProtR)`-resolved
-# call across 00_functions.R and both Rmd templates.
-
 #' List and classify PEAKS export subfolders
 #'
 #' Lists the subdirectories under `directory`, classifies each by export type

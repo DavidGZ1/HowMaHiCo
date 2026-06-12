@@ -6,10 +6,13 @@
   `graphics`, `stats`, `utils`) in `DESCRIPTION` `Imports`.
 * The full exported function set is now part of the public reference: removed
   `@keywords internal` from every exported function (the package-overview page
-  and the non-exported vendored helper stay internal), and listed every export
+  and the non-exported helpers stay internal), and listed every export
   in `_pkgdown.yml`.
 * Internal code now uses the native R pipe (`|>`) throughout instead of magrittr
   `%>%`. **This raises the minimum R version to 4.1.0** (`Depends: R (>= 4.1.0)`).
+* De-vendored `get_dirs_index_peaks()`: the helper (originally adapted from
+  `deltaProtR`) is now native HowMaHiCo code in `R/loaders-peaks-dirs.R`
+  (was `R/vendored-deltaprotr.R`).
 * Added this `NEWS.md` changelog.
 
 ## Bug fixes

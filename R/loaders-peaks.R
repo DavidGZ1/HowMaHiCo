@@ -149,7 +149,7 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 
 #' Batch-read PEAKS export folders and merge them into raw long format
 #'
-#' Indexes the PEAKS export subfolders (via the vendored
+#' Indexes the PEAKS export subfolders (via
 #' [get_dirs_index_peaks()]), selects which to read, then reads and row-binds
 #' each one with [read_peaks()]. Three input modes are supported (checked in
 #' priority order):
