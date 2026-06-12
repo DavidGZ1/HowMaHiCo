@@ -29,4 +29,3 @@ has no sequences of the requested length (and so is dropped from the plot).
 ggseqlogo_bylength(pep_short, seq_length = 9, by = "Condition")
 }
 }
-\keyword{internal}

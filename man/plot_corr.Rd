@@ -24,4 +24,3 @@ gets a \verb{[0, 1]}-anchored scale with \code{mid = 0.7}.
 plot_corr(cor(pep_all_log2area_tr, method = "pearson", use = "pairwise.complete.obs"))
 }
 }
-\keyword{internal}

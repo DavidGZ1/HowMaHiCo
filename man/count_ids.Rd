@@ -22,4 +22,3 @@ Count distinct peptides, sequences, and proteins
 count_ids(pep_all)
 }
 }
-\keyword{internal}

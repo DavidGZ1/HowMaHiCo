@@ -26,4 +26,3 @@ the total each class represents.
 check_ids_global(pep_all)
 }
 }
-\keyword{internal}

@@ -23,4 +23,3 @@ Classify charge states into \code{+1}/\code{+2}/\verb{>= +3} groups
 get_charge_group(pep_all)
 }
 }
-\keyword{internal}

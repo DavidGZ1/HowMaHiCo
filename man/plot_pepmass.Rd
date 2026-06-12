@@ -28,4 +28,3 @@ it on the histogram panel.
 plot_pepmass(pep_all, title = "All peptides")
 }
 }
-\keyword{internal}

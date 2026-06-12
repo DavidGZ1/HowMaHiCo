@@ -22,15 +22,15 @@
 #' read_fragpipe("2_data/fragpipe_dda_combined/JY/psm.tsv", "JY", testmode = FALSE)
 #' }
 read_fragpipe <- function(folder, samplename, testmode = FALSE){
-  if(testmode == TRUE){
+  if(testmode){
     input <- readr::read_tsv(folder, show_col_types = FALSE, progress = FALSE, n_max = 100)
     warning("Test mode ON: only the first 50 lines were loaded")
 
   }else{
     input <- readr::read_tsv(folder, show_col_types = FALSE, progress = FALSE)
   }
-  input %>%
-    dplyr::mutate(Sample_fp = samplename) %>%
+  input |>
+    dplyr::mutate(Sample_fp = samplename) |>
     dplyr::relocate(Sample_fp)
 }
 
@@ -139,9 +139,9 @@ parse_fragpipe <- function(input, shortpep_range = c(8, 13)){
     warning("All Intensity (Area) values were 0. Log2Area will be inputed to 1 to avoid -Inf values")
   }
 
-  input %>%
-    dplyr::rename_with(~ gsub(patt = " ", rep = "_", .x), dplyr::everything()) %>%
-    dplyr::rename_with(~ gsub(patt = "/", rep = ".", .x, fixed = TRUE), dplyr::everything()) %>%
+  input |>
+    dplyr::rename_with(~ gsub(patt = " ", rep = "_", .x), dplyr::everything()) |>
+    dplyr::rename_with(~ gsub(patt = "/", rep = ".", .x, fixed = TRUE), dplyr::everything()) |>
     dplyr::mutate(
       Retention = Retention / 60, # in seconds in Fragpipe but in min in PEAKS
       Modified_Peptide = ifelse(is.na(Modified_Peptide), Peptide, Modified_Peptide), # Modified_Peptide is na if not modified
@@ -159,7 +159,7 @@ parse_fragpipe <- function(input, shortpep_range = c(8, 13)){
       Found_By = "FragPipe",
       Source_file = sub("[.].*", "", Spectrum),
       Source_file = sub("_diatracer", "", Source_file) # faciliate merging when dda+dia worklfow was used
-    ) %>%
+    ) |>
     dplyr::select(Sample_fp,
                   Accession = Protein,
                   Peptide = Modified_Peptide,
@@ -236,19 +236,19 @@ annotate_fragpipe <- function(input, annotation, mode = "individual_files"){
   ## throw a warning if some samples will be dropped
   ### need to use both Sample_fp and Source_file in case of multiple results per sample
   input_samples <-
-    input %>%
-    dplyr::select(Sample_fp, Source_file) %>%
-    unique() %>%
-    dplyr::arrange(Sample_fp, Source_file) %>%
-    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) %>%
+    input |>
+    dplyr::select(Sample_fp, Source_file) |>
+    unique() |>
+    dplyr::arrange(Sample_fp, Source_file) |>
+    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) |>
     dplyr::pull(Sample)
 
   annotation_samples <-
-    annotation %>%
-    dplyr::select(Sample_fp, Source_file) %>%
-    unique() %>%
-    dplyr::arrange(Sample_fp, Source_file) %>%
-    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) %>%
+    annotation |>
+    dplyr::select(Sample_fp, Source_file) |>
+    unique() |>
+    dplyr::arrange(Sample_fp, Source_file) |>
+    tidyr::unite(col = "Sample", Sample_fp, Source_file, sep = ",", remove = TRUE) |>
     dplyr::pull(Sample)
   if(all(input_samples %in% annotation_samples) & all(annotation_samples %in% input_samples)){
     message("All samples were correctly matched between the input results and the annotation table")
@@ -269,7 +269,7 @@ annotate_fragpipe <- function(input, annotation, mode = "individual_files"){
   ## merge
   if(mode == "individual_files") {
     output <-
-      dplyr::inner_join(annotation, input, by = c("Sample_fp")) %>%
+      dplyr::inner_join(annotation, input, by = c("Sample_fp")) |>
       dplyr::relocate(Sample_ID, .after = "Is_Unique")
   }
   if(mode == "combined_file"){
@@ -277,9 +277,9 @@ annotate_fragpipe <- function(input, annotation, mode = "individual_files"){
     if(!all(c("Source_file") %in% names(annotation))){
       stop("combined_file mode was activated, but the Source_file column is missing from the annotation table, please add it")
     }
-    output <- input %>%
-      dplyr::inner_join(annotation, ., by = c("Source_file", "Sample_fp")) %>%
-      dplyr::relocate(Sample_ID, .after = "Is_Unique") %>%
+    output <- input |>
+      (\(x) dplyr::inner_join(annotation, x, by = c("Source_file", "Sample_fp")))() |>
+      dplyr::relocate(Sample_ID, .after = "Is_Unique") |>
       droplevels() # necessary to avoid dragging empty factors that create errors
   }
   return(output)

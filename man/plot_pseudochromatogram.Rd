@@ -24,4 +24,3 @@ Peptide ID pseudochromatogram: count vs RT, faceted by Condition
 plot_pseudochromatogram(pep_all, "All peptides identified", ncol = 3)
 }
 }
-\keyword{internal}

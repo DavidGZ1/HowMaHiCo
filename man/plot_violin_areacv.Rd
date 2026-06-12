@@ -27,4 +27,3 @@ annotating each group's peptide count.
 plot_violin_areacv(summarise_area(pep_all, Condition), Condition)
 }
 }
-\keyword{internal}

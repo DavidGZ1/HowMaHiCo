@@ -25,20 +25,20 @@
 #' }
 read_peaks <- function(filedir, folder_peaks_db, instrument = "tims_tof"){
   pep_renamed <-
-    read.csv(file.path(filedir, folder_peaks_db, "peptide.csv")) %>%
-    dplyr::rename_with(~ gsub(patt = "[.]", rep = "_", .x), dplyr::everything()) %>%
-    dplyr::rename(Score = X_10lgP) %>%
-    dplyr::rename_with(~ gsub(patt = "X_", rep = "n_", .x), dplyr::everything()) %>%
+    read.csv(file.path(filedir, folder_peaks_db, "peptide.csv")) |>
+    dplyr::rename_with(~ gsub(patt = "[.]", rep = "_", .x), dplyr::everything()) |>
+    dplyr::rename(Score = X_10lgP) |>
+    dplyr::rename_with(~ gsub(patt = "X_", rep = "n_", .x), dplyr::everything()) |>
     dplyr::mutate(Sequence = gsub("\\s*\\([^\\)]+\\)", "", as.character(Peptide)), # Get striped sequences
                   Charge = as.factor(paste0("+ ", round(Mass / m_z, 0))),
                   Peptide_charge = paste(Peptide, as.numeric(Charge), sep = "_"),
                   Nter = as.factor(stringr::str_sub(Peptide, 1, 1)),
-                  Cter = as.factor(stringr::str_sub(Peptide, -1, -1))) %>%
+                  Cter = as.factor(stringr::str_sub(Peptide, -1, -1))) |>
     dplyr::select(-dplyr::starts_with("n_Feature_"))
   pep_long <-
-    pep_renamed %>%
+    pep_renamed |>
     dplyr::rename_with(~ mgsub::mgsub(.x, c("Area_", "ms2r_score_", "ms2r_q_value_pep_"),
-                                      c("Area#", "ms2r_score_sample#", "ms2r_q_value_pep_sample#"))) %>%
+                                      c("Area#", "ms2r_score_sample#", "ms2r_q_value_pep_sample#"))) |>
     tidyr::pivot_longer(cols = tidyr::contains("#"),
                         names_sep = "#",
                         names_to = c(".value", "Sample_peaks"),
@@ -48,29 +48,29 @@ read_peaks <- function(filedir, folder_peaks_db, instrument = "tims_tof"){
   # format IMS
   if(instrument == "tims_tof"){
     output <-
-      pep_long %>%
+      pep_long |>
       tidyr::separate(col = X1_k0_Range, into = c("invk0_start", "invk0_end"),
-                      sep = "-", convert = TRUE, remove = TRUE) %>%
+                      sep = "-", convert = TRUE, remove = TRUE) |>
       dplyr::mutate(invk0 = ((invk0_end + invk0_start) / 2))
   }else{
     if(instrument == "faims_orbi"){
       # quick fix to allow faims_orbi compatibility
       output <-
-        pep_long %>%
-        dplyr::mutate(X1_k0_Range = paste0(CV, "to", CV)) %>%
+        pep_long |>
+        dplyr::mutate(X1_k0_Range = paste0(CV, "to", CV)) |>
         tidyr::separate(col = X1_k0_Range, into = c("invk0_start", "invk0_end"),
-                        sep = "to", convert = TRUE, remove = TRUE) %>%
+                        sep = "to", convert = TRUE, remove = TRUE) |>
         dplyr::mutate(invk0 = ((invk0_end + invk0_start) / 2))
       # message("faims_orbi is not fully suported yet. For now, the Compensation Voltage (CV) is renamed as invko (1/k0) in the tables and used as mobility dimension in the plots")
     }else{
       if(instrument == "orbi"){
         # quick fix to allow orbi compatibility
         output <-
-          pep_long %>%
-          dplyr::mutate(CV = NA) %>%
-          dplyr::mutate(X1_k0_Range = paste0(CV, "to", CV)) %>%
+          pep_long |>
+          dplyr::mutate(CV = NA) |>
+          dplyr::mutate(X1_k0_Range = paste0(CV, "to", CV)) |>
           tidyr::separate(col = X1_k0_Range, into = c("invk0_start", "invk0_end"),
-                          sep = "to", convert = TRUE, remove = TRUE) %>%
+                          sep = "to", convert = TRUE, remove = TRUE) |>
           dplyr::mutate(invk0 = ((invk0_end + invk0_start) / 2))
         # message("orbi is not fully suported yet. For now, the Compensation Voltage (CV) is renamed as invko (1/k0) in the tables and used as mobility dimension in the plots")
       }
@@ -87,12 +87,12 @@ read_peaks <- function(filedir, folder_peaks_db, instrument = "tims_tof"){
 #'
 #' @return A one-row data frame of QC statistics, with `Sample` prepended.
 #'
-#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
 #' read_qc_peaks("JY_QC_PEAKS_01", sample = "JY_01")
 #' }
+#' @keywords internal
 read_qc_peaks <- function(folder_peaks_qc, sample){
   output <- read.csv(file.path(folder_peaks_qc, "StatisticsTable.csv"))
   output[, 3] <- as.numeric(sub("%", "", output[, 3]))
@@ -119,27 +119,27 @@ read_qc_peaks <- function(folder_peaks_qc, sample){
 #' @return A data frame of per-fraction QC statistics joined to the matching
 #'   annotation rows.
 #'
-#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
 #' read_qc_peaks_single("JY_QC_PEAKS_01", annotation)
 #' }
+#' @keywords internal
 read_qc_peaks_single <- function(folder_peaks_qc, annotation){
   annotation <-
-    annotation %>%
-    dplyr::select(Condition, BioReplicate, TechReplicate, Sample, Sample_peaks, File_peaks_nb, Fraction_peaks) %>%
+    annotation |>
+    dplyr::select(Condition, BioReplicate, TechReplicate, Sample, Sample_peaks, File_peaks_nb, Fraction_peaks) |>
     dplyr::mutate(Fraction_peaks = paste0("F", Fraction_peaks))
   output <-
-    read.csv(file.path(folder_peaks_qc, "StatisticsTable.csv")) %>%
-    dplyr::rename_with(~ sub("Control..", "", .x)) %>%
-    dplyr::select(-c(X, Total, Average)) %>%
-    dplyr::mutate(dplyr::across(-X.1, ~ as.numeric(sub("%", "", .x)))) %>%
-    tibble::column_to_rownames("X.1") %>%
-    t %>% as.data.frame() %>%
-    janitor::clean_names %>%
-    tibble::rownames_to_column("Fraction_peaks") %>%
-    dplyr::inner_join(annotation, by = "Fraction_peaks") %>%
+    read.csv(file.path(folder_peaks_qc, "StatisticsTable.csv")) |>
+    dplyr::rename_with(~ sub("Control..", "", .x)) |>
+    dplyr::select(-c(X, Total, Average)) |>
+    dplyr::mutate(dplyr::across(-X.1, ~ as.numeric(sub("%", "", .x)))) |>
+    tibble::column_to_rownames("X.1") |>
+    t() |> as.data.frame() |>
+    janitor::clean_names() |>
+    tibble::rownames_to_column("Fraction_peaks") |>
+    dplyr::inner_join(annotation, by = "Fraction_peaks") |>
     dplyr::relocate(Fraction_peaks, .after = Sample_peaks)
 
 
@@ -149,7 +149,7 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 
 #' Batch-read PEAKS export folders and merge them into raw long format
 #'
-#' Indexes the PEAKS export subfolders (via the vendored
+#' Indexes the PEAKS export subfolders (via
 #' [get_dirs_index_peaks()]), selects which to read, then reads and row-binds
 #' each one with [read_peaks()]. Three input modes are supported (checked in
 #' priority order):
@@ -208,8 +208,8 @@ read_peaks_batch <- function(folder = NULL, annotation = NULL, files = NULL,
     out <- read_peaks(filedir = getwd(), folder_peaks_db = x, instrument = instrument)
     message("loaded ", x)
     out
-  }) %>%
-    do.call(args = ., what = dplyr::bind_rows)
+  }) |>
+    (\(x) do.call(dplyr::bind_rows, x))()
 }
 
 
@@ -234,15 +234,15 @@ read_peaks_batch <- function(folder = NULL, annotation = NULL, files = NULL,
 #' parse_peaks(read_peaks_batch(folder, annotation), shortpep_range = c(8, 13))
 #' }
 parse_peaks <- function(input, shortpep_range = c(8, 13)){
-  input %>%
-    dplyr::rename(dplyr::any_of(c(Source_File_ID = "Source_File"))) %>%
+  input |>
+    dplyr::rename(dplyr::any_of(c(Source_File_ID = "Source_File"))) |>
     dplyr::mutate(
       AccessionFirst = gsub("|", "_", sub("\\:.*", "", Accession), fixed = TRUE)
-    ) %>%
+    ) |>
     tidyr::separate(AccessionFirst, sep = "_",
                     into = c("ProteinFirst", "GeneFirst", "OrganismFirst"),
-                    fill = "right", extra = "drop") %>%
-    dplyr::arrange(ProteinFirst, m_z) %>%
+                    fill = "right", extra = "drop") |>
+    dplyr::arrange(ProteinFirst, m_z) |>
     dplyr::mutate(
       PeptideID = paste0(ProteinFirst, "_", round(m_z, 1), "_", as.numeric(Charge)),
       Log2Area = ifelse(Area == 0, NA, log(Area, 2)),
@@ -252,7 +252,7 @@ parse_peaks <- function(input, shortpep_range = c(8, 13)){
         Length < shortpep_range[1] | Length > shortpep_range[2] ~ "others"),
       Length_range = factor(Length_range),
       Found_By = "PEAKS"
-    ) %>%
+    ) |>
     dplyr::select(dplyr::any_of(
       c("Accession", "Peptide", "Sequence", "Length",
         "Score",
@@ -298,20 +298,20 @@ annotate_peaks <- function(input, annotation){
   }
 
   if (any(grepl("#DECOY#", output$Accession))) {
-    output <- output %>% dplyr::filter(!grepl("#DECOY#", Accession))
+    output <- output |> dplyr::filter(!grepl("#DECOY#", Accession))
     message("Decoys were included in the raw results. They have been filtered out")
   }
 
   if (any(is.na(output$Condition))) {
     warning("The following samples were not matched with the annotation file and thus will be dropped")
-    output %>%
-      dplyr::filter(is.na(Condition)) %>%
-      dplyr::select(dplyr::any_of(c("Condition", "Sample", "Source_File_ID", "Sample_peaks", "File_peaks_nb"))) %>%
-      unique() %>%
-      kableExtra::kable() %>%
-      kableExtra::kable_paper("hover", full_width = FALSE) %>%
+    output |>
+      dplyr::filter(is.na(Condition)) |>
+      dplyr::select(dplyr::any_of(c("Condition", "Sample", "Source_File_ID", "Sample_peaks", "File_peaks_nb"))) |>
+      unique() |>
+      kableExtra::kable() |>
+      kableExtra::kable_paper("hover", full_width = FALSE) |>
       print()
-    output <- output %>% dplyr::filter(!is.na(Condition))
+    output <- output |> dplyr::filter(!is.na(Condition))
   }
 
   return(output)

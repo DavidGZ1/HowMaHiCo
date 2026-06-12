@@ -107,8 +107,8 @@ run_howmahico_report <- function(template = c("01_mhc_report", "02_mhc_upsets"),
 derive_filtered_annotation <- function(annotation_file, folder, pattern, suffix = tolower(pattern)){
   stem <- sub("_all\\.csv$", "", annotation_file)
   output_file <- file.path(folder, paste0(stem, "_", suffix, ".csv"))
-  utils::read.csv(file.path(folder, annotation_file)) %>%
-    dplyr::filter(grepl(pattern, Condition)) %>%
+  utils::read.csv(file.path(folder, annotation_file)) |>
+    dplyr::filter(grepl(pattern, Condition)) |>
     utils::write.csv(output_file, row.names = FALSE)
   invisible(output_file)
 }

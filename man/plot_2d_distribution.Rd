@@ -41,4 +41,3 @@ plot_2d_distribution(pep_all, "m_z", "invk0", c(10, 0.025), "All peptides",
                      x_lab = "m/z", y_lab = "1/k0", ncol = 3)
 }
 }
-\keyword{internal}

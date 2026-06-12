@@ -41,4 +41,3 @@ and pass whatever values their report context needs.
 ggsave_rawr(p_peplength_all, "peplength_all", folder = FolderFigures)
 }
 }
-\keyword{internal}

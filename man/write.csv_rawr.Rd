@@ -38,4 +38,3 @@ write.csv_rawr(counts_pep_all_condition, folder = FolderResults)
 write.csv_rawr(counts_pep_all_wide, folder = FolderResults, prefix = params$Subset)
 }
 }
-\keyword{internal}

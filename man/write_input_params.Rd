@@ -39,4 +39,3 @@ independent of \code{CsvSave}/xlsx exports — \code{input_params.csv} is part o
 write_input_params(params, folder = FolderResults)
 }
 }
-\keyword{internal}

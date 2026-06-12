@@ -57,4 +57,3 @@ passes \code{counts_size_total} as \code{df} — these were always the same obje
 plot_bp_count_length(counts_size_total, "Peptides", lim_level = 50000, shortpep_range = c(8, 13))
 }
 }
-\keyword{internal}

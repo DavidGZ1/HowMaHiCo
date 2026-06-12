@@ -9,14 +9,14 @@
 #' @return A `ggpubr`-arranged figure (boxplot above a count histogram) with
 #'   the title annotated above.
 #'
-#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
 #' plot_peplength(pep_all, title = "All peptides")
 #' }
+#' @keywords internal
 plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
-  max_count <- input %>% dplyr::group_by(Length) %>% dplyr::count() %>% max()
+  max_count <- input |> dplyr::group_by(Length) |> dplyr::count() |> max()
   max_x <- max(input$Length)
   if(is.null(ylimits)){
     ylimits <- c(0, ceiling(max_count / 1000) * 1000)
@@ -30,7 +30,7 @@ plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
   }
 
   p_length_bp <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = Length)) +
     ggplot2::geom_boxplot(color = "#39568CFF", outlier.size = 0.5) +
     ggplot2::stat_boxplot(geom = 'errorbar', width = 0.5) +
@@ -39,7 +39,7 @@ plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
     ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text = ggplot2::element_text(face = "bold", size = 2)) +
     ggplot2::scale_x_continuous(limits = xlimits, breaks = seq(0, xlimits[2], by = 1))
   p_length_hist <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = Length)) +
     ggplot2::geom_histogram(fill = "#39568CFF", binwidth = 1) +
     ggplot2::scale_y_continuous(limits = ylimits, breaks = seq(0, ylimits[2], by = 1000)) +
@@ -47,7 +47,7 @@ plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
     ggplot2::ylab("Peptide count") +
     ggplot2::xlab("Peptide length") +
     theme_howmahico()
-  ggpubr::ggarrange(p_length_bp, p_length_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") %>%
+  ggpubr::ggarrange(p_length_bp, p_length_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") |>
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 8))
 }
 
@@ -66,7 +66,6 @@ plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
 #' @return A `ggpubr`-arranged figure (boxplot above a density histogram) with
 #'   the title annotated above.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -74,7 +73,7 @@ plot_peplength <- function(input, title, ylimits = NULL, xlimits = NULL){
 #' plot_peplength_dens(pep_all, title = "All peptides")
 #' }
 plot_peplength_dens <- function(input, title, ylimits = NULL, xlimits = NULL){
-  max_count <- input %>% dplyr::group_by(Length) %>% dplyr::count() %>% max()
+  max_count <- input |> dplyr::group_by(Length) |> dplyr::count() |> max()
   max_x <- max(input$Length)
   if(is.null(ylimits)){
     ylimits <- c(0, ceiling(max_count / 1000) * 1000)
@@ -88,7 +87,7 @@ plot_peplength_dens <- function(input, title, ylimits = NULL, xlimits = NULL){
   }
 
   p_length_bp <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = Length)) +
     ggplot2::geom_boxplot(color = "#39568CFF", outlier.size = 0.5) +
     ggplot2::stat_boxplot(geom = 'errorbar', width = 0.5) +
@@ -97,13 +96,13 @@ plot_peplength_dens <- function(input, title, ylimits = NULL, xlimits = NULL){
     ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text = ggplot2::element_text(face = "bold", size = 2)) +
     ggplot2::scale_x_continuous(limits = xlimits, breaks = seq(0, xlimits[2], by = 1))
   p_length_hist <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = Length, y = ..density..)) +
     ggplot2::geom_histogram(fill = "#39568CFF", binwidth = 1) +
     ggplot2::scale_x_continuous(limits = xlimits, breaks = seq(0, xlimits[2], by = 3)) +
     ggplot2::xlab("Peptide length") +
     theme_howmahico()
-  ggpubr::ggarrange(p_length_bp, p_length_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") %>%
+  ggpubr::ggarrange(p_length_bp, p_length_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") |>
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 8))
 }
 
@@ -143,17 +142,17 @@ plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
   range_label <- paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs")
   # Pre-compute counts and normalise by condition total so density reflects the
   # full distribution (not each fill group independently).
-  df <- input %>%
+  df <- input |>
     dplyr::mutate(
       in_range = factor(
         ifelse(Length >= shortpep_range[1] & Length <= shortpep_range[2],
                range_label, "others"),
         levels = c(range_label, "others")
       )
-    ) %>%
-    dplyr::count(Condition, Length, in_range) %>%
-    dplyr::group_by(Condition) %>%
-    dplyr::mutate(density = n / sum(n)) %>%
+    ) |>
+    dplyr::count(Condition, Length, in_range) |>
+    dplyr::group_by(Condition) |>
+    dplyr::mutate(density = n / sum(n)) |>
     dplyr::ungroup()
   y_var <- if (type == "density") "density" else "n"
   y_lab <- if (type == "density") "Density" else "Count"
@@ -189,7 +188,6 @@ plot_peplength_hist <- function(input, shortpep_range = c(8, 13),
 #' @return A `ggpubr`-arranged figure (boxplot above a density histogram with
 #'   an "Apex = ..." annotation) with the title annotated above.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -202,7 +200,7 @@ plot_pepmass <- function(input, title, xlimits = NULL){
   max_dens_y <- density(input$Mass)$y[which.max(density(input$Mass)$y)] # Find distribution apex
 
   p_mass_bp <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = Mass)) +
     ggplot2::geom_boxplot(color = "#39568CFF", outlier.size = 0.5) +
     ggplot2::stat_boxplot(geom = 'errorbar', width = 0.5) +
@@ -211,7 +209,7 @@ plot_pepmass <- function(input, title, xlimits = NULL){
     ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text = ggplot2::element_text(face = "bold"))
 
   p_mass_hist <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = Mass)) +
     ggplot2::geom_histogram(ggplot2::aes(y = ..density..), fill = "#39568CFF", color = "white",
                             binwidth = 50, size = 0.1) +
@@ -228,7 +226,7 @@ plot_pepmass <- function(input, title, xlimits = NULL){
   }
 
 
-  ggpubr::ggarrange(p_mass_bp, p_mass_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") %>%
+  ggpubr::ggarrange(p_mass_bp, p_mass_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") |>
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 10))
 }
 
@@ -245,7 +243,6 @@ plot_pepmass <- function(input, title, xlimits = NULL){
 #' @return A `ggpubr`-arranged figure (boxplot above a density histogram with
 #'   an "Apex = ..." annotation) with the title annotated above.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -259,7 +256,7 @@ plot_pepmz <- function(input, title, xlimits = NULL){
 
 
   p_mass_bp <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = m_z)) +
     ggplot2::geom_boxplot(color = "#39568CFF", outlier.size = 0.5) +
     ggplot2::stat_boxplot(geom = 'errorbar', width = 0.5) +
@@ -267,7 +264,7 @@ plot_pepmz <- function(input, title, xlimits = NULL){
     ggpubr::clean_theme() +
     ggplot2::theme(strip.background = ggplot2::element_blank(), strip.text = ggplot2::element_text(face = "bold"))
   p_mass_hist <-
-    input %>%
+    input |>
     ggplot2::ggplot(ggplot2::aes(x = m_z)) +
     ggplot2::geom_histogram(ggplot2::aes(y = ..density..), fill = "#39568CFF", color = "white",
                             binwidth = 50, size = 0.1) +
@@ -284,7 +281,7 @@ plot_pepmz <- function(input, title, xlimits = NULL){
     p_mass_hist <- p_mass_hist + ggplot2::scale_x_continuous(limits = xlimits)
   }
 
-  ggpubr::ggarrange(p_mass_bp, p_mass_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") %>%
+  ggpubr::ggarrange(p_mass_bp, p_mass_hist, nrow = 2, heights = c(0.15, 0.85), align = "v") |>
     ggpubr::annotate_figure(top = ggpubr::text_grob(title, face = "bold", size = 10))
 }
 
@@ -320,7 +317,6 @@ plot_pepmz <- function(input, title, xlimits = NULL){
 #' @return A `ggpubr` bar chart (`ggbarplot`) with per-bar count labels, a
 #'   `"Total=..."` annotation, and a viridis or manual fill scale.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -330,14 +326,14 @@ plot_pepmz <- function(input, title, xlimits = NULL){
 plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13),
                                   x_var = "Condition", palette = NULL){
   nlevel <- paste0("n_", level)
-  p <- df %>%
-    dplyr::filter(Length_range != "All peptides") %>%
-    droplevels() %>%
+  p <- df |>
+    dplyr::filter(Length_range != "All peptides") |>
+    droplevels() |>
     ggpubr::ggbarplot(x = x_var, y = nlevel, fill = "Length_range", group = "Length_range",
                       label = TRUE, alpha = 0.7,
                       lab.vjust = 1.5,
                       lab.nb.digits = 0, lab.size = 2.5) +
-    ggplot2::geom_text(data = df %>% dplyr::filter(Length_range == "All peptides"),
+    ggplot2::geom_text(data = df |> dplyr::filter(Length_range == "All peptides"),
                        ggplot2::aes(label = paste0("Total=\n", get(nlevel))),
                        nudge_y = 300 + lim_level / 10,
                        size = 2.5, alpha = 0.8,
@@ -374,16 +370,16 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
 #'
 #' @return A `ggvenn` ggplot object.
 #'
-#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
 #' plot_venn4(pep_all, "Sequence", "Condition")
 #' }
+#' @keywords internal
 plot_venn4 <- function(input, variable, group){
-  output <- input %>%
-    dplyr::arrange(variable) %>%
-    with(., split(get(variable), get(group))) %>%
+  output <- input |>
+    dplyr::arrange(variable) |>
+    (\(d) with(d, split(get(variable), get(group))))() |>
     ggvenn::ggvenn(text_size = 3,
                    set_name_size = 3,
                    fill_alpha = 0.5,
@@ -416,7 +412,6 @@ plot_venn4 <- function(input, variable, group){
 #' @return A ggplot2/`ggupset` object with an intersection-count bar chart and
 #'   a caption reporting the total unique count and intersections shown.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -428,14 +423,14 @@ plot_upset <-
              plot.margin = ggplot2::unit(c(0.2,0.2,0.2,0.2), "cm")){
   ## prepare data
   df[, "Compare"] <- df[, Compare]
-  df_distinct <- df %>%
+  df_distinct <- df |>
     dplyr::distinct(Compare, {{ vars }}, .keep_all = FALSE)
-  df_distinct_total <- df_distinct %>% dplyr::pull({{ vars }}) %>% dplyr::n_distinct()
+  df_distinct_total <- df_distinct |> dplyr::pull({{ vars }}) |> dplyr::n_distinct()
   ## plot
-  upset_table <- df_distinct %>%
-    dplyr::group_by({{ vars }}) %>%
+  upset_table <- df_distinct |>
+    dplyr::group_by({{ vars }}) |>
     dplyr::summarize(Compare = list(as.character(Compare)), .groups = "drop")
-  p_upset <- upset_table %>%
+  p_upset <- upset_table |>
     ggplot2::ggplot(ggplot2::aes(x = Compare)) +
     ggplot2::geom_bar(fill = "#39568CFF") +
     ggupset::scale_x_upset(n_intersections = n_intersections) +
@@ -479,7 +474,6 @@ plot_upset <-
 #' @return A named list of ggplot2/`ggupset` objects, one per entry of `vars`,
 #'   named `"<var>_by_<Compare>"`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -490,11 +484,11 @@ plot_upset_batch <-   function(df, vars, n_intersections = 20, Compare = "Condit
            plot.margin = ggplot2::unit(c(0.2,0.2,0.2,0.2), "cm")){
   output <-
     lapply(vars, function(x){
-      df %>%
-        dplyr::select(var = dplyr::all_of(x), dplyr::all_of(Compare)) %>%
-        unique() %>%
-        droplevels() %>%
-        plot_upset(., var, n_intersections = n_intersections, Compare = Compare,
+      df |>
+        dplyr::select(var = dplyr::all_of(x), dplyr::all_of(Compare)) |>
+        unique() |>
+        droplevels() |>
+        plot_upset(var, n_intersections = n_intersections, Compare = Compare,
                    labels = labels, lab.size = lab.size, plot.margin = plot.margin) +
         ggplot2::ggtitle(paste0(x, " overlap by ", Compare))
     })
@@ -516,7 +510,6 @@ plot_upset_batch <-   function(df, vars, n_intersections = 20, Compare = "Condit
 #'
 #' @return A `ggseqlogo` ggplot object, faceted by `by`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -525,13 +518,13 @@ plot_upset_batch <-   function(df, vars, n_intersections = 20, Compare = "Condit
 #' }
 ggseqlogo_bylength <- function(input, seq_length, by, ...){
   ## Get sequences and groups
-  input_filtered <- input %>%
-    dplyr::filter(Length == seq_length) %>%
-    dplyr::select(dplyr::all_of(by), Sequence) %>%
-    unique %>% droplevels
+  input_filtered <- input |>
+    dplyr::filter(Length == seq_length) |>
+    dplyr::select(dplyr::all_of(by), Sequence) |>
+    unique() |> droplevels()
   ## Check if some groups were droped due to not having sequences
-  by_input <- input %>% dplyr::pull(by) %>% unique
-  by_input_filtered <- input_filtered %>% dplyr::pull(by) %>% unique
+  by_input <- input |> dplyr::pull(by) |> unique()
+  by_input_filtered <- input_filtered |> dplyr::pull(by) |> unique()
   if(length(by_input) != length(by_input_filtered)){
     print(paste0("The following groups were droped because no Sequence with Length = ", seq_length, " was found: ", paste(by_input[!by_input %in% by_input_filtered]), "\n", collapse = ", "))
 
@@ -539,7 +532,7 @@ ggseqlogo_bylength <- function(input, seq_length, by, ...){
   ## Get in list format
   input_filtered_list <- lapply(split(input_filtered[-1], input_filtered[, by]), function(x) x[x != ""])
   ## plot
-  input_filtered_list %>%
+  input_filtered_list |>
     ggseqlogo::ggseqlogo(scales = "free", ...) +
     ggplot2::theme(plot.background = ggplot2::element_rect(fill = "white"))
 }
@@ -568,13 +561,13 @@ ggseqlogo_bylength <- function(input, seq_length, by, ...){
 #'
 #' @return Invisible `NULL`; called for its side effect of writing `file`.
 #'
-#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
 #' plot_heatmap(mat_log2area, annotation, level = "Sample", group = "Condition",
 #'              file = file.path("4_figures", "hm_pep_all_log2area_br_nonscaled.png"))
 #' }
+#' @keywords internal
 plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24, height = 24, units = "cm", res = 100, keysize = 0.9, file, ...){
   # Simple heatmap using heatmap.2
   # mat = matrix of numeric functions
@@ -596,11 +589,11 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
   gr.row <- cutree(cl.row, n_clust)
   ## Use Condition to color the columns
   gr.col <-
-    annotation %>%
-    dplyr::select(dplyr::all_of(c(level, group))) %>% dplyr::distinct() %>%
-    dplyr::mutate(Condition = as.integer(as.factor(get(group)))) %>%
-    tibble::column_to_rownames(level) %>%
-    t
+    annotation |>
+    dplyr::select(dplyr::all_of(c(level, group))) |> dplyr::distinct() |>
+    dplyr::mutate(Condition = as.integer(as.factor(get(group)))) |>
+    tibble::column_to_rownames(level) |>
+    t()
   # get colors
   col1 <- viridis::magma(n_clust)
   col2 <- viridis::viridis(max(t(gr.col)))
@@ -611,7 +604,7 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
                     col = palette_hm, trace = "none",
                     RowSideColors = col1[gr.row], ColSideColors = col2[gr.col], keysize = keysize, ...)
   grDevices::dev.off()
-  message(paste0("Heatmap saved in ", file.path("4_figures", "hm_pep_all_log2area_br_nonscaled.png")))
+  message("Heatmap saved in ", file)
 
 }
 
@@ -632,7 +625,6 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #'
 #' @return A ggplot2 stacked bar chart.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -643,10 +635,10 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #' }
 plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 1.6,
                                         palette = NULL, x_var = "Condition"){
-  p <- input %>%
+  p <- input |>
     dplyr::filter(Length_range != "All peptides",
-                  Level == level2plot) %>%
-    droplevels %>%
+                  Level == level2plot) |>
+    droplevels() |>
     ggplot2::ggplot(ggplot2::aes(x = .data[[x_var]], y = Proportion, group = Length_range)) +
     ggplot2::geom_bar(stat = "identity",
                       ggplot2::aes(fill = Length_range),
@@ -682,7 +674,6 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
 #'
 #' @return A ggplot2 stacked bar chart.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -690,14 +681,14 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
 #' plot_charge_proportions(get_proportion_charge(counts_charge_condition), Condition)
 #' }
 plot_charge_proportions <- function(input, variable, label_size = 1.6){
-  input %>%
+  input |>
     dplyr::filter(Charge_group != "Total",
-                  Level == "Peptides") %>%
-    droplevels %>%
-    dplyr::arrange(Charge_group) %>%
+                  Level == "Peptides") |>
+    droplevels() |>
+    dplyr::arrange(Charge_group) |>
     dplyr::mutate(PositionProp = dplyr::case_when(Charge_group == "+ 1" ~ CumProportion - 0.02,
                                                    Charge_group == "+ 2" ~ CumProportion * 0.9,
-                                                   TRUE ~ CumProportion * 0.9)) %>%
+                                                   TRUE ~ CumProportion * 0.9)) |>
     ggplot2::ggplot(ggplot2::aes(x = {{ variable }}, y = Proportion, fill = Charge_group, group = Charge_group)) +
     ggplot2::geom_bar(stat = "identity", alpha = 0.7) +
     ggplot2::geom_text(ggplot2::aes(label = Percentage, y = Proportion),
@@ -724,7 +715,6 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
 #'
 #' @return A ggplot2 violin/boxplot figure.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -735,7 +725,7 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
   ## get ylim
   cv_ylim <- ceiling(max(input$Area_CV, na.rm = TRUE) * 12) / 10
   ## plot
-  input %>%
+  input |>
     ggplot2::ggplot(ggplot2::aes(x = {{ by }}, y = Area_CV)) +
     ggplot2::geom_violin(ggplot2::aes(fill = {{ by }}), alpha = 0.5, color = NA,
                          width = 0.9, size = 0.2) +
@@ -759,7 +749,6 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
 #'
 #' @return A ggplot2 bar chart.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -767,10 +756,10 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
 #' plot_pseudochromatogram(pep_all, "All peptides identified", ncol = 3)
 #' }
 plot_pseudochromatogram <- function(input, title, ncol = 3) {
-  input %>%
-    dplyr::mutate(RT = round(RT, 0)) %>%
-    dplyr::group_by(Condition, RT) %>%
-    dplyr::summarise(Count = dplyr::n_distinct(Peptide), .groups = "drop") %>%
+  input |>
+    dplyr::mutate(RT = round(RT, 0)) |>
+    dplyr::group_by(Condition, RT) |>
+    dplyr::summarise(Count = dplyr::n_distinct(Peptide), .groups = "drop") |>
     ggplot2::ggplot(ggplot2::aes(x = RT, y = Count, fill = Condition)) +
     ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge2()) +
     ggplot2::ylab("Peptides") +
@@ -794,7 +783,6 @@ plot_pseudochromatogram <- function(input, title, ncol = 3) {
 #'
 #' @return A ggplot2 heatmap.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -827,7 +815,6 @@ plot_2d_distribution <- function(input, x_var, y_var, binwidth, title,
 #'
 #' @return A `ggcorrplot` ggplot object.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -844,7 +831,7 @@ plot_corr <- function(mat){
     corrarea_breaks <- seq(0, 1, 0.1)
   }
 
-  mat %>%
+  mat |>
     ggcorrplot::ggcorrplot(hc.order = FALSE) +
     ggplot2::scale_x_discrete(limits = rev) +
     ggplot2::scale_y_discrete(limits = rev) +
@@ -874,7 +861,6 @@ plot_corr <- function(mat){
 #'
 #' @return A `ggpubr` barplot with mean ± SD error bars and viridis fill.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -883,9 +869,9 @@ plot_corr <- function(mat){
 #' }
 plot_count_mean_sd <- function(df, level, lim_level) {
   nlevel <- paste0("n_", level)
-  df %>%
-    dplyr::filter(Length_range != "others") %>%
-    droplevels() %>%
+  df |>
+    dplyr::filter(Length_range != "others") |>
+    droplevels() |>
     ggpubr::ggbarplot(x = "Condition", y = nlevel, fill = "Condition",
                       facet.by = "Length_range", add = "mean_sd", scales = "free_x",
                       label = TRUE, alpha = 0.5,
@@ -921,7 +907,6 @@ plot_count_mean_sd <- function(df, level, lim_level) {
 #' @return A [ggpubr::ggarrange()] figure (upper: all peptides; lower: short
 #'   peptides) with a shared legend.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -949,27 +934,27 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
   tot_col <- paste0("total_", sub("n_", "", n_col))
 
   .make_overlap_df <- function(df) {
-    df %>%
-      dplyr::select(Condition, Sample, dplyr::all_of(id_col)) %>%
-      unique() %>%
-      dplyr::group_by(Condition, .data[[id_col]]) %>%
-      dplyr::summarize(n_Samples = dplyr::n_distinct(Sample), .groups = "drop") %>%
-      dplyr::group_by(Condition, n_Samples) %>%
-      dplyr::summarize(n_ids = dplyr::n_distinct(.data[[id_col]]), .groups = "drop") %>%
-      dplyr::rename_with(.fn = ~n_col, .cols = "n_ids") %>%
-      dplyr::mutate(n_Samples = as.factor(n_Samples)) %>%
-      dplyr::arrange(Condition, dplyr::desc(n_Samples)) %>%
-      dplyr::group_by(Condition) %>%
+    df |>
+      dplyr::select(Condition, Sample, dplyr::all_of(id_col)) |>
+      unique() |>
+      dplyr::group_by(Condition, .data[[id_col]]) |>
+      dplyr::summarize(n_Samples = dplyr::n_distinct(Sample), .groups = "drop") |>
+      dplyr::group_by(Condition, n_Samples) |>
+      dplyr::summarize(n_ids = dplyr::n_distinct(.data[[id_col]]), .groups = "drop") |>
+      dplyr::rename_with(.fn = ~n_col, .cols = "n_ids") |>
+      dplyr::mutate(n_Samples = as.factor(n_Samples)) |>
+      dplyr::arrange(Condition, dplyr::desc(n_Samples)) |>
+      dplyr::group_by(Condition) |>
       dplyr::mutate(
         tot_val = sum(.data[[n_col]]),
         perc    = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
-        cum     = cumsum(.data[[n_col]])) %>%
+        cum     = cumsum(.data[[n_col]])) |>
       dplyr::rename_with(.fn = ~tot_col, .cols = "tot_val")
   }
 
   .make_bar <- function(df_ov, title) {
     ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
-    df_ov %>%
+    df_ov |>
       ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
                         label = FALSE, lab.pos = "in",
                         lab.nb.digits = 0, lab.size = 2.5, alpha = 0.7) +
@@ -1014,7 +999,6 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
 #'
 #' @return A `ggpubr` violin/boxplot figure, faceted by `ChargeSimple`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -1023,9 +1007,9 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
 #' plot_qc_violin(pep_all, "ppm",   "Mass error distribution, and boxplot")
 #' }
 plot_qc_violin <- function(df, y_var, title) {
-  df %>%
+  df |>
     dplyr::mutate(ChargeSimple = as.factor(
-      dplyr::case_when(Charge == "+ 1" ~ "+ 1", TRUE ~ ">= +2"))) %>%
+      dplyr::case_when(Charge == "+ 1" ~ "+ 1", TRUE ~ ">= +2"))) |>
     ggpubr::ggviolin(x = "Condition", y = y_var, fill = "Condition",
                      facet.by = "ChargeSimple", nrow = 2) +
     ggplot2::geom_boxplot(fill = NA, outlier.shape = NA, width = 0.5) +
@@ -1049,7 +1033,6 @@ plot_qc_violin <- function(df, y_var, title) {
 #'
 #' @return A `ggpubr` boxplot figure, faceted by `ChargeSimple`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -1058,9 +1041,9 @@ plot_qc_violin <- function(df, y_var, title) {
 #' plot_qc_box(pep_all, "ppm",   "Mass error boxplot")
 #' }
 plot_qc_box <- function(df, y_var, title) {
-  df %>%
+  df |>
     dplyr::mutate(ChargeSimple = as.factor(
-      dplyr::case_when(Charge == "+ 1" ~ "+ 1", TRUE ~ ">= +2"))) %>%
+      dplyr::case_when(Charge == "+ 1" ~ "+ 1", TRUE ~ ">= +2"))) |>
     ggpubr::ggboxplot(x = "Condition", y = y_var, color = "Condition",
                       facet.by = "ChargeSimple", nrow = 2) +
     ggplot2::stat_boxplot(geom = "errorbar", width = 0.5) +
@@ -1088,7 +1071,6 @@ plot_qc_box <- function(df, y_var, title) {
 #'
 #' @return A ggplot2 tile heatmap.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -1101,26 +1083,26 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
   type <- match.arg(type)
 
   pep_short_ptm <-
-    pep_short %>%
-    dplyr::filter(PTM != "") %>%
-    dplyr::mutate(PTM = gsub(" ", "", PTM)) %>%
-    tidyr::separate_rows(PTM, sep = ";|,") %>%
+    pep_short |>
+    dplyr::filter(PTM != "") |>
+    dplyr::mutate(PTM = gsub(" ", "", PTM)) |>
+    tidyr::separate_rows(PTM, sep = ";|,") |>
     dplyr::mutate(PTM = trimws(PTM, "left", "[0-9]+"))
 
   count_df <-
-    pep_short_ptm %>%
-    tidyr::separate_rows(PTM, sep = ";|,") %>%
-    dplyr::group_by(Condition, PTM) %>%
+    pep_short_ptm |>
+    tidyr::separate_rows(PTM, sep = ";|,") |>
+    dplyr::group_by(Condition, PTM) |>
     dplyr::summarise(n_Peptides  = dplyr::n_distinct(Peptide),
                      n_Sequences = dplyr::n_distinct(Sequence),
                      n_Proteins  = dplyr::n_distinct(Accession),
                      SumArea     = sum(Area, na.rm = TRUE),
-                     .groups = "drop") %>%
-    tidyr::complete(PTM, Condition) %>%
+                     .groups = "drop") |>
+    tidyr::complete(PTM, Condition) |>
     dplyr::mutate(dplyr::across(where(is.numeric), ~ifelse(is.na(.x), 0, .x)))
 
   if (type == "count") {
-    count_df %>%
+    count_df |>
       ggplot2::ggplot(ggplot2::aes(y = PTM, x = Condition, fill = n_Peptides)) +
       ggplot2::geom_tile() +
       ggplot2::geom_text(ggplot2::aes(label = n_Peptides)) +
@@ -1130,19 +1112,19 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
       ggplot2::ggtitle("PTM profile, counts of modified peptides")
   } else {
     totals_df <-
-      pep_short %>%
-      dplyr::group_by(Condition) %>%
-      dplyr::summarise(n_Peptides = dplyr::n_distinct(Peptide), .groups = "drop") %>%
+      pep_short |>
+      dplyr::group_by(Condition) |>
+      dplyr::summarise(n_Peptides = dplyr::n_distinct(Peptide), .groups = "drop") |>
       dplyr::mutate(PTM = "Total")
 
-    count_df %>%
-      dplyr::select(PTM, Condition, n_Peptides) %>%
-      dplyr::bind_rows(totals_df) %>%
-      dplyr::group_by(Condition) %>%
-      dplyr::mutate(prop_Peptides = round(n_Peptides / n_Peptides[PTM == "Total"], 4)) %>%
-      dplyr::mutate(perc_Peptides = .data[["prop_Peptides"]] * 100) %>%
-      dplyr::filter(PTM != "Total") %>%
-      droplevels() %>%
+    count_df |>
+      dplyr::select(PTM, Condition, n_Peptides) |>
+      dplyr::bind_rows(totals_df) |>
+      dplyr::group_by(Condition) |>
+      dplyr::mutate(prop_Peptides = round(n_Peptides / n_Peptides[PTM == "Total"], 4)) |>
+      dplyr::mutate(perc_Peptides = .data[["prop_Peptides"]] * 100) |>
+      dplyr::filter(PTM != "Total") |>
+      droplevels() |>
       ggplot2::ggplot(ggplot2::aes(y = PTM, x = Condition, fill = .data[["perc_Peptides"]])) +
       ggplot2::geom_tile() +
       ggplot2::geom_text(ggplot2::aes(label = paste0(.data[["perc_Peptides"]], "%")), size = 2.5) +

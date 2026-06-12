@@ -27,4 +27,3 @@ column per \code{Condition} (\verb{n_Samples.<Condition>}).
 count_ids_by(pep_all, BioReplicate)
 }
 }
-\keyword{internal}

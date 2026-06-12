@@ -17,7 +17,7 @@ evaluation).}
 removed and unused factor levels dropped.
 }
 \description{
-Shorthand for \code{select(...) \%>\% unique() \%>\% droplevels()} — used to build
+Shorthand for \code{select(...) |> unique() |> droplevels()} — used to build
 the small per-comparison data frames consumed by \code{\link[=plot_upset_batch]{plot_upset_batch()}} and
 similar overlap helpers.
 }
@@ -26,4 +26,3 @@ similar overlap helpers.
 select_unique(pep_all, Condition, Sequence)
 }
 }
-\keyword{internal}

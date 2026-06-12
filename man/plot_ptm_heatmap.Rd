@@ -36,4 +36,3 @@ plot_ptm_heatmap(pep_short, type = "count")
 plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = c(8, 13))
 }
 }
-\keyword{internal}

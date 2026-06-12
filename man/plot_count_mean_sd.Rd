@@ -30,4 +30,3 @@ barplot showing mean ± SD across BioReplicates per Condition.
 plot_count_mean_sd(counts_size, "Peptides", lim_level = 30000)
 }
 }
-\keyword{internal}

@@ -26,4 +26,3 @@ consumed by \code{\link[=plot_charge_proportions]{plot_charge_proportions()}}.
 get_proportion_charge(counts_charge_condition)
 }
 }
-\keyword{internal}

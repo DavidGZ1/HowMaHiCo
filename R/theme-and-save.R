@@ -8,7 +8,6 @@
 #'
 #' @return A ggplot2 theme object, addable to a plot with `+`.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -70,7 +69,6 @@ theme_howmahico <- function(base_size = 8) {
 #'
 #' @return The printed object (invisibly), or a warning if it does not exist.
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -78,7 +76,7 @@ theme_howmahico <- function(base_size = 8) {
 #' ggprint_rawr(p_corr_log2area_all)
 #' }
 ggprint_rawr <- function(input) {
-  if(exists(deparse(substitute(input))) == TRUE){
+  if(exists(deparse(substitute(input)))){
     input
   }else{
     warning(paste0(deparse(substitute(input)), " was not generated"))

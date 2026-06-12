@@ -22,4 +22,3 @@ sized to fit the report's compact figure layout.
 ggplot(pep_all, aes(Length)) + geom_histogram() + theme_rawr()
 }
 }
-\keyword{internal}

@@ -27,4 +27,3 @@ partway through a render.
 check_output_exists("3_results/all", overwrite = FALSE)
 }
 }
-\keyword{internal}

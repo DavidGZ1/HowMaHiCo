@@ -10,7 +10,6 @@
 #'
 #' @return Invisible `NULL`; called for its side effects (`stop()`/`warning()`).
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -18,13 +17,11 @@
 #' check_file_exists("3_results/all/pep_all.csv", overwrite = FALSE)
 #' }
 check_file_exists <- function(file, overwrite = FALSE){
-  if(file.exists(file) & overwrite == TRUE){
-    warning("The following file already exists and will be overwritten:")
-    print(file)
+  if(file.exists(file) && overwrite){
+    warning("The following file already exists and will be overwritten: ", file)
   }
-  if(file.exists(file) & overwrite == FALSE){
-    stop("The following file already exists. Please rename, replace or remove the conflicting file")
-    print(file)
+  if(file.exists(file) && !overwrite){
+    stop("The following file already exists. Please rename, replace or remove the conflicting file: ", file)
   }
 }
 
@@ -42,7 +39,6 @@ check_file_exists <- function(file, overwrite = FALSE){
 #'
 #' @return Invisible `NULL`; called for its side effects (`stop()`/`warning()`).
 #'
-#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -59,13 +55,12 @@ check_output_exists <- function(dir, overwrite = FALSE){
                             file.path(dir, "summary_peaks.csv"),
                             file.path(dir, "upset_table_pep.csv"),
                             file.path(dir, "upset_table_prot.csv"),
-                            file.path(dir, "upset_table_prot.csv"),
                             file.path(dir, "upset_table_unique.csv"),
-                            file.path(dir, "pep_overlap.csv"))) %>%
-    dplyr::mutate(found = file.exists(res_file)) %>%
+                            file.path(dir, "pep_overlap.csv"))) |>
+    dplyr::mutate(found = file.exists(res_file)) |>
     dplyr::filter(found)
 
-  if(nrow(res_files_found) >= 1 & overwrite == FALSE){
+  if(nrow(res_files_found) >= 1 && !overwrite){
     warning("The following result files were found and they cannot be overwritten.
             Please rename, replace or remove them before starting the code again")
 

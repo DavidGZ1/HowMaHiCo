@@ -21,4 +21,3 @@ options (top filters, fixed header, no rownames).
 print_annot(read_annot(file.path("1_documentation", params$AnnotationFile)))
 }
 }
-\keyword{internal}

@@ -27,4 +27,3 @@ logic, applied to the \code{m_z} column instead of \code{Mass}.
 plot_pepmz(pep_all, title = "All peptides")
 }
 }
-\keyword{internal}

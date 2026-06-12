@@ -27,4 +27,3 @@ proportion bar chart, with percentage labels.
 plot_charge_proportions(get_proportion_charge(counts_charge_condition), Condition)
 }
 }
-\keyword{internal}

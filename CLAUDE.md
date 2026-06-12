@@ -7,7 +7,10 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.2.1** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.3.0** — Phases 1–6 of the package conversion are complete.
+v0.3.0 was a best-practices pass: base-package imports declared, all exports made
+public (no `@keywords internal`), `NEWS.md` added, internal code unified on the
+native `|>` pipe (R floor raised to 4.1.0).
 `project-style-guide.md` documents the target R-package + Docker + Shiny distribution
 pattern. The package layout is authoritative — `DESCRIPTION`, `LICENSE`/`LICENSE.md`,
 `NAMESPACE`, `R/` (~40 functions plus the report entry point),
@@ -24,17 +27,17 @@ pre-migration reference copies — no longer canonical. RStudio project file:
 Tracked in a private GitHub repo (`DavidGZ1/HowMaHiCo`, remote `origin`); `2_data/`,
 `3_results/`, `4_figures/`, `example/`, and rendered `*.html` reports are gitignored.
 
-One vendoring note: `R/vendored-deltaprotr.R` copies `get_dirs_index_peaks()` from the
-author's other package, `deltaProtR` (github.com/DavidGZ1/deltaProtR) —
-verbatim-adapted, not `Imports`-declared, to avoid a GitHub-only dependency
-(`Remotes:` everywhere: CI/Docker/installs). It's the only `deltaProtR` function
-HowMaHiCo calls.
+`R/loaders-peaks-dirs.R` holds `get_dirs_index_peaks()`, the internal helper that
+indexes PEAKS export subfolders for `read_peaks_batch()`. It was originally
+adapted from the author's other package `deltaProtR`
+(github.com/DavidGZ1/deltaProtR) but is now native HowMaHiCo code — `deltaProtR`
+is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs).
 
 ## Directory layout (numbered-folder convention)
 
 | Folder | Contents |
 |---|---|
-| `R/` | Package source: all exported functions (~40) + vendored helper |
+| `R/` | Package source: all exported functions (~40) + internal helpers |
 | `inst/rmarkdown/templates/` | `01_mhc_report/` and `02_mhc_upsets/` skeleton Rmds |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
@@ -89,7 +92,9 @@ overlap/UpSet-only report template, rendered the same way with
 - **`R/io.R`** — `write.csv_rawr`, `write_input_params`
 - **`R/run-report.R`** — `run_howmahico_report`, `derive_filtered_annotation`
 - **`R/get-report.R`** — `get_report_template` (copies a skeleton to the working dir)
-- **`R/vendored-deltaprotr.R`** — vendored `get_dirs_index_peaks()` from `deltaProtR`
+- **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
+  export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
+  `deltaProtR`, now native)
 - **`inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd`** (~1100 lines)
   — the main QC report. Sections: total IDs (incl. decoys/contaminants) → ID counts
   (mean±sd, by length, by charge) → intra-condition replicate overlap → cross-condition
@@ -201,9 +206,9 @@ sync with a hand-typed string.
 
 Dependencies are declared in `DESCRIPTION` (`Imports`/`Suggests`, per
 `project-style-guide.md`'s meta-package-free convention) rather than `library()`-ed
-at the top of a sourced script — `deltaProtR` is no longer one of them: the one
-function HowMaHiCo actually called from it (`get_dirs_index_peaks`) is vendored into
-`R/vendored-deltaprotr.R`.
+at the top of a sourced script — `deltaProtR` is not one of them: the one
+function HowMaHiCo originally borrowed from it (`get_dirs_index_peaks`) now lives
+natively in `R/loaders-peaks-dirs.R`.
 
 ## Conventions & gotchas
 
@@ -242,8 +247,9 @@ function HowMaHiCo actually called from it (`get_dirs_index_peaks`) is vendored 
   `CsvSave`/`PlotsSave`.
 - **Code version** in the report header is `` `r packageVersion("HowMaHiCo")` `` —
   reads from `DESCRIPTION` automatically. When template logic changes meaningfully,
-  bump `DESCRIPTION`'s `Version:` field and update the "Current version" line at the
-  top of this file.
+  bump `DESCRIPTION`'s `Version:` field, add a matching entry to `NEWS.md`
+  (newest version first — pkgdown renders it as the Changelog), and update the
+  "Current version" line at the top of this file.
 - For the longer-term packaging conventions (R package structure, Docker, Shiny app,
   CI/release process) this project is expected to follow once matured into a
   distributable tool, see `project-style-guide.md`.
