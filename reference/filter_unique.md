@@ -1,7 +1,7 @@
 # Filter rows and drop to distinct/unused-level state
 
-Shorthand for `filter(...) %>% unique() %>% droplevels()` — the
-filtering counterpart to
+Shorthand for `filter(...) |> unique() |> droplevels()` — the filtering
+counterpart to
 [`select_unique()`](https://davidgz1.github.io/HowMaHiCo/reference/select_unique.md),
 used to restrict a `pep_all`-shaped data frame to one
 `Condition`/`Sample_type`/... before batch-plotting its overlap.

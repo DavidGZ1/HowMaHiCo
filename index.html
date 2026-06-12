@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,7 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -59,7 +60,7 @@
 pep_all  — unified long-format peptide table
       │
       ▼
-inst/rmarkdown/templates/howmahico-report/skeleton/skeleton.Rmd
+inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd
       │   rendered via run_howmahico_report() — self-contained interactive HTML
       │   (ID counts, replicate/condition overlaps, size &amp; charge distributions,
       │    RT/ion-mobility/m_z "pseudochromatograms", Area correlation &amp; %CV,
@@ -87,7 +88,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </tr>
 <tr>
 <td><code>inst/rmarkdown/templates/</code></td>
-<td>The two parameterized Rmd report templates (<code>howmahico-report</code>, <code>howmahico-upsets</code>), packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>
+<td>The two parameterized Rmd report templates (<code>01_mhc_report</code>, <code>02_mhc_upsets</code>), packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>
 </td>
 </tr>
 <tr>
@@ -115,8 +116,8 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <td>Optional generated PNG plot exports (not tracked)</td>
 </tr>
 <tr>
-<td><code>0_code/</code></td>
-<td>Legacy pre-package reference copies (<code>00_functions.R</code>, the two Rmds, the render driver) — superseded by <code>R/</code>/<code>inst/</code>, about to be removed</td>
+<td><code>example/</code></td>
+<td>Legacy pre-package reference copies — gitignored, for reference only</td>
 </tr>
 </tbody>
 </table>
@@ -128,33 +129,69 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <h2 id="requirements">Requirements<a class="anchor" aria-label="anchor" href="#requirements"></a>
 </h2>
 <ul>
-<li>R (&gt;= 3.5.0) with <a href="https://posit.co/download/rstudio-desktop/" class="external-link">RStudio</a> (project file: <code>HowMaHiCo.Rproj</code>)</li>
-<li>Install the package (e.g. <code>devtools::install_github("DavidGZ1/HowMaHiCo")</code> or <code>devtools::load_all()</code> from a clone) — all dependencies are declared in <code>DESCRIPTION</code> (<code>Imports</code>/<code>Suggests</code>) and resolved automatically; no manual library list or companion-package install required (the one <code>deltaProtR</code> function HowMaHiCo needs, <code><a href="reference/get_dirs_index_peaks.html">get_dirs_index_peaks()</a></code>, is vendored into <code>R/vendored-deltaprotr.R</code>)</li>
+<li>R (&gt;= 4.1.0) with <a href="https://posit.co/download/rstudio-desktop/" class="external-link">RStudio</a> (project file: <code>HowMaHiCo.Rproj</code>)</li>
+<li>Install the package (e.g. <code>devtools::install_github("DavidGZ1/HowMaHiCo")</code> or <code>devtools::load_all()</code> from a clone) — all dependencies are declared in <code>DESCRIPTION</code> (<code>Imports</code>/<code>Suggests</code>) and resolved automatically; no manual library list or companion-package install required</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="how-to-run">How to run<a class="anchor" aria-label="anchor" href="#how-to-run"></a>
 </h2>
-<ol style="list-style-type: decimal">
-<li><p>Place raw search-engine output under <code>2_data/&lt;software&gt;/&lt;condition&gt;/...</code></p></li>
-<li><p>Fill in a sample annotation CSV under <code>1_documentation/</code> (or auto-generate a skeleton with <code>0_code/00_extract_sample_info_fragpipe.R</code>)</p></li>
-<li>
-<p>Render a report with <code><a href="https://github.com/DavidGZ1/HowMaHiCo" class="external-link">library(HowMaHiCo)</a></code> + <code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>:</p>
+<p><strong>1. Install the package</strong></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavidGZ1/HowMaHiCo" class="external-link">HowMaHiCo</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span></span>
-<span>  template <span class="op">=</span> <span class="st">"howmahico-report"</span>,        <span class="co"># or "howmahico-upsets"</span></span>
-<span>  params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Title <span class="op">=</span> <span class="st">"Report: MHC1p evaluation - dda_all"</span>,</span>
-<span>                AnnotationFile <span class="op">=</span> <span class="st">"sample_annotation_dda_all.csv"</span>,</span>
-<span>                FolderDocumentation <span class="op">=</span> <span class="st">"1_documentation"</span>,</span>
-<span>                Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span>
-<span>                FolderData <span class="op">=</span> <span class="st">"2_data"</span>, FolderResults <span class="op">=</span> <span class="st">"3_results"</span>, FolderFigures <span class="op">=</span> <span class="st">"4_figures"</span>,</span>
-<span>                Software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span>, <span class="va">...</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="co"># from a local clone:</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">load_all</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co"># or from GitHub:</span></span>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"DavidGZ1/HowMaHiCo"</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavidGZ1/HowMaHiCo" class="external-link">HowMaHiCo</a></span><span class="op">)</span></span></code></pre></div>
+<p><strong>2. Auto-generate an annotation CSV skeleton</strong></p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># FragPipe (psm.tsv layout)</span></span>
+<span><span class="fu"><a href="reference/get_annot_fragpipe.html">get_annot_fragpipe</a></span><span class="op">(</span>dir_data <span class="op">=</span> <span class="st">"2_data"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/get_annot_sampleid.html">get_annot_sampleid</a></span><span class="op">(</span>file_sample_list <span class="op">=</span> <span class="st">"1_documentation/sample_list.xlsx"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span>row.names <span class="op">=</span> <span class="cn">FALSE</span>, file <span class="op">=</span> <span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># DIA-NN (report.tsv layout)</span></span>
+<span><span class="fu"><a href="reference/get_annot_diann.html">get_annot_diann</a></span><span class="op">(</span>dir_data <span class="op">=</span> <span class="st">"2_data"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/get_annot_sampleid.html">get_annot_sampleid</a></span><span class="op">(</span>file_sample_list <span class="op">=</span> <span class="st">"1_documentation/sample_list.xlsx"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span>row.names <span class="op">=</span> <span class="cn">FALSE</span>, file <span class="op">=</span> <span class="st">"1_documentation/sample_annotation_diann.csv"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>3. Complete the annotation CSV</strong></p>
+<p>Open the generated CSV and fill in the experimental metadata: <code>Condition</code>, <code>BioReplicate</code>, <code>TechReplicate</code>, <code>Sample_ID</code>. Verify that <code>Sample_fp</code> (FragPipe/DIA-NN) or <code>Sample_peaks</code> (PEAKS) matches the data subfolder names exactly, then save.</p>
+<p><em>(Optional)</em> Instead of typing <code>Sample_ID</code> by hand, populate it from a Bruker HyStar sample list using <code><a href="reference/get_annot_sampleid.html">get_annot_sampleid()</a></code>:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="reference/get_annot_sampleid.html">get_annot_sampleid</a></span><span class="op">(</span>file_sample_list <span class="op">=</span> <span class="st">"1_documentation/sample_list.xlsx"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span>row.names <span class="op">=</span> <span class="cn">FALSE</span>, file <span class="op">=</span> <span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="reference/get_annot_sampleid.html">get_annot_sampleid()</a></code> inner-joins on <code>Source_file</code>, so only rows present in both the annotation table and the sample list are kept — check the row count afterwards.</p>
+<p><strong>4. (Optional) Get a local copy of the report template to customise</strong></p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/get_report_template.html">get_report_template</a></span><span class="op">(</span><span class="st">"MyReport"</span>, template <span class="op">=</span> <span class="st">"01_mhc_report"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>5. Render a report</strong></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span></span>
+<span>  template <span class="op">=</span> <span class="st">"01_mhc_report"</span>,          <span class="co"># or "02_mhc_upsets"</span></span>
+<span>  params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    Title            <span class="op">=</span> <span class="st">"MHC1 immunopeptidomics — DDA all"</span>,</span>
+<span>    SampleSet        <span class="op">=</span> <span class="st">"project_id"</span>,</span>
+<span>    DataAnalysisNames <span class="op">=</span> <span class="st">"DGZ"</span>,</span>
+<span>    WetLabNames      <span class="op">=</span> <span class="st">"operator"</span>,</span>
+<span>    FolderDocumentation <span class="op">=</span> <span class="st">"1_documentation"</span>,</span>
+<span>    AnnotationFile   <span class="op">=</span> <span class="st">"sample_annotation.csv"</span>,</span>
+<span>    Subset           <span class="op">=</span> <span class="st">"dda_all"</span>,</span>
+<span>    FolderData       <span class="op">=</span> <span class="st">"2_data"</span>,</span>
+<span>    FolderResults    <span class="op">=</span> <span class="st">"3_results"</span>,</span>
+<span>    FolderFigures    <span class="op">=</span> <span class="st">"4_figures"</span>,</span>
+<span>    <span class="co"># ProjectDir     = getwd(),   # set if rendering from a subdirectory</span></span>
+<span>    Instrument       <span class="op">=</span> <span class="st">"tims_tof"</span>,    <span class="co"># faims_orbi | orbi</span></span>
+<span>    Software         <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span>,</span>
+<span>    MHCclass         <span class="op">=</span> <span class="st">"MHC1"</span>,        <span class="co"># MHC1 (8-13 AA) or MHC2 (12-25 AA)</span></span>
+<span>    TestMode         <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    ResultsOverwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>    PlotsSave        <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>    CsvSave          <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span>,</span>
 <span>  output_file <span class="op">=</span> <span class="st">"01_report_main__hla1_dda_all.html"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code>FolderDocumentation</code>/<code>FolderData</code>/<code>FolderResults</code>/<code>FolderFigures</code> are absolute (or render-time-working-directory-relative) paths — the template ships inside an installed package and can be rendered from anywhere. One call renders one report; loop it for the <code>{dda,dia} × {all,jy,plasma}</code> 6-subset batch pattern (see the <code>\dontrun{}</code> example on <code>run_howmahico_report</code>/<code>derive_filtered_annotation</code>).</p>
-</li>
-</ol>
+<p><code>FolderDocumentation</code>/<code>FolderData</code>/<code>FolderResults</code>/<code>FolderFigures</code> are absolute (or render-time-working-directory-relative) paths — the template ships inside an installed package and can be rendered from anywhere. One call renders one report; loop with <code><a href="reference/derive_filtered_annotation.html">derive_filtered_annotation()</a></code> for multi-subset batch runs (see the <code>\dontrun{}</code> example on <code>run_howmahico_report</code>).</p>
 <p>Reports are written to <code>output_file</code> (HTML), and result tables/figures are written under <code>&lt;FolderResults&gt;/&lt;subset&gt;/</code> and <code>&lt;FolderFigures&gt;/&lt;subset&gt;/</code>.</p>
 </div>
 <div class="section level2">

@@ -7,7 +7,13 @@ as a stacked proportion bar chart per condition, with percentage labels.
 ## Usage
 
 ``` r
-plot_prop_length_condition(input, level2plot = "Peptides", label_size = 1.6)
+plot_prop_length_condition(
+  input,
+  level2plot = "Peptides",
+  label_size = 1.6,
+  palette = NULL,
+  x_var = "Condition"
+)
 ```
 
 ## Arguments
@@ -27,6 +33,16 @@ plot_prop_length_condition(input, level2plot = "Peptides", label_size = 1.6)
   Text size for the percentage labels (`geom_text`); mirrors the
   report's `PlotTextLabelSize` param.
 
+- palette:
+
+  Optional named character vector mapping `Length_range` values to fill
+  colours. When `NULL` (default) `scale_fill_viridis_d()` is used.
+
+- x_var:
+
+  Name of the column to map to the x-axis. Default `"Condition"`; pass
+  `"Sample"` for the sample-level proportion plot.
+
 ## Value
 
 A ggplot2 stacked bar chart.
@@ -36,5 +52,7 @@ A ggplot2 stacked bar chart.
 ``` r
 if (FALSE) { # \dontrun{
 plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all))
+plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all, "Sample"),
+                           x_var = "Sample")
 } # }
 ```

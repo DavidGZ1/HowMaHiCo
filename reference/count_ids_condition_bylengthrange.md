@@ -10,22 +10,28 @@ relative to its condition's total — the table consumed by
 ## Usage
 
 ``` r
-count_ids_condition_bylengthrange(input)
+count_ids_condition_bylengthrange(input, group_var = "Condition")
 ```
 
 ## Arguments
 
 - input:
 
-  A `pep_all`-shaped data frame with `Condition`, `Length_range`,
-  `Peptide`, `Sequence`, `Accession` columns.
+  A `pep_all`-shaped data frame with `Condition` (or the column named by
+  `group_var`), `Length_range`, `Peptide`, `Sequence`, `Accession`
+  columns.
+
+- group_var:
+
+  Name of the grouping column. Default `"Condition"`; pass `"Sample"` to
+  compute per-sample proportions.
 
 ## Value
 
 A long-format data frame of counts/proportions/percentages per
-`Condition` × `Length_range` × `Level` (`Peptides.Modified`/`Peptides`/
+`group_var` × `Length_range` × `Level` (`Peptides.Modified`/`Peptides`/
 `Proteins`), with `Length_range` factor-ordered for stacked-bar
-plotting.
+plotting. The grouping column retains the name supplied in `group_var`.
 
 ## Details
 
@@ -42,5 +48,6 @@ the original "imported from functions_thunder" implementation.
 ``` r
 if (FALSE) { # \dontrun{
 count_ids_condition_bylengthrange(pep_all)
+count_ids_condition_bylengthrange(pep_all, group_var = "Sample")
 } # }
 ```

@@ -11,13 +11,13 @@ Source:
 [`DESCRIPTION`](https://github.com/DavidGZ1/HowMaHiCo/blob/master/DESCRIPTION)
 
 Gomez-Zepeda D (2026). *HowMaHiCo: LC-Immunopeptidomics QC Reporting
-Workflow*. R package version 0.0.0.9000,
+Workflow*. R package version 0.3.0,
 <https://github.com/DavidGZ1/HowMaHiCo>.
 
     @Manual{,
       title = {HowMaHiCo: LC-Immunopeptidomics QC Reporting Workflow},
       author = {David Gomez-Zepeda},
       year = {2026},
-      note = {R package version 0.0.0.9000},
+      note = {R package version 0.3.0},
       url = {https://github.com/DavidGZ1/HowMaHiCo},
     }

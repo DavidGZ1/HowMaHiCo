@@ -14,8 +14,9 @@ plot_upset(
   vars,
   n_intersections = 10,
   Compare = "Condition",
-  labels = "abs",
-  lab.size = 2
+  labels = "perc",
+  lab.size = 2,
+  plot.margin = ggplot2::unit(c(0.2, 0.2, 0.2, 0.2), "cm")
 )
 ```
 
@@ -43,11 +44,15 @@ plot_upset(
 
   One of `"abs"` (absolute intersection counts, the default), `"perc"`
   (percentage of the total), or any other value to omit the per-bar
-  count labels entirely.
+  count labels entirely. Defaults to `"perc"`.
 
 - lab.size:
 
   Text size of the per-bar count/percentage labels.
+
+- plot.margin:
+
+  Plot margin, as unit.
 
 ## Value
 

@@ -13,7 +13,7 @@ percentage intersection-size labels."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -22,6 +22,7 @@ percentage intersection-size labels."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/DavidGZ1/HowMaHiCo/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -52,8 +53,9 @@ percentage intersection-size labels.</p>
 <span>  <span class="va">vars</span>,</span>
 <span>  n_intersections <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>  Compare <span class="op">=</span> <span class="st">"Condition"</span>,</span>
-<span>  labels <span class="op">=</span> <span class="st">"abs"</span>,</span>
-<span>  lab.size <span class="op">=</span> <span class="fl">2</span></span>
+<span>  labels <span class="op">=</span> <span class="st">"perc"</span>,</span>
+<span>  lab.size <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  plot.margin <span class="op">=</span> <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/grid/unit.html" class="external-link">unit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.2</span>, <span class="fl">0.2</span>, <span class="fl">0.2</span>, <span class="fl">0.2</span><span class="op">)</span>, <span class="st">"cm"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -82,11 +84,15 @@ being compared, e.g. <code>Sequence</code>.</p></dd>
 <dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
 <dd><p>One of <code>"abs"</code> (absolute intersection counts, the default),
 <code>"perc"</code> (percentage of the total), or any other value to omit the
-per-bar count labels entirely.</p></dd>
+per-bar count labels entirely. Defaults to <code>"perc"</code>.</p></dd>
 
 
 <dt id="arg-lab-size">lab.size<a class="anchor" aria-label="anchor" href="#arg-lab-size"></a></dt>
 <dd><p>Text size of the per-bar count/percentage labels.</p></dd>
+
+
+<dt id="arg-plot-margin">plot.margin<a class="anchor" aria-label="anchor" href="#arg-plot-margin"></a></dt>
+<dd><p>Plot margin, as unit.</p></dd>
 
 </dl></div>
     <div class="section level2">

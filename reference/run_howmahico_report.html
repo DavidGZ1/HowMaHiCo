@@ -15,7 +15,7 @@ Docker-idiomatic (&quot;one container run = one job&quot;)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@ Docker-idiomatic (&quot;one container run = one job&quot;)."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/DavidGZ1/HowMaHiCo/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -51,7 +52,7 @@ Docker-idiomatic ("one container run = one job").</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">run_howmahico_report</span><span class="op">(</span></span>
-<span>  template <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"howmahico-report"</span>, <span class="st">"howmahico-upsets"</span><span class="op">)</span>,</span>
+<span>  template <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"01_mhc_report"</span>, <span class="st">"02_mhc_upsets"</span><span class="op">)</span>,</span>
 <span>  <span class="va">params</span>,</span>
 <span>  <span class="va">output_file</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -63,22 +64,27 @@ Docker-idiomatic ("one container run = one job").</p>
 
 
 <dl><dt id="arg-template">template<a class="anchor" aria-label="anchor" href="#arg-template"></a></dt>
-<dd><p>One of <code>"howmahico-report"</code> (the main QC report) or
-<code>"howmahico-upsets"</code> (the secondary overlap/UpSet report).</p></dd>
+<dd><p>One of <code>"01_mhc_report"</code> (the main QC report) or
+<code>"02_mhc_upsets"</code> (the secondary overlap/UpSet report).</p></dd>
 
 
 <dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
 <dd><p>Named list of report parameters, as declared in the
-template's YAML header (<code>Title</code>, <code>AnnotationFile</code>, <code>Subset</code>, <code>FolderData</code>,
-<code>FolderResults</code>, <code>FolderFigures</code>, <code>Software</code>, ...). Pass
-<code>ProjectDir = "/absolute/path/to/project"</code> to resolve relative folder paths
-from that directory instead of the current working directory — useful when
-R is started from a subdirectory (e.g. <code>0_code/</code>).</p></dd>
+template's YAML header (<code>SampleSet</code>, <code>AnnotationFile</code>, <code>Subset</code>,
+<code>FolderData</code>, <code>FolderResults</code>, <code>FolderFigures</code>, <code>Software</code>, <code>MHCclass</code>,
+...). The report title is auto-generated from <code>SampleSet</code>, <code>Subset</code>,
+<code>MHCclass</code>, and the render date — no <code>Title</code> param needed. Key params:
+<code>MHCclass</code> — <code>"MHC1"</code> (8-13 AA window, default) or <code>"MHC2"</code> (12-25 AA
+window); overrides <code>ShortPeptideLengthMin</code>/<code>ShortPeptideLengthMax</code> when set
+to a recognised value. Pass <code>ProjectDir = "/absolute/path/to/project"</code> to
+resolve relative folder paths from that directory instead of the current
+working directory — useful when R is started from a subdirectory.</p></dd>
 
 
 <dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
-<dd><p>Output HTML file path, forwarded to
-<code><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">rmarkdown::render()</a></code>.</p></dd>
+<dd><p>Output HTML file path. Relative paths are resolved
+against <code>params$ProjectDir</code> (if supplied) or the current working directory
+at call time — never against the package-internal skeleton location.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -104,9 +110,8 @@ inside an installed package and can be rendered from anywhere.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="fu">run_howmahico_report</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  template <span class="op">=</span> <span class="st">"howmahico-report"</span>,</span></span>
-<span class="r-in"><span>  params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Title <span class="op">=</span> <span class="st">"Report: MHC1p evaluation - dda_all"</span>,</span></span>
-<span class="r-in"><span>                SampleSet <span class="op">=</span> <span class="st">"MEGF_035_K251128"</span>,</span></span>
+<span class="r-in"><span>  template <span class="op">=</span> <span class="st">"01_mhc_report"</span>,</span></span>
+<span class="r-in"><span>  params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SampleSet <span class="op">=</span> <span class="st">"MEGF_035_K251128"</span>,</span></span>
 <span class="r-in"><span>                AnnotationFile <span class="op">=</span> <span class="st">"sample_annotation_dda_all.csv"</span>,</span></span>
 <span class="r-in"><span>                Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span></span>
 <span class="r-in"><span>                FolderData <span class="op">=</span> <span class="st">"/data/2_data"</span>,</span></span>
@@ -120,7 +125,7 @@ inside an installed package and can be rendered from anywhere.</p>
 <span class="r-in"><span><span class="va">annot_jy</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_filtered_annotation.html">derive_filtered_annotation</a></span><span class="op">(</span><span class="st">"sample_annotation_dda_all.csv"</span>,</span></span>
 <span class="r-in"><span>                                       <span class="st">"1_documentation"</span>, <span class="st">"JY"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw">for</span> <span class="op">(</span><span class="va">subset</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dda_all"</span>, <span class="st">"dda_jy"</span>, <span class="st">"dda_plasma"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="fu">run_howmahico_report</span><span class="op">(</span>template <span class="op">=</span> <span class="st">"howmahico-report"</span>,</span></span>
+<span class="r-in"><span>  <span class="fu">run_howmahico_report</span><span class="op">(</span>template <span class="op">=</span> <span class="st">"01_mhc_report"</span>,</span></span>
 <span class="r-in"><span>                       params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Subset <span class="op">=</span> <span class="va">subset</span>, <span class="va">...</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>                       output_file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"01_report_main__hla1_"</span>, <span class="va">subset</span>, <span class="st">".html"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>

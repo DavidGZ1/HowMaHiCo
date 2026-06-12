@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,6 +16,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/DavidGZ1/HowMaHiCo/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -53,10 +54,17 @@
 
         </dt>
         <dd>Derive a Condition-filtered copy of a sample annotation file</dd>
+
+        <dt>
+
+          <code><a href="get_report_template.html">get_report_template()</a></code>
+
+        </dt>
+        <dd>Get the HowMaHiCo templates</dd>
       </dl></div><div class="section level2">
       <h2 id="annotation">Annotation<a class="anchor" aria-label="anchor" href="#annotation"></a></h2>
 
-      <div class="section-desc"><p>Read, validate, and display sample annotation tables</p></div>
+      <div class="section-desc"><p>Read, validate, display, and auto-generate sample annotation tables</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -76,6 +84,27 @@
 
         </dt>
         <dd>Render an annotation table as an interactive HTML datatable</dd>
+
+        <dt>
+
+          <code><a href="get_annot_fragpipe.html">get_annot_fragpipe()</a></code>
+
+        </dt>
+        <dd>Auto-generate a skeleton annotation table from FragPipe psm.tsv files</dd>
+
+        <dt>
+
+          <code><a href="get_annot_diann.html">get_annot_diann()</a></code>
+
+        </dt>
+        <dd>Auto-generate a skeleton annotation table from DIA-NN report.tsv files</dd>
+
+        <dt>
+
+          <code><a href="get_annot_sampleid.html">get_annot_sampleid()</a></code>
+
+        </dt>
+        <dd>Enrich an annotation table with Sample_ID from a Bruker HyStar sample list</dd>
       </dl></div><div class="section level2">
       <h2 id="data-loaders">Data loaders<a class="anchor" aria-label="anchor" href="#data-loaders"></a></h2>
 
@@ -154,7 +183,21 @@
           <code><a href="read_peaks_batch.html">read_peaks_batch()</a></code>
 
         </dt>
-        <dd>Batch-read and annotate every PEAKS export folder into <code>pep_all</code> format</dd>
+        <dd>Batch-read PEAKS export folders and merge them into raw long format</dd>
+
+        <dt>
+
+          <code><a href="parse_peaks.html">parse_peaks()</a></code>
+
+        </dt>
+        <dd>Parse raw PEAKS results into <code>pep_all</code> format</dd>
+
+        <dt>
+
+          <code><a href="annotate_peaks.html">annotate_peaks()</a></code>
+
+        </dt>
+        <dd>Join parsed PEAKS results to the sample annotation table</dd>
       </dl></div><div class="section level2">
       <h2 id="checks">Checks<a class="anchor" aria-label="anchor" href="#checks"></a></h2>
 
@@ -304,6 +347,13 @@
 
         <dt>
 
+          <code><a href="plot_peplength_hist.html">plot_peplength_hist()</a></code>
+
+        </dt>
+        <dd>Peptide length histogram faceted by Condition</dd>
+
+        <dt>
+
           <code><a href="plot_pepmass.html">plot_pepmass()</a></code>
 
         </dt>
@@ -325,24 +375,10 @@
 
         <dt>
 
-          <code><a href="plot_upset.html">plot_upset()</a></code>
+          <code><a href="plot_count_mean_sd.html">plot_count_mean_sd()</a></code>
 
         </dt>
-        <dd>UpSet plot of overlap between groups for a given variable</dd>
-
-        <dt>
-
-          <code><a href="plot_upset_batch.html">plot_upset_batch()</a></code>
-
-        </dt>
-        <dd>Batch of UpSet plots across several variables</dd>
-
-        <dt>
-
-          <code><a href="ggseqlogo_bylength.html">ggseqlogo_bylength()</a></code>
-
-        </dt>
-        <dd>Sequence motif logo for peptides of a given length</dd>
+        <dd>Mean ± SD barplot of ID counts per Condition, faceted by length range</dd>
 
         <dt>
 
@@ -360,10 +396,59 @@
 
         <dt>
 
+          <code><a href="plot_overlap_intra_condition.html">plot_overlap_intra_condition()</a></code>
+
+        </dt>
+        <dd>Stacked overlap barplot (all vs short peptides) for one ID level</dd>
+
+        <dt>
+
+          <code><a href="plot_upset.html">plot_upset()</a></code>
+
+        </dt>
+        <dd>UpSet plot of overlap between groups for a given variable</dd>
+
+        <dt>
+
+          <code><a href="plot_upset_batch.html">plot_upset_batch()</a></code>
+
+        </dt>
+        <dd>Batch of UpSet plots across several variables</dd>
+
+        <dt>
+
+          <code><a href="plot_pseudochromatogram.html">plot_pseudochromatogram()</a></code>
+
+        </dt>
+        <dd>Peptide ID pseudochromatogram: count vs RT, faceted by Condition</dd>
+
+        <dt>
+
+          <code><a href="plot_2d_distribution.html">plot_2d_distribution()</a></code>
+
+        </dt>
+        <dd>2D binned heatmap for any two continuous peptide properties</dd>
+
+        <dt>
+
           <code><a href="plot_violin_areacv.html">plot_violin_areacv()</a></code>
 
         </dt>
         <dd>Violin + boxplot of Area %CV by group</dd>
+
+        <dt>
+
+          <code><a href="plot_qc_box.html">plot_qc_box()</a></code>
+
+        </dt>
+        <dd>Boxplot of Score or mass error per Condition and charge</dd>
+
+        <dt>
+
+          <code><a href="plot_qc_violin.html">plot_qc_violin()</a></code>
+
+        </dt>
+        <dd>Violin + overlaid boxplot of Score or mass error per Condition and charge</dd>
 
         <dt>
 
@@ -374,10 +459,31 @@
 
         <dt>
 
+          <code><a href="plot_ptm_heatmap.html">plot_ptm_heatmap()</a></code>
+
+        </dt>
+        <dd>Heatmap of PTM counts or proportions for length-filtered peptides</dd>
+
+        <dt>
+
+          <code><a href="ggseqlogo_bylength.html">ggseqlogo_bylength()</a></code>
+
+        </dt>
+        <dd>Sequence motif logo for peptides of a given length</dd>
+
+        <dt>
+
           <code><a href="theme_rawr.html">theme_rawr()</a></code>
 
         </dt>
         <dd>HowMaHiCo's shared ggplot theme</dd>
+
+        <dt>
+
+          <code><a href="theme_howmahico.html">theme_howmahico()</a></code>
+
+        </dt>
+        <dd>HowMaHiCo's unified ggplot theme</dd>
       </dl></div><div class="section level2">
       <h2 id="export-i-o-helpers">Export &amp; I/O helpers<a class="anchor" aria-label="anchor" href="#export-i-o-helpers"></a></h2>
 

@@ -8,7 +8,14 @@ the `"All peptides"` row's count.
 ## Usage
 
 ``` r
-plot_bp_count_length(df, level, lim_level, shortpep_range = c(8, 13))
+plot_bp_count_length(
+  df,
+  level,
+  lim_level,
+  shortpep_range = c(8, 13),
+  x_var = "Condition",
+  palette = NULL
+)
 ```
 
 ## Arguments
@@ -35,10 +42,21 @@ plot_bp_count_length(df, level, lim_level, shortpep_range = c(8, 13))
   Length-2 vector `c(min, max)` used to label the `"others"`
   `Length_range` class as `"< min OR > max AAs"`.
 
+- x_var:
+
+  Column name for the x-axis (default `"Condition"`). Pass `"Sample"`
+  for a per-sample version of the plot.
+
+- palette:
+
+  Optional named character vector mapping `Length_range` values to fill
+  colours (e.g. `c("8 to 13 AAs" = "#fde725", "others" = "#440154")`).
+  When `NULL` (default) `scale_fill_viridis_d()` is used.
+
 ## Value
 
 A `ggpubr` bar chart (`ggbarplot`) with per-bar count labels, a
-`"Total=..."` annotation, and a viridis fill scale.
+`"Total=..."` annotation, and a viridis or manual fill scale.
 
 ## Details
 

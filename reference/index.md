@@ -9,15 +9,26 @@ end-to-end
   : Render a HowMaHiCo QC report from the installed package templates
 - [`derive_filtered_annotation()`](https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.md)
   : Derive a Condition-filtered copy of a sample annotation file
+- [`get_report_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.md)
+  : Get the HowMaHiCo templates
 
 ## Annotation
 
-Read, validate, and display sample annotation tables
+Read, validate, display, and auto-generate sample annotation tables
 
 - [`read_annot()`](https://davidgz1.github.io/HowMaHiCo/reference/read_annot.md)
   : Read, validate, and reformat a sample annotation table
 - [`print_annot()`](https://davidgz1.github.io/HowMaHiCo/reference/print_annot.md)
   : Render an annotation table as an interactive HTML datatable
+- [`get_annot_fragpipe()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_fragpipe.md)
+  : Auto-generate a skeleton annotation table from FragPipe psm.tsv
+  files
+- [`get_annot_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_diann.md)
+  : Auto-generate a skeleton annotation table from DIA-NN report.tsv
+  files
+- [`get_annot_sampleid()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_sampleid.md)
+  : Enrich an annotation table with Sample_ID from a Bruker HyStar
+  sample list
 
 ## Data loaders
 
@@ -66,10 +77,15 @@ schema
   Read one PEAKS `peptide.csv` export into long format
 
 - [`read_peaks_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks_batch.md)
+  : Batch-read PEAKS export folders and merge them into raw long format
+
+- [`parse_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_peaks.md)
   :
 
-  Batch-read and annotate every PEAKS export folder into `pep_all`
-  format
+  Parse raw PEAKS results into `pep_all` format
+
+- [`annotate_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_peaks.md)
+  : Join parsed PEAKS results to the sample annotation table
 
 ## Checks
 
@@ -143,6 +159,9 @@ correlation
 - [`plot_peplength_dens()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_peplength_dens.md)
   : Peptide length distribution: boxplot + density histogram
 
+- [`plot_peplength_hist()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_peplength_hist.md)
+  : Peptide length histogram faceted by Condition
+
 - [`plot_pepmass()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pepmass.md)
   : Peptide mass distribution: boxplot + density histogram with apex
   annotation
@@ -155,14 +174,9 @@ correlation
   : Stacked bar chart of total ID counts per Condition, split by length
   range
 
-- [`plot_upset()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset.md)
-  : UpSet plot of overlap between groups for a given variable
-
-- [`plot_upset_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset_batch.md)
-  : Batch of UpSet plots across several variables
-
-- [`ggseqlogo_bylength()`](https://davidgz1.github.io/HowMaHiCo/reference/ggseqlogo_bylength.md)
-  : Sequence motif logo for peptides of a given length
+- [`plot_count_mean_sd()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_count_mean_sd.md)
+  : Mean ± SD barplot of ID counts per Condition, faceted by length
+  range
 
 - [`plot_prop_length_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_prop_length_condition.md)
   :
@@ -173,14 +187,45 @@ correlation
 - [`plot_charge_proportions()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_charge_proportions.md)
   : Stacked bar chart of charge-state proportions by group
 
+- [`plot_overlap_intra_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_overlap_intra_condition.md)
+  : Stacked overlap barplot (all vs short peptides) for one ID level
+
+- [`plot_upset()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset.md)
+  : UpSet plot of overlap between groups for a given variable
+
+- [`plot_upset_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset_batch.md)
+  : Batch of UpSet plots across several variables
+
+- [`plot_pseudochromatogram()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pseudochromatogram.md)
+  : Peptide ID pseudochromatogram: count vs RT, faceted by Condition
+
+- [`plot_2d_distribution()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_2d_distribution.md)
+  : 2D binned heatmap for any two continuous peptide properties
+
 - [`plot_violin_areacv()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_violin_areacv.md)
   : Violin + boxplot of Area %CV by group
+
+- [`plot_qc_box()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_qc_box.md)
+  : Boxplot of Score or mass error per Condition and charge
+
+- [`plot_qc_violin()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_qc_violin.md)
+  : Violin + overlaid boxplot of Score or mass error per Condition and
+  charge
 
 - [`plot_corr()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_corr.md)
   : Pearson correlation heatmap of log2(Area)
 
+- [`plot_ptm_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ptm_heatmap.md)
+  : Heatmap of PTM counts or proportions for length-filtered peptides
+
+- [`ggseqlogo_bylength()`](https://davidgz1.github.io/HowMaHiCo/reference/ggseqlogo_bylength.md)
+  : Sequence motif logo for peptides of a given length
+
 - [`theme_rawr()`](https://davidgz1.github.io/HowMaHiCo/reference/theme_rawr.md)
   : HowMaHiCo's shared ggplot theme
+
+- [`theme_howmahico()`](https://davidgz1.github.io/HowMaHiCo/reference/theme_howmahico.md)
+  : HowMaHiCo's unified ggplot theme
 
 ## Export & I/O helpers
 

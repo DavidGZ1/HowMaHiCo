@@ -1,7 +1,7 @@
 # Select distinct rows on a subset of columns
 
-Shorthand for `select(...) %>% unique() %>% droplevels()` — used to
-build the small per-comparison data frames consumed by
+Shorthand for `select(...) |> unique() |> droplevels()` — used to build
+the small per-comparison data frames consumed by
 [`plot_upset_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset_batch.md)
 and similar overlap helpers.
 

@@ -5,10 +5,13 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/LICENSE.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/authors.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/index.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/news/index.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/plans_dgz.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/project-style-guide.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/HowMaHiCo-package.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/annotate_diann.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/annotate_fragpipe.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/annotate_peaks.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/check_file_exists.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/check_ids_global.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/check_output_exists.html</loc></url>
@@ -22,10 +25,14 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/count_uniqueby_ip.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/filter_unique.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_annot_diann.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_annot_fragpipe.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_annot_sampleid.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_charge_group.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_dirs_index_peaks.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_mat_log2area.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_proportion_charge.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/ggprint_rawr.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/ggsave_rawr.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/ggseqlogo_bylength.html</loc></url>
@@ -33,6 +40,8 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/list_sequences.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_diann.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_fragpipe.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_peaks.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_2d_distribution.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_bp_count_length.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_charge_proportions.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_corr.html</loc></url>
@@ -41,9 +50,11 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_overlap_intra_condition.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_peplength.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_peplength_dens.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_peplength_hist.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_pepmass.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_pepmz.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_prop_length_condition.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_pseudochromatogram.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_ptm_heatmap.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_qc_box.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_qc_violin.html</loc></url>
@@ -64,6 +75,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/select_unique.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/summarise_area.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/theme_howmahico.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/theme_rawr.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/write.csv_rawr.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/write_input_params.html</loc></url>

@@ -16,8 +16,9 @@ plot_upset_batch(
   vars,
   n_intersections = 20,
   Compare = "Condition",
-  labels = "abs",
-  lab.size = 2
+  labels = "perc",
+  lab.size = 2,
+  plot.margin = ggplot2::unit(c(0.2, 0.2, 0.2, 0.2), "cm")
 )
 ```
 
@@ -44,9 +45,14 @@ plot_upset_batch(
 
   Forwarded to
   [`plot_upset()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset.md)
-  (`"abs"`, `"perc"`, or other).
+  (`"abs"`, `"perc"`, or other). Defaults to `"perc"`.
 
 - lab.size:
+
+  Forwarded to
+  [`plot_upset()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset.md).
+
+- plot.margin:
 
   Forwarded to
   [`plot_upset()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset.md).
