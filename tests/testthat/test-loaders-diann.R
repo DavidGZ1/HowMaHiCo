@@ -30,13 +30,13 @@ test_that("parse_diann reshapes raw report rows into pep_all schema", {
   expect_equal(out$Source_file, rep("run1", 3))
 })
 
-test_that("parse_diann maps zero-area rows to Log2Area = 1", {
+test_that("parse_diann maps zero-area rows to NA Log2Area", {
   raw <- make_diann_report_raw()
   out <- parse_diann(raw)
   zero_row <- out[out$Area == 0, ]
 
   expect_equal(nrow(zero_row), 1)
-  expect_equal(zero_row$Log2Area, 1)
+  expect_true(is.na(zero_row$Log2Area))
 })
 
 test_that("annotate_diann joins parsed DIA-NN results to the annotation table by Sample_fp + Source_file", {

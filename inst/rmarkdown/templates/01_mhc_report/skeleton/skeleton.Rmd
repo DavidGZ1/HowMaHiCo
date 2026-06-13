@@ -610,11 +610,15 @@ Below are shown the UpSet plots representing the overlap between the conditions 
 
 ```{r plot-upset-all, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 var_levels <-  c("Peptide", "Sequence", "Accession")
-up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
-for (i in 1:length(var_levels)) {
-  cat("\n### ", var_levels[i],"\n")
-  up_pep_all_list[i]  |>  print()
-  cat('\n\n')
+if (dplyr::n_distinct(pep_all$Condition) < 2) {
+  cat("\n_UpSet plots require at least two Conditions to show overlap; only one is present in this subset._\n")
+} else {
+  up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
+  for (i in 1:length(var_levels)) {
+    cat("\n### ", var_levels[i],"\n")
+    up_pep_all_list[i]  |>  print()
+    cat('\n\n')
+  }
 }
 
 ```
@@ -622,11 +626,15 @@ for (i in 1:length(var_levels)) {
 ## Selected peptides {.tabset}
 
 ```{r plot-upset-short, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
-up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
-for (i in 1:length(var_levels)) {
-  cat("\n### ", var_levels[i],"\n")
-  up_pep_short_list[i]  |>  print()
-  cat('\n\n')
+if (dplyr::n_distinct(pep_short$Condition) < 2) {
+  cat("\n_UpSet plots require at least two Conditions to show overlap; only one is present in this subset._\n")
+} else {
+  up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
+  for (i in 1:length(var_levels)) {
+    cat("\n### ", var_levels[i],"\n")
+    up_pep_short_list[i]  |>  print()
+    cat('\n\n')
+  }
 }
 
 ```
@@ -975,6 +983,10 @@ pep_all_summ_area_cond <- summarise_area(pep_all, Condition)
 pep_all_summ_area_biorep <- summarise_area(pep_all,  BioReplicate)
 pep_short_summ_area_cond <- summarise_area(pep_short, Condition)
 pep_short_summ_area_biorep <- summarise_area(pep_short,  BioReplicate)
+# Initialise to NULL so the print chunks below have something to test against
+# when a branch is skipped (no replicates) instead of an undefined-object error.
+pviolin_areacv_cond_all <- pviolin_areacv_cond_short <-
+  pviolin_areacv_biorep_all <- pviolin_areacv_biorep_short <- NULL
 if(all(is.na(pep_all_summ_area_cond$Area_CV))){
   warning("Area CV plots cannot be generated for conditions. No replicates found")
 }else{
@@ -994,13 +1006,13 @@ if(all(is.na(pep_all_summ_area_biorep$Area_CV))){
 ### Condition
 
 ```{r plot-areacv-all-condition}
-ggprint_rawr(pviolin_areacv_cond_all)
+if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-all-biorep}
-ggprint_rawr(pviolin_areacv_biorep_all)
+if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
 ```
 
 ## Slected peptides  {.tabset}
@@ -1008,13 +1020,13 @@ ggprint_rawr(pviolin_areacv_biorep_all)
 ### Condition
 
 ```{r plot-areacv-short-condition}
-ggprint_rawr(pviolin_areacv_cond_short)
+if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-short-biorep}
-ggprint_rawr(pviolin_areacv_biorep_short)
+if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short)
 ```
 
 # Identification QC
@@ -1208,6 +1220,33 @@ if(params$PlotsSave == TRUE){
   }
 }
 ```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>
 
 
 

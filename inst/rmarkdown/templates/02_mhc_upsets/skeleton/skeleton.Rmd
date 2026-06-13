@@ -11,6 +11,7 @@ output:
 params:
   SampleSet: "OBIM_001 MM"
   DataAnalysisNames: "MF, DGZ"
+  DataAcquisitionNames: "LK" # operator(s) who ran the LC-MS acquisition; shown in the report header
   WetLabNames: "LK"
   FolderDocumentation: "1_documentation" # ABSOLUTE path (or relative to the render-time working directory) containing AnnotationFile
   AnnotationFile: "sample_annotation_mm_hla1.csv" # Samples Annotation file, in FolderDocumentation
@@ -385,6 +386,33 @@ for(j in 1:length(conditions)){
   cat('\n')
 }
 ```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>
 
 # END of Report
 

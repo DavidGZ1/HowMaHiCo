@@ -181,7 +181,7 @@ get_annot_sampleid <- function(annotation, file_sample_list){
   sample_list_simple <-
     sample_list_all |>
     dplyr::select(Source_file = Result.Path, Sample_ID = Sample.Comment) |>
-    dplyr::mutate(Source_file = sub(".*\\\\(.+).d.*", "\\1", Source_file))
+    dplyr::mutate(Source_file = extract_run_name(Source_file))
 
   dplyr::inner_join(dplyr::select(annotation, -Sample_ID),
                     sample_list_simple, by = "Source_file")

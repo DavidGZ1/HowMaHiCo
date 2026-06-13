@@ -51,13 +51,13 @@ test_that("parse_fragpipe reshapes raw PSM rows into pep_all schema", {
   expect_equal(out$Source_file, rep("run1", 4))
 })
 
-test_that("parse_fragpipe maps zero-intensity rows to Log2Area = 1 and warns when all-zero", {
+test_that("parse_fragpipe maps zero-intensity rows to NA Log2Area and warns when all-zero", {
   raw <- make_fp_psm_raw()
   out <- suppressWarnings(parse_fragpipe(raw))
   zero_row <- out[out$Area == 0, ]
 
   expect_equal(nrow(zero_row), 1)
-  expect_equal(zero_row$Log2Area, 1)
+  expect_true(is.na(zero_row$Log2Area))
 
   all_zero <- raw
   all_zero$Intensity <- 0

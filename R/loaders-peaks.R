@@ -245,7 +245,7 @@ parse_peaks <- function(input, shortpep_range = c(8, 13)){
     dplyr::arrange(ProteinFirst, m_z) |>
     dplyr::mutate(
       PeptideID = paste0(ProteinFirst, "_", round(m_z, 1), "_", as.numeric(Charge)),
-      Log2Area = ifelse(Area == 0, NA, log(Area, 2)),
+      Log2Area = compute_log2area(Area),
       Length_range = dplyr::case_when(
         Length >= shortpep_range[1] & Length <= shortpep_range[2] ~
           paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"),
@@ -262,7 +262,8 @@ parse_peaks <- function(input, shortpep_range = c(8, 13)){
         "Sample_peaks", "File_peaks_nb",
         "Source_File_ID", "Precursor_Id", "n_Feature", "Found_By",
         "PeptideID", "ProteinFirst", "GeneFirst", "OrganismFirst")
-    ))
+    )) |>
+    validate_pep_all("PEAKS")
 }
 
 

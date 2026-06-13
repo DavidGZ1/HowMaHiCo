@@ -7,7 +7,15 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.3.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.4.0** — Phases 1–6 of the package conversion are complete.
+v0.4.0 is a loader-consistency + report-robustness pass: the three loaders now share
+`compute_log2area()` (zero `Area` → `NA` everywhere, previously `1` for FragPipe/DIA-NN
+and `NA` for PEAKS — a user-visible behavior change), `extract_run_name()` (POSIX-safe
+run-name extraction, no longer Windows-backslash-only), and `validate_pep_all()`
+(core-schema guard at each parser tail) — all internal helpers in `R/utils-loaders.R`.
+The `01_mhc_report` template degrades gracefully on partial subsets (single-Condition
+UpSets, no-replicate Area %CV), both templates gained a "Session & provenance" footer,
+and `02_mhc_upsets` now declares its `DataAcquisitionNames` param.
 v0.3.0 was a best-practices pass: base-package imports declared, all exports made
 public (no `@keywords internal`), `NEWS.md` added, internal code unified on the
 native `|>` pipe (R floor raised to 4.1.0).

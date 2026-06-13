@@ -1,3 +1,36 @@
+# HowMaHiCo 0.4.0
+
+## Loader consistency & portability
+
+* Unified `Log2Area` zero-handling across all three loaders: a zero
+  `Area`/`Intensity` now maps to `NA` everywhere. Previously FragPipe and DIA-NN
+  mapped it to `1` while PEAKS mapped it to `NA`, so the same zero-area row
+  behaved differently depending on the search engine. **This changes
+  FragPipe/DIA-NN output for zero-area rows** — they no longer carry a fabricated
+  `Log2Area = 1`. The shared logic now lives in an internal `compute_log2area()`
+  helper.
+* Run-name extraction (DIA-NN `File.Name`, Bruker HyStar `Result.Path`) is now
+  separator-agnostic via an internal `extract_run_name()` helper, replacing a
+  backslash-anchored regex that only worked on Windows-style paths. The loaders
+  are now portable to Linux/macOS (and Docker).
+* Each `parse_*()` validates its output against the core `pep_all` schema
+  (`validate_pep_all()`), so a loader that drops/renames a core column or returns
+  an empty table fails loudly at the source instead of producing a half-broken
+  report several sections later.
+
+## Report robustness & provenance
+
+* The main report (`01_mhc_report`) no longer aborts on partial subsets: the
+  UpSet sections skip gracefully when fewer than two Conditions are present, and
+  the Area %CV sections render an explanatory note instead of erroring when no
+  replicates exist.
+* Both report templates gained a "Session & provenance" footer: the run
+  parameters as a table, the package version, and a collapsible `sessionInfo()`,
+  so a saved HTML is self-documenting.
+* Declared the previously-undeclared `DataAcquisitionNames` parameter in the
+  `02_mhc_upsets` template (it was referenced in the header but never defined in
+  the YAML, so it rendered blank).
+
 # HowMaHiCo 0.3.0
 
 ## Packaging & best-practices cleanup
