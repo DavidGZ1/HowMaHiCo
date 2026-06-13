@@ -11,6 +11,8 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## In standby
 
+* Overlap intra-Condition (across replicates), split into individual plots for each length
+* Peptides identified per charge +1 to +4, make one plot for all peptides (from pep_all) and one for selected length (from pep_short)
 * 2do by me change purple color of length plots to a dimmer one
 * one single parser function
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins
