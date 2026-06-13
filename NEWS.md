@@ -1,4 +1,4 @@
-# HowMaHiCo 0.3.0 (development version)
+# HowMaHiCo 0.3.0
 
 ## Packaging & best-practices cleanup
 
