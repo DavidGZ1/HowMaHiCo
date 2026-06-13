@@ -11,9 +11,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## In standby
 
-* Overlap intra-Condition (across replicates), split into individual plots for each length
-* Peptides identified per charge +1 to +4, make one plot for all peptides (from pep_all) and one for selected length (from pep_short)
-* 2do by me change purple color of length plots to a dimmer one
 * one single parser function
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins
 * reorder plots in a way that makes more sense
@@ -81,4 +78,7 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * add to the readme as optional subpoint in complete the annotation csv: complete the annotation table with the Sample_ID from the Hystar sample list using get_annot_sampleid
 * de-vendor get_dirs_index_peaks: removed the vendored/deltaProtR provenance, renamed R/vendored-deltaprotr.R to R/loaders-peaks-dirs.R, converted its pipes to |> (v0.3.0)
 * unify the two report templates (01_mhc_report, 02_mhc_upsets skeleton.Rmd) on the native |> pipe (181 %>% converted; verified via knitr::purl + parse) (v0.3.0)
+* 2do by me change purple color of length plots to a dimmer one
+* Overlap intra-Condition (across replicates), split into individual plots for each length: plot_overlap_intra_condition() refactored to single-plot (df, id_col, title); report section now All peptides / Selected peptides nested tabsets (v0.5.0)
+* Peptides identified per charge +1 to +4, one plot for all peptides (pep_all) and one for selected length (pep_short), shown in an All / Selected tabset (v0.5.0)
 

@@ -7,8 +7,13 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.4.0** — Phases 1–6 of the package conversion are complete.
-v0.4.0 is a loader-consistency + report-robustness pass: the three loaders now share
+**Current version: 0.5.0** — Phases 1–6 of the package conversion are complete.
+v0.5.0 split two report sections by length to match the "Average +/- sd" pattern:
+`plot_overlap_intra_condition()` is now a single-plot function (breaking signature:
+`(df, id_col, title, shortpep_range)` — was `(pep_all, pep_short, id_col, ...)`),
+and the "Overlap intra-Condition" + "Peptides identified per charge" report sections
+now show All peptides / Selected peptides (`pep_short`) as separate nested tabsets.
+v0.4.0 was a loader-consistency + report-robustness pass: the three loaders now share
 `compute_log2area()` (zero `Area` → `NA` everywhere, previously `1` for FragPipe/DIA-NN
 and `NA` for PEAKS — a user-visible behavior change), `extract_run_name()` (POSIX-safe
 run-name extraction, no longer Windows-backslash-only), and `validate_pep_all()`

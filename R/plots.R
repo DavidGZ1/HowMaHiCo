@@ -890,31 +890,34 @@ plot_count_mean_sd <- function(df, level, lim_level) {
     ggplot2::ggtitle(paste0("Unique ", level, " (mean +/- sd)"))
 }
 
-#' Stacked overlap barplot (all vs short peptides) for one ID level
+#' Overlap barplot for one ID level
 #'
-#' Builds two barplots — one for `pep_all` and one for `pep_short` — showing
-#' how many IDs were detected in 1, 2, 3, … replicates per Condition, then
-#' combines them vertically with [ggpubr::ggarrange()]. Works for Peptides,
-#' Sequences, or Proteins by dispatching on `id_col`.
+#' Builds a barplot showing how many IDs were detected in 1, 2, 3, …
+#' replicates per Condition, for a single `pep_all`-shaped data frame. Works for
+#' Peptides, Sequences, or Proteins by dispatching on `id_col`. Call it once per
+#' length subset (e.g. all peptides, then length-selected peptides) to get an
+#' individual plot for each.
 #'
-#' @param pep_all,pep_short `pep_all`-shaped data frames (all and length-
-#'   filtered peptides respectively).
+#' @param df A `pep_all`-shaped data frame (e.g. `pep_all`, or the
+#'   length-filtered `pep_short`).
 #' @param id_col Column defining the ID level: `"Peptide"`, `"Sequence"`, or
 #'   `"Accession"`.
-#' @param shortpep_range Length-2 numeric vector `c(min, max)` used only to
-#'   build the subtitle of the lower panel.
+#' @param title Plot title. When `NULL` (default), a generic id-based label
+#'   (`"Nb Peptides"` etc.) is used.
+#' @param shortpep_range Length-2 numeric vector `c(min, max)`; retained for API
+#'   compatibility (no longer used to build a subtitle now that all/short are
+#'   plotted separately).
 #'
-#' @return A [ggpubr::ggarrange()] figure (upper: all peptides; lower: short
-#'   peptides) with a shared legend.
+#' @return A ggplot2 barplot of IDs by number of replicates, per Condition.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' plot_overlap_intra_condition(pep_all, pep_short, "Peptide")
-#' plot_overlap_intra_condition(pep_all, pep_short, "Accession")
+#' plot_overlap_intra_condition(pep_all, "Peptide", title = "All Peptides")
+#' plot_overlap_intra_condition(pep_short, "Accession")
 #' }
-plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
+plot_overlap_intra_condition <- function(df, id_col, title = NULL,
                                          shortpep_range = c(8, 13)) {
   n_col  <- dplyr::case_when(id_col == "Peptide"   ~ "n_Peptides",
                               id_col == "Sequence"  ~ "n_Sequences",
@@ -922,68 +925,43 @@ plot_overlap_intra_condition <- function(pep_all, pep_short, id_col,
   ylabel <- dplyr::case_when(id_col == "Peptide"   ~ "Nb Peptides",
                               id_col == "Sequence"  ~ "Nb Sequences",
                               id_col == "Accession" ~ "Nb Proteins")
-  title_all <- dplyr::case_when(
-    id_col == "Peptide"   ~ "All Peptides",
-    id_col == "Sequence"  ~ "All Sequences",
-    id_col == "Accession" ~ "Proteins from all peptides")
-  title_short <- dplyr::case_when(
-    id_col == "Peptide"   ~ paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
-    id_col == "Sequence"  ~ paste0("Selected Sequences (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
-    id_col == "Accession" ~ paste0("Proteins from ", shortpep_range[1], " to ", shortpep_range[2], " AAs"))
+  if (is.null(title)) title <- ylabel
   nudge <- if (id_col == "Accession") 200 else 300
   tot_col <- paste0("total_", sub("n_", "", n_col))
 
-  .make_overlap_df <- function(df) {
-    df |>
-      dplyr::select(Condition, Sample, dplyr::all_of(id_col)) |>
-      unique() |>
-      dplyr::group_by(Condition, .data[[id_col]]) |>
-      dplyr::summarize(n_Samples = dplyr::n_distinct(Sample), .groups = "drop") |>
-      dplyr::group_by(Condition, n_Samples) |>
-      dplyr::summarize(n_ids = dplyr::n_distinct(.data[[id_col]]), .groups = "drop") |>
-      dplyr::rename_with(.fn = ~n_col, .cols = "n_ids") |>
-      dplyr::mutate(n_Samples = as.factor(n_Samples)) |>
-      dplyr::arrange(Condition, dplyr::desc(n_Samples)) |>
-      dplyr::group_by(Condition) |>
-      dplyr::mutate(
-        tot_val = sum(.data[[n_col]]),
-        perc    = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
-        cum     = cumsum(.data[[n_col]])) |>
-      dplyr::rename_with(.fn = ~tot_col, .cols = "tot_val")
-  }
+  df_ov <- df |>
+    dplyr::select(Condition, Sample, dplyr::all_of(id_col)) |>
+    unique() |>
+    dplyr::group_by(Condition, .data[[id_col]]) |>
+    dplyr::summarize(n_Samples = dplyr::n_distinct(Sample), .groups = "drop") |>
+    dplyr::group_by(Condition, n_Samples) |>
+    dplyr::summarize(n_ids = dplyr::n_distinct(.data[[id_col]]), .groups = "drop") |>
+    dplyr::rename_with(.fn = ~n_col, .cols = "n_ids") |>
+    dplyr::mutate(n_Samples = as.factor(n_Samples)) |>
+    dplyr::arrange(Condition, dplyr::desc(n_Samples)) |>
+    dplyr::group_by(Condition) |>
+    dplyr::mutate(
+      tot_val = sum(.data[[n_col]]),
+      perc    = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
+      cum     = cumsum(.data[[n_col]])) |>
+    dplyr::rename_with(.fn = ~tot_col, .cols = "tot_val")
 
-  .make_bar <- function(df_ov, title) {
-    ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
-    df_ov |>
-      ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
-                        label = FALSE, lab.pos = "in",
-                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
-      ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
-                         size = 2.5, nudge_y = -nudge) +
-      ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
-                         size = 2.5, nudge_y = nudge) +
-      theme_howmahico() +
-      ggplot2::ylab(ylabel) +
-      ggplot2::xlab("Condition") +
-      ggpubr::rotate_x_text(70) +
-      ggplot2::scale_y_continuous(
-        limits = c(0, ylim_ov),
-        # breaks = seq(0, ylim_ov, 5000),
-        # labels = scales::label_number(suffix = " k", scale = 1e-3)
-        n.breaks = 5) +
-      ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
-      ggplot2::ggtitle(title)
-  }
-
-  df_all_ov   <- .make_overlap_df(pep_all)
-  df_short_ov <- .make_overlap_df(pep_short)
-  bp_all      <- .make_bar(df_all_ov,   title_all)
-  bp_short    <- .make_bar(df_short_ov, title_short)
-  ggpubr::ggarrange(
-    bp_all   + ggpubr::rremove("xlab") + ggpubr::rremove("x.text"),
-    bp_short,
-    nrow = 2, heights = c(0.4, 0.6), align = "v",
-    common.legend = TRUE, legend = "right")
+  ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
+  df_ov |>
+    ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
+                      label = FALSE, lab.pos = "in",
+                      lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
+    ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
+                       size = 2.5, nudge_y = -nudge) +
+    ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
+                       size = 2.5, nudge_y = nudge) +
+    theme_howmahico() +
+    ggplot2::ylab(ylabel) +
+    ggplot2::xlab("Condition") +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::scale_y_continuous(limits = c(0, ylim_ov), n.breaks = 5) +
+    ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
+    ggplot2::ggtitle(title)
 }
 
 #' Violin + overlaid boxplot of Score or mass error per Condition and charge

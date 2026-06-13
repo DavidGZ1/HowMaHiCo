@@ -1,3 +1,20 @@
+# HowMaHiCo 0.5.0
+
+## Report: per-length splits for the overlap and charge sections
+
+* `plot_overlap_intra_condition()` now returns a single replicate-overlap bar
+  chart for one data frame and one ID level, instead of stacking all-vs-selected
+  peptides into a two-row `ggpubr::ggarrange()`. **Breaking signature change**:
+  the arguments are now `(df, id_col, title = NULL, shortpep_range)` (previously
+  `(pep_all, pep_short, id_col, shortpep_range)`). The main report's "Overlap
+  intra-Condition" section now presents All peptides and Selected peptides as
+  separate nested tabsets (Peptides / Sequences / Proteins), matching the
+  "Average +/- sd" section.
+* The "Peptides identified per charge +1 to +4" section now renders a plot for
+  the selected-length peptides (`pep_short`) alongside the all-peptides plot, in
+  an All peptides / Selected peptides tabset. The selected-length plot is also
+  written out when `PlotsSave = TRUE`.
+
 # HowMaHiCo 0.4.0
 
 ## Loader consistency & portability

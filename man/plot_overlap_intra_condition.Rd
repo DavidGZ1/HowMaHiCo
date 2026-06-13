@@ -2,38 +2,42 @@
 % Please edit documentation in R/plots.R
 \name{plot_overlap_intra_condition}
 \alias{plot_overlap_intra_condition}
-\title{Stacked overlap barplot (all vs short peptides) for one ID level}
+\title{Overlap barplot for one ID level}
 \usage{
 plot_overlap_intra_condition(
-  pep_all,
-  pep_short,
+  df,
   id_col,
+  title = NULL,
   shortpep_range = c(8, 13)
 )
 }
 \arguments{
-\item{pep_all, pep_short}{\code{pep_all}-shaped data frames (all and length-
-filtered peptides respectively).}
+\item{df}{A \code{pep_all}-shaped data frame (e.g. \code{pep_all}, or the
+length-filtered \code{pep_short}).}
 
 \item{id_col}{Column defining the ID level: \code{"Peptide"}, \code{"Sequence"}, or
 \code{"Accession"}.}
 
-\item{shortpep_range}{Length-2 numeric vector \code{c(min, max)} used only to
-build the subtitle of the lower panel.}
+\item{title}{Plot title. When \code{NULL} (default), a generic id-based label
+(\code{"Nb Peptides"} etc.) is used.}
+
+\item{shortpep_range}{Length-2 numeric vector \code{c(min, max)}; retained for API
+compatibility (no longer used to build a subtitle now that all/short are
+plotted separately).}
 }
 \value{
-A \code{\link[ggpubr:ggarrange]{ggpubr::ggarrange()}} figure (upper: all peptides; lower: short
-peptides) with a shared legend.
+A ggplot2 barplot of IDs by number of replicates, per Condition.
 }
 \description{
-Builds two barplots — one for \code{pep_all} and one for \code{pep_short} — showing
-how many IDs were detected in 1, 2, 3, … replicates per Condition, then
-combines them vertically with \code{\link[ggpubr:ggarrange]{ggpubr::ggarrange()}}. Works for Peptides,
-Sequences, or Proteins by dispatching on \code{id_col}.
+Builds a barplot showing how many IDs were detected in 1, 2, 3, …
+replicates per Condition, for a single \code{pep_all}-shaped data frame. Works for
+Peptides, Sequences, or Proteins by dispatching on \code{id_col}. Call it once per
+length subset (e.g. all peptides, then length-selected peptides) to get an
+individual plot for each.
 }
 \examples{
 \dontrun{
-plot_overlap_intra_condition(pep_all, pep_short, "Peptide")
-plot_overlap_intra_condition(pep_all, pep_short, "Accession")
+plot_overlap_intra_condition(pep_all, "Peptide", title = "All Peptides")
+plot_overlap_intra_condition(pep_short, "Accession")
 }
 }
