@@ -1,3 +1,19 @@
+# HowMaHiCo 0.8.0
+
+* The four focused reports (`01_id_counts`, `02_overlaps`, `03_lcms_qc`,
+  `04_quant`) gained a `PepAllSource` param (with `PepAllFile`) selecting how to
+  obtain `pep_all`: `"cached"` (default — load the `<Subset>_pep_all.rda` cache,
+  the prior behavior), `"rda"` (load an explicit `.rda`), or `"build"` (parse the
+  raw search output via `build_pep_all()` and write the cache). A focused report
+  can now be rendered straight from results without a separate `build_pep_all()`
+  call. Backward compatible — the default reproduces the old behavior.
+* Added a simulated FragPipe dataset (`inst/extdata/sim_fragpipe_dda/`, 2
+  Conditions x 3 BioReplicates, generated with MaHiCoInSilico) and
+  `tests/testthat/test-sim-fragpipe.R`: a `build_pep_all()` loader assertion plus
+  the first end-to-end render test of a focused report (gated on
+  `skip_on_cran()` / pandoc). Moving the data out of `data/` into `inst/extdata/`
+  also clears the R CMD check warnings about non-R files in `data/`.
+
 # HowMaHiCo 0.7.1
 
 * Fixed a "Duplicate chunk label 'setup'" parse error that aborted every focused

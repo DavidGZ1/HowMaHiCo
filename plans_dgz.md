@@ -18,7 +18,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * homogenize sample annotation tables across software
 * Overlap intra-Condition (across replicates) is currently showing absolute count numbers. Add another section showing similar plots but with y axis as percentages.
 * Plan an advanced quantification report. Use Limma for the normalization and statisticla testing.
-* design a test using simulated data in data. For now it only contains fragpipe data, but I will add data from other sofware later. This was generated using MaHiCoInSilico.
 
 
 ## Done
@@ -87,4 +86,6 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * renumbered all report templates: 01_mhc_report->00_mhc_report, 02_mhc_upsets->00_mhc_upsets, 03_id_counts->01_id_counts, 04_overlaps->02_overlaps, 05_lcms_qc->03_lcms_qc, 06_quant->04_quant (v0.7.0)
 * lcms_qc RT/1k0/m_z distribution section rewritten to a single looped results='asis' chunk (config list of views x peptide sets) instead of 8 hand-written chunks (v0.7.0)
 * fixed "Duplicate chunk label 'setup'" parse error in the focused reports: shared setup.Rmd had a fenced r-chunk example inside its leading HTML comment (knitr parses chunks even in comments -> recursive re-include); comment is now prose + regression guard test (v0.7.1)
+* focused reports gained PepAllSource param (cached / rda / build) so each can load the default cache, load an explicit .rda (PepAllFile), or self-build from raw results via build_pep_all(); default = cached = prior behavior (v0.8.0)
+* added simulated FragPipe data (inst/extdata/sim_fragpipe_dda, moved out of data/) + test-sim-fragpipe.R: build_pep_all assertion + first end-to-end render test of a focused report (v0.8.0)
 

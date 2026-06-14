@@ -171,6 +171,13 @@ for (tmpl in c("01_id_counts",  # ID counts, size distributions, motifs, PTM
 }
 ```
 
+Each focused report chooses how to obtain `pep_all` via the `PepAllSource` param:
+`"cached"` (default — load the `<Subset>_pep_all.rda` cache), `"rda"` (load an
+explicit `PepAllFile`), or `"build"` (parse the raw search output itself, no
+separate `build_pep_all()` call). So to render a single focused report directly
+from results, pass `PepAllSource = "build"` (plus `Software`, `AnnotationFile`,
+`FolderDocumentation`) and skip the `build_pep_all()` step above.
+
 `00_mhc_report` (all-in-one) and `00_mhc_upsets` are unchanged and still parse
 the raw files themselves.
 
