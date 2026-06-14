@@ -7,7 +7,12 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.7.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.7.1** — Phases 1–6 of the package conversion are complete.
+v0.7.1 fixed a "Duplicate chunk label 'setup'" parse error that aborted all four
+focused reports: the shared `inst/rmarkdown/shared/setup.Rmd` had a fenced r-chunk
+example inside its leading HTML comment, and knitr parses chunk headers even inside
+comments (re-including the file → duplicate `setup`). Comment is now prose;
+`tests/testthat/test-report-templates.R` guards against it.
 v0.7.0 **renumbered all report templates** (breaking: the `template=` names change):
 `01_mhc_report`→`00_mhc_report`, `02_mhc_upsets`→`00_mhc_upsets`,
 `03_id_counts`→`01_id_counts`, `04_overlaps`→`02_overlaps`,

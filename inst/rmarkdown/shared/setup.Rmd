@@ -1,9 +1,11 @@
 <!--
 Shared setup for the focused HowMaHiCo report templates (01_id_counts,
-02_overlaps, 03_lcms_qc, 04_quant). Included from each skeleton via:
-
-    ```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
-    ```
+02_overlaps, 03_lcms_qc, 04_quant). Each focused skeleton pulls it in with a
+knitr child chunk whose only option is
+child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo").
+(Do not paste that as a fenced r-chunk example in this comment: knitr parses
+chunk headers even inside HTML comments, so an example fence would re-include
+this file and duplicate the 'setup' chunk label.)
 
 It loads libraries, derives the shortpep range / palettes / output folders, then
 LOADS the cached `pep_all` (built once by build_pep_all() or by 00_mhc_report)

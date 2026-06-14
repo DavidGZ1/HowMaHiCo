@@ -1,3 +1,13 @@
+# HowMaHiCo 0.7.1
+
+* Fixed a "Duplicate chunk label 'setup'" parse error that aborted every focused
+  report (`01_id_counts`, `02_overlaps`, `03_lcms_qc`, `04_quant`). The shared
+  `inst/rmarkdown/shared/setup.Rmd` had a fenced r-chunk example inside its leading
+  HTML comment; knitr parses chunk headers even inside comments, so that example
+  re-included the file and duplicated the `setup` chunk. The comment now describes
+  the include in prose, and a regression test guards against reintroducing a chunk
+  fence there. (The two all-in-one reports were unaffected.)
+
 # HowMaHiCo 0.7.0
 
 * **Breaking: renumbered all report templates.** The `template=` value passed to
