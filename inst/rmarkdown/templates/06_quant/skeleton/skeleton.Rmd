@@ -1,0 +1,252 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  TestMode: FALSE
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('06_quant | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **quantitative-data** report (log2(Area) correlation and Area %CV) for
+immunopeptidomics experiments, provided by the Immunopeptidomics Platform (IPP).
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+# Correlation log2(Area) {.tabset}
+
+Pearson correlation using pairwise complete-observations
+
+```{r corr-log2area-data, echo=FALSE, message=FALSE, warning=FALSE}
+# Get Log2Area matrices; NAs are kept as NA; mean is calculated if needed
+## all peptides
+pep_all_log2area_tr  <- get_mat_log2area(pep_all, PeptideID, Sample)
+pep_all_log2area_br  <- get_mat_log2area(pep_all, PeptideID, BioReplicate)
+prot_all_log2area_tr <- get_mat_log2area(pep_all, ProteinFirst, Sample)
+prot_all_log2area_br <- get_mat_log2area(pep_all, ProteinFirst, BioReplicate)
+## short peptides
+pep_short_log2area_tr  <- get_mat_log2area(pep_short, PeptideID, Sample)
+pep_short_log2area_br  <- get_mat_log2area(pep_short, PeptideID, BioReplicate)
+prot_short_log2area_tr <- get_mat_log2area(pep_short, ProteinFirst, Sample)
+prot_short_log2area_br <- get_mat_log2area(pep_short, ProteinFirst, BioReplicate)
+
+# Initialise so the export block can test for them when a plot was skipped (all-NA)
+p_corr_log2area_all <- p_corr_log2area_short <- NULL
+```
+
+
+## All peptides
+
+```{r plot-corr-all, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=TRUE}
+# Matrix of log2(Area)
+corr_log2area_all <-  cor(pep_all_log2area_tr, method = "pearson", use = "pairwise.complete.obs")
+
+#setup limits
+corrarea_lim <- c(floor(min(corr_log2area_all, na.rm = TRUE)),
+                  ceiling(max(corr_log2area_all, na.rm = TRUE)))
+
+corrarea_mid <- ifelse(all(corrarea_lim == c(-1,1)), 0, 0.7)
+if(all(corrarea_lim == c(-1,1))){
+  corrarea_breaks <- seq(-1, 1, 0.2)
+}else {
+  corrarea_breaks <- seq(0, 1, 0.1)
+}
+
+
+if(all(is.na(corr_log2area_all))){
+  warning("Correlation plot cannot be generated because there is no non-na correlation. Maybe the Areas were not included.")
+}else{
+  p_corr_log2area_all <-
+  corr_log2area_all |>
+  plot_corr() +
+  ggtitle("Log2Area correlation for all peptides")
+
+ggplotly(p_corr_log2area_all)
+}
+
+
+```
+
+
+## Selected peptides `r paste0("(", shortpep_range[1]," to ", shortpep_range[2], " AAs)")`
+
+```{r plot-corr-short, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE}
+corr_log2area_short <-  cor(pep_short_log2area_tr, method = "pearson", use = "pairwise.complete.obs")
+#setup limits
+corrarea_lim <- c(floor(min(corr_log2area_short, na.rm = TRUE)),
+                  ceiling(max(corr_log2area_short, na.rm = TRUE)))
+
+corrarea_mid <- ifelse(all(corrarea_lim == c(-1,1)), 0, 0.7)
+if(all(corrarea_lim == c(-1,1))){
+  corrarea_breaks <- seq(-1, 1, 0.2)
+}else {
+  corrarea_breaks <- seq(0, 1, 0.1)
+}
+
+
+
+
+if(all(is.na(corr_log2area_short))){
+  warning("Correlation plot cannot be generated because there is no non-na correlation. Maybe the Areas were not included.")
+}else{
+p_corr_log2area_short<-
+  corr_log2area_short |>
+  plot_corr() +
+    ggtitle(paste0("Log2Area correlation for selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)"))
+
+ggplotly(p_corr_log2area_short)
+}
+```
+
+
+# Area CV violin plots {.tabset}
+
+```{r areacv-data, echo=FALSE, fig.width=8, fig.height=7}
+pep_all_summ_area_cond <- summarise_area(pep_all, Condition)
+pep_all_summ_area_biorep <- summarise_area(pep_all,  BioReplicate)
+pep_short_summ_area_cond <- summarise_area(pep_short, Condition)
+pep_short_summ_area_biorep <- summarise_area(pep_short,  BioReplicate)
+# Initialise to NULL so the print chunks below have something to test against
+# when a branch is skipped (no replicates) instead of an undefined-object error.
+pviolin_areacv_cond_all <- pviolin_areacv_cond_short <-
+  pviolin_areacv_biorep_all <- pviolin_areacv_biorep_short <- NULL
+if(all(is.na(pep_all_summ_area_cond$Area_CV))){
+  warning("Area CV plots cannot be generated for conditions. No replicates found")
+}else{
+  pviolin_areacv_cond_all  <- plot_violin_areacv(pep_all_summ_area_cond, Condition)
+  pviolin_areacv_cond_short  <- plot_violin_areacv(pep_short_summ_area_cond, Condition)
+}
+if(all(is.na(pep_all_summ_area_biorep$Area_CV))){
+  warning("Area CV plots cannot be generated for BioReplicates. No replicates found")
+}else{
+  pviolin_areacv_biorep_all  <- plot_violin_areacv(pep_all_summ_area_biorep, BioReplicate)
+  pviolin_areacv_biorep_short  <- plot_violin_areacv(pep_short_summ_area_biorep, BioReplicate)
+}
+```
+
+## All peptides  {.tabset}
+
+### Condition
+
+```{r plot-areacv-all-condition}
+if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all)
+```
+
+### BioReplicate
+
+```{r plot-areacv-all-biorep}
+if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
+```
+
+## Slected peptides  {.tabset}
+
+### Condition
+
+```{r plot-areacv-short-condition}
+if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short)
+```
+
+### BioReplicate
+
+```{r plot-areacv-short-biorep}
+if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short)
+```
+
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+write_input_params(params, folder = FolderResults, prefix = "06_quant")
+
+if (params$CsvSave) {
+  write.csv_rawr(pep_all_log2area_tr, folder = FolderResults)
+  write.csv_rawr(pep_all_log2area_br, folder = FolderResults)
+  write.csv_rawr(prot_all_log2area_tr, folder = FolderResults)
+  write.csv_rawr(prot_all_log2area_br, folder = FolderResults)
+  write.csv_rawr(pep_short_log2area_tr, folder = FolderResults)
+  write.csv_rawr(pep_short_log2area_br, folder = FolderResults)
+  write.csv_rawr(prot_short_log2area_tr, folder = FolderResults)
+  write.csv_rawr(prot_short_log2area_br, folder = FolderResults)
+}
+
+if (params$PlotsSave) {
+  if (!is.null(p_corr_log2area_all))
+    ggsave_rawr(p_corr_log2area_all, file = "p_corr_log2area_all", folder = FolderFigures, width = 20, height = 20)
+  if (!is.null(p_corr_log2area_short))
+    ggsave_rawr(p_corr_log2area_short, file = "p_corr_log2area_short", folder = FolderFigures, width = 22, height = 22)
+  for (nm in c("pviolin_areacv_cond_all", "pviolin_areacv_biorep_all",
+               "pviolin_areacv_cond_short", "pviolin_areacv_biorep_short")) {
+    obj <- get(nm)
+    if (!is.null(obj)) ggsave_rawr(obj, file = nm, folder = FolderFigures, width = 12, height = 8)
+  }
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>

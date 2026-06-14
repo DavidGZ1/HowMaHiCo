@@ -39,7 +39,7 @@ conditions and replicates.
 | Folder | Contents |
 |---|---|
 | `R/` | Package source — the ~40 functions (loaders, annotation, counting, plotting, export) plus the `run_howmahico_report()`/`derive_filtered_annotation()` entry points |
-| `inst/rmarkdown/templates/` | The two parameterized Rmd report templates (`01_mhc_report`, `02_mhc_upsets`), packaged for `rmarkdown::draft()`/`run_howmahico_report()` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `01_mhc_report` (all-in-one), `02_mhc_upsets`, and the focused `03_id_counts`/`04_overlaps`/`05_lcms_qc`/`06_quant` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
 | `man/` | Generated roxygen2 documentation (`.Rd`) |
 | `1_documentation/` | Sample annotation CSVs (one per analysis subset) |
@@ -147,6 +147,32 @@ run_howmahico_report(
 installed package and can be rendered from anywhere. One call renders one report;
 loop with `derive_filtered_annotation()` for multi-subset batch runs (see the
 `\dontrun{}` example on `run_howmahico_report`).
+
+**Focused reports (instead of the all-in-one `01_mhc_report`)** — build the
+`pep_all` cache once with `build_pep_all()`, then render any subset of the
+smaller, purpose-focused templates against it (no re-parsing per report):
+
+```r
+annot <- read_annot("1_documentation/sample_annotation.csv")
+build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
+              annotation = annot, shortpep_range = c(8, 13),
+              file_rda = "2_data/dda_all_pep_all.rda")
+
+for (tmpl in c("03_id_counts",  # ID counts, size distributions, motifs
+               "04_overlaps",   # replicate / condition / pairwise overlap
+               "05_lcms_qc",    # RT/1k0/mz, Score/ppm, PTM (advanced)
+               "06_quant")) {   # log2(Area) correlation, Area %CV
+  run_howmahico_report(tmpl,
+                       params = list(SampleSet = "project_id", Subset = "dda_all",
+                                     FolderData = "2_data", FolderResults = "3_results",
+                                     FolderFigures = "4_figures",
+                                     Software = "fragpipe_dda_combined"),
+                       output_file = paste0(tmpl, "__dda_all.html"))
+}
+```
+
+`01_mhc_report` (all-in-one) and `02_mhc_upsets` are unchanged and still parse
+the raw files themselves.
 
 Reports are written to `output_file` (HTML), and result tables/figures are written
 under `<FolderResults>/<subset>/` and `<FolderFigures>/<subset>/`.

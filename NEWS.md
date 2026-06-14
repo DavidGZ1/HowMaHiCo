@@ -1,3 +1,27 @@
+# HowMaHiCo 0.6.0
+
+## Multi-report framework
+
+* New exported `build_pep_all()` extracts the raw-file parsing step (the
+  FragPipe / DIA-NN / PEAKS read → parse → annotate dispatch) into a standalone,
+  unit-tested function that writes the `<Subset>_pep_all.rda` cache. Run it once,
+  then render any of the focused reports against that cache instead of
+  re-parsing the raw search files per report.
+* Four new focused report templates, each a slice of the all-in-one
+  `01_mhc_report`, rendered the same way via `run_howmahico_report()`:
+  - `03_id_counts` — total IDs, identification counts (mean±sd, by length, by
+    charge, by sample), peptide size distributions, peptide motifs.
+  - `04_overlaps` — intra-Condition replicate overlap, UpSet across Conditions,
+    and Condition pairwise overlap.
+  - `05_lcms_qc` — RT / 1k0 / m/z distributions, Score and mass-error
+    identification QC, and the PTM profile (advanced LC-MS QC).
+  - `06_quant` — log2(Area) correlation and Area %CV violins.
+* The focused reports share one setup fragment
+  (`inst/rmarkdown/shared/setup.Rmd`, pulled in via a knitr `child`) that loads
+  the cache and derives the common objects, instead of duplicating the
+  boilerplate in every skeleton.
+* `01_mhc_report` and `02_mhc_upsets` are unchanged — full retrocompatibility.
+
 # HowMaHiCo 0.5.0
 
 ## Report: per-length splits for the overlap and charge sections

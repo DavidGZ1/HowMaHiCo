@@ -1,0 +1,541 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  TestMode: FALSE
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('03_id_counts | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **general identification-QC** report (ID counts, size distributions and
+motifs) for immunopeptidomics experiments, provided by the Immunopeptidomics
+Platform (IPP).
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+## Total IDs with decoys, DeNovo and contaminants
+
+This evaluation includes all peptides identified, without filtering out peptides that were not assigned to any protein or peptides that could come from contaminant proteins (Accession labeled Cont_). These values are shown below. Some true peptides can be originated from proteins typically assigned as contaminant in proteomics experiments (e.g., actins, keratins, albumins, etc.).
+
+```{r check-ids-global, echo=FALSE}
+check_ids_global(pep_all) |>
+  kable() |>
+  kable_paper("hover", full_width = F)
+```
+
+# Identification counts
+
+```{r counts-all, echo=FALSE}
+
+counts_levels <- c("Peptides", "Sequences", "Proteins")
+
+# Counts all peptides
+## Sample
+counts_all <- pep_all |>
+  group_by(Condition, BioReplicate, Sample) |>
+  summarise(n_Peptides = n_distinct(Peptide),
+            n_Sequences = n_distinct(Sequence),
+            n_Proteins = n_distinct(Accession),
+            .groups = "drop")
+
+## Condition average
+counts_all_mean <-
+  counts_all |>
+  group_by(Condition) |>
+  summarise(across(where(is.numeric),
+                   list(mean = ~mean(.x, na.rm = TRUE),
+                   sd = ~sd(.x, na.rm = TRUE))),
+            .groups = "drop") |>
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+## Condition total
+counts_all_total <- pep_all |>
+  group_by(Condition) |>
+  summarise(n_Peptides = n_distinct(Peptide),
+            n_Sequences = n_distinct(Sequence),
+            n_Proteins = n_distinct(Accession),
+            .groups = "drop")
+
+## BioReplicate per TechReplicate
+counts_all_overlap <-
+  pep_all |>
+  filter(Area != 0) |>
+  count(Condition,  Accession, Peptide, Sequence, name = "n_Samples") |>
+  mutate(n_Samples = factor(paste0(n_Samples, " Rep."))) |>
+  group_by(Condition, n_Samples) |>
+  summarise(n_Peptides = n_distinct(Peptide),
+            n_Sequences = n_distinct(Sequence),
+            n_Proteins = n_distinct(Accession),
+            .groups = "drop") |>
+  full_join(rename_with(counts_all_total, ~gsub("n_", "total_", .x)), by = "Condition") |>
+  pivot_longer(cols = -c(Condition, n_Samples), names_to = "Type_Level", values_to = "n") |>
+  separate(Type_Level, sep = "_", into = c("Type", "Level")) |>
+  pivot_wider(id_cols = c(Condition, n_Samples, Level), values_from = "n", names_from = "Type") |>
+  arrange(Condition, Level, desc(n_Samples)) |>
+  group_by(Condition, Level) |>
+  mutate(perc = paste0("", round(100*(n/total), 1), "%"),
+         cum = cumsum(n)) |>
+  pivot_wider(id_cols = c(Condition, n_Samples), names_from = Level, values_from = all_of(c("n", "perc", "cum",  "total")))
+
+## Limits for plots
+count_lim <- data.frame(Level = c("Peptides", "Sequences", "Proteins"),
+                        Limit_mean = c( ceiling((max(counts_all$n_Peptides)*1.2/100))*100,
+                                   ceiling((max(counts_all$n_Sequences)*1.2/100))*100,
+                                   ceiling((max(counts_all$n_Proteins)*1.3/100))*100),
+                        Limit_total = c( ceiling((max(counts_all_total$n_Peptides)*1.2/100))*100,
+                                   ceiling((max(counts_all_total$n_Sequences)*1.2/100))*100,
+                                   ceiling((max(counts_all_total$n_Proteins)*1.2/100))*100))
+
+### adaptation for running with all way of plotting for the overlaps
+
+npep_ylim <- count_lim[count_lim$Level == "Peptides", "Limit_mean"]
+nseq_ylim <- count_lim[count_lim$Level == "Sequences", "Limit_mean"]
+nprot_ylim <- count_lim[count_lim$Level == "Proteins", "Limit_mean"]
+npep_ylim_total <- count_lim[count_lim$Level == "Peptides", "Limit_total"]
+nseq_ylim_total <- count_lim[count_lim$Level == "Sequences", "Limit_total"]
+nprot_ylim_total <- count_lim[count_lim$Level == "Proteins", "Limit_total"]
+
+
+# By LengthRange
+## Sample
+counts_size <-
+  bind_rows(counts_all |>
+              mutate(Length_range =  "All peptides"),
+            pep_all |>
+              group_by(Condition, BioReplicate, Sample, Length_range) |>
+              summarise(n_Peptides = n_distinct(Peptide),
+                        n_Sequences = n_distinct(Sequence),
+                        n_Proteins = n_distinct(Accession),
+                        .groups = "drop") |>
+              arrange(Sample))  |>
+  #arrange factors in a logical way
+  mutate(Length_range = factor(Length_range,
+                               levels = c("All peptides", "others", paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"))))
+
+## Condition average
+counts_size_mean <-
+  counts_size |>
+  group_by(Condition, Length_range) |>
+  summarise(across(where(is.numeric),
+                   list(mean = ~mean(.x, na.rm = TRUE),
+                        sd = ~sd(.x, na.rm = TRUE))),
+            .groups = "drop") |>
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+## Condition total
+counts_size_total <-
+  bind_rows(counts_all_total |>
+              mutate(Length_range =  "All peptides"),
+            pep_all |>
+              group_by(Condition, Length_range) |>
+              summarise(n_Peptides = n_distinct(Peptide),
+                        n_Sequences = n_distinct(Sequence),
+                        n_Proteins = n_distinct(Accession),
+                        .groups = "drop")) |>
+  #arrange factors in a logical way
+  mutate(Length_range = factor(Length_range,
+                               levels = c("All peptides", "others", paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"))))
+
+# Per-sample y-axis limits
+counts_all_sample <- counts_size |> dplyr::filter(Length_range == "All peptides")
+count_lim$Limit_sample <- c(
+  ceiling(max(counts_all_sample$n_Peptides)  * 1.2 / 100) * 100,
+  ceiling(max(counts_all_sample$n_Sequences) * 1.2 / 100) * 100,
+  ceiling(max(counts_all_sample$n_Proteins)  * 1.2 / 100) * 100
+)
+```
+
+
+```{r counts-size-short-prep, echo=FALSE}
+counts_size_short <- counts_size |>
+  dplyr::filter(!Length_range %in% c("All peptides", "others")) |>
+  droplevels()
+count_lim_short <- data.frame(
+  Level = c("Peptides", "Sequences", "Proteins"),
+  Limit_mean = c(
+    ceiling(max(counts_size_short$n_Peptides,  na.rm = TRUE) * 1.2 / 100) * 100,
+    ceiling(max(counts_size_short$n_Sequences, na.rm = TRUE) * 1.2 / 100) * 100,
+    ceiling(max(counts_size_short$n_Proteins,  na.rm = TRUE) * 1.2 / 100) * 100
+  )
+)
+```
+
+## Average +/- sd {.tabset}
+
+### All peptides {.tabset}
+
+```{r plot-count-mean-sd-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+counts_size_all <- counts_size |> dplyr::filter(Length_range == "All peptides") |> droplevels()
+for (i in seq_along(counts_levels)) {
+  level <- counts_levels[i]
+  lim_level <- count_lim[count_lim$Level == level, "Limit_mean"]
+  cat("#### ", level, "\n")
+  print(plot_count_mean_sd(counts_size_all, level, lim_level))
+  cat("\n\n")
+}
+```
+
+### Selected peptides {.tabset}
+
+```{r plot-count-mean-sd-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(counts_levels)) {
+  level <- counts_levels[i]
+  lim_level <- count_lim_short[count_lim_short$Level == level, "Limit_mean"]
+  cat("#### ", level, "\n")
+  print(plot_count_mean_sd(counts_size_short, level, lim_level))
+  cat("\n\n")
+}
+```
+
+## Total by Condition {.tabset}
+
+Total IDs by Condition in function of length range
+
+```{r plot-count-total-condition, results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE}
+
+bp_count_length <- list(plot_bp_count_length(df = counts_size_total, level = counts_levels[1],
+                                              lim_level = count_lim[count_lim$Level == counts_levels[1], "Limit_total"],
+                                              shortpep_range = shortpep_range, palette = shortpep_colors),
+                        plot_bp_count_length(df = counts_size_total, level = counts_levels[2],
+                                              lim_level = count_lim[count_lim$Level == counts_levels[2], "Limit_total"],
+                                              shortpep_range = shortpep_range, palette = shortpep_colors),
+                        plot_bp_count_length(df = counts_size_total, level = counts_levels[3],
+                                              lim_level = count_lim[count_lim$Level == counts_levels[3], "Limit_total"],
+                                              shortpep_range = shortpep_range, palette = shortpep_colors))
+
+names(bp_count_length) <- counts_levels
+for(i in 1:length(counts_levels)){
+
+  #print
+  cat("### ",counts_levels[i],"\n")
+  print(bp_count_length[[i]])
+  cat('\n\n')
+}
+```
+
+### Proportion by length
+
+```{r plot-prop-length-condition, echo=FALSE,  fig.height=2.5, fig.width=8, warning=FALSE}
+count_all_condition_lengthrange  <-
+  pep_all |>
+  count_ids_condition_bylengthrange()
+
+
+bp_prop_length_pep_condition <-
+  count_all_condition_lengthrange   |>
+  plot_prop_length_condition(palette = shortpep_colors)  +
+  rotate_x_text(70)
+
+bp_prop_length_pep_condition
+```
+
+## Total by Sample {.tabset}
+
+Total IDs by Sample in function of length range
+
+```{r plot-count-total-sample, results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE}
+bp_count_length_sample <- list(
+  plot_bp_count_length(df = counts_size, level = counts_levels[1],
+                       lim_level = count_lim[count_lim$Level == counts_levels[1], "Limit_sample"],
+                       shortpep_range = shortpep_range, x_var = "Sample", palette = shortpep_colors),
+  plot_bp_count_length(df = counts_size, level = counts_levels[2],
+                       lim_level = count_lim[count_lim$Level == counts_levels[2], "Limit_sample"],
+                       shortpep_range = shortpep_range, x_var = "Sample", palette = shortpep_colors),
+  plot_bp_count_length(df = counts_size, level = counts_levels[3],
+                       lim_level = count_lim[count_lim$Level == counts_levels[3], "Limit_sample"],
+                       shortpep_range = shortpep_range, x_var = "Sample", palette = shortpep_colors)
+)
+names(bp_count_length_sample) <- counts_levels
+for(i in 1:length(counts_levels)){
+  cat("### ", counts_levels[i], "\n")
+  print(bp_count_length_sample[[i]])
+  cat('\n\n')
+}
+```
+
+### Proportion by length
+
+```{r plot-prop-length-sample, echo=FALSE, fig.height=2.5, fig.width=8, warning=FALSE}
+count_all_sample_lengthrange <-
+  pep_all |>
+  count_ids_condition_bylengthrange(group_var = "Sample")
+
+bp_prop_length_pep_sample <-
+  count_all_sample_lengthrange |>
+  plot_prop_length_condition(x_var = "Sample", palette = shortpep_colors) +
+  rotate_x_text(70)
+
+bp_prop_length_pep_sample
+```
+
+
+## Peptides identified per charge +1 to +4 {.tabset}
+
+```{r charge-proportion-data, echo=FALSE, warning=TRUE}
+# Build the charge-state proportion table for a given peptide set (all or selected)
+.charge_prop_table <- function(pep) {
+  bind_rows(
+    pep |>
+      get_charge_group() |>
+      group_by(Condition, Charge_group) |>
+      count_ids() |>
+      arrange(Condition, Charge_group),
+    pep |>
+      get_charge_group() |>
+      group_by(Condition) |>
+      count_ids() |>
+      mutate(Charge_group = "Total")
+  ) |>
+    mutate(Charge_group = factor(Charge_group, rev(unique(Charge_group)))) |>
+    get_proportion_charge()
+}
+
+prop_all_condition_charge   <- .charge_prop_table(pep_all)
+prop_short_condition_charge <- .charge_prop_table(pep_short)
+
+bp_prop_all_condition_charge <-
+  prop_all_condition_charge |>
+  plot_charge_proportions(Condition) +
+  rotate_x_text(70) +
+  ggtitle("Charge proportion all peptides")
+bp_prop_short_condition_charge <-
+  prop_short_condition_charge |>
+  plot_charge_proportions(Condition) +
+  rotate_x_text(70) +
+  ggtitle("Charge proportion selected peptides")
+
+# check if % > 100, per set (peptides can be reported with multiple charge states)
+tmp_prop_total <-
+  bind_rows(all = prop_all_condition_charge, short = prop_short_condition_charge, .id = "set") |>
+  filter(Charge_group != "Total") |>
+  group_by(set, Condition, Level) |>
+  summarise(Proportion_Total = sum(Proportion), .groups = "drop")
+if(any(tmp_prop_total$Proportion_Total > 1)){
+  warning("The total percentage is > 100% in some cases. This may be because some peptides can be reported with multiple charge states (e.g. in Fragpipe)")
+}
+rm(tmp_prop_total)
+```
+
+### All peptides
+
+```{r plot-charge-proportion-all, echo=FALSE, fig.height=3.5, fig.width=8}
+bp_prop_all_condition_charge
+```
+
+### Selected peptides
+
+```{r plot-charge-proportion-short, echo=FALSE, fig.height=3.5, fig.width=8}
+bp_prop_short_condition_charge
+```
+
+
+# Peptide size distribution {.tabset}
+
+```{r pep-unique-data, echo=FALSE, warning=FALSE}
+# calculations for plots below
+pep_all_unique <- pep_all |>
+  select(Peptide, Sequence, PTM, Condition, Length, Mass) |>
+  unique()
+pep_all_unique_mz <- pep_all |>
+  select(Peptide, Sequence, PTM, Condition, Length, Mass, m_z, Charge) |>
+  unique()
+```
+
+## Peptide length (Nb AAs) {.tabset}
+
+### Density
+
+```{r plot-peplength-density, echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+phist_peplength_density <- plot_peplength_hist(pep_all_unique, shortpep_range = shortpep_range,
+                                               type = "density", palette = shortpep_colors)
+phist_peplength_density
+```
+
+### Counts
+
+```{r plot-peplength-counts, echo=FALSE, fig.height=5, fig.width=8, message=FALSE, warning=FALSE}
+plot_peplength_hist(pep_all_unique, shortpep_range = shortpep_range,
+                   type = "count", palette = shortpep_colors)
+```
+
+## Peptide mass (Da)
+
+```{r plot-pepmass, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE}
+phist_pep_mass <- lapply(conditions,
+       function(x) plot_pepmass(pep_all_unique[pep_all_unique$Condition == x, ], x, xlimits = c(0, 5500)))
+names(phist_pep_mass) <- conditions
+
+phist_pep_mass_merged <- ggarrange(plotlist=phist_pep_mass, nrow=phis_nrow, ncol=phis_ncol)
+
+phist_pep_mass_merged
+```
+
+## m/z
+
+```{r plot-pepmz, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE}
+phist_pep_mz <- lapply(conditions,
+       function(x) plot_pepmz(pep_all_unique_mz[pep_all_unique_mz$Condition == x, ], x, xlimits = c(0, 1500)))
+names(phist_pep_mz) <- conditions
+
+phist_pep_mz_merged <- ggarrange(plotlist=phist_pep_mz, nrow = phis_nrow, ncol = phis_ncol)
+
+phist_pep_mz_merged
+```
+
+## Summary table
+
+```{r table-pep-size-summary, echo=FALSE, warning=FALSE}
+pep_all_unique_mz |>
+  select(Condition, Length, Mass, m_z) |>
+  group_by(Condition) |>
+  # summarise(Min = min(Length))
+  summarise(across(where(is.numeric), c(min = ~min(.x, na.rm=TRUE),
+                                        q1 = ~quantile(.x, na.rm=TRUE)[2],
+                                        median = ~median(.x, na.rm=TRUE),
+                                        q3 = ~quantile(.x, na.rm=TRUE)[3],
+                                        max = ~max(.x, na.rm=TRUE))),  .groups = "drop")  |>
+  tibble::column_to_rownames("Condition") |>
+  t()
+```
+
+
+# Peptide motifs {.tabset}
+
+Sequence logos are shown below, separated by sequence length, without any clustering or deconvolution. [Wagih, Omar. ggseqlogo: a versatile R package for drawing sequence logos. Bioinformatics (2017). https://doi.org/10.1093/bioinformatics/btx469]
+
+
+```{r plot-seqlogo, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
+# seq_lengths_short <- sort(unique(pep_short$Length))
+seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) <= 24]) # this helps skiping lengths with 0 peptides to avoid errors
+
+motifs_pepshort <- lapply(seq_lengths_short, function(x){
+  # print(x)
+    ggseqlogo_bylength(pep_all, seq_length = x, by = "Condition", ncol = phis_ncol) +
+                            theme(text = element_text(size = 8))
+
+})
+names(motifs_pepshort) <- seq_lengths_short
+
+for (i in 1:length(motifs_pepshort)) {
+  cat("\n### Length = ", names(motifs_pepshort)[i],"\n")
+  motifs_pepshort[i]  |>  print()
+  cat('\n\n')
+}
+```
+
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+# Always-written export: render parameters + the main long table and summaries
+write_input_params(params, folder = FolderResults, prefix = "03_id_counts")
+
+seq_by_condition <- list_sequences(by = "Condition", input = pep_all)
+write.xlsx(seq_by_condition, file.path(FolderResults, "seq_by_condition.xlsx"), overwrite = params$ResultsOverwrite)
+
+counts_pep_all_condition <- pep_all |> count_ids_by(Condition)
+write.csv_rawr(counts_pep_all_condition, folder = FolderResults)
+write.csv_rawr(pep_all, folder = FolderResults)
+
+if (params$CsvSave) {
+  write.csv_rawr(counts_all, folder = FolderResults)
+  write.csv_rawr(counts_all_mean, folder = FolderResults)
+  write.csv_rawr(counts_all_total, folder = FolderResults)
+  write.csv_rawr(counts_size, folder = FolderResults)
+  write.csv_rawr(counts_size_mean, folder = FolderResults)
+  write.csv_rawr(counts_size_total, folder = FolderResults)
+}
+
+if (params$PlotsSave) {
+  ggsave_rawr(phist_peplength_density, "phist_peplength_density", folder = FolderFigures, width = n_conditions*1.5 + 2, height = 8)
+  ggsave_rawr(phist_pep_mass_merged, "phist_pep_mass_merged.tif", folder = FolderFigures, width = n_conditions*1.5 + 2, height = 10)
+  ggsave_rawr(phist_pep_mz_merged, "phist_pep_mz_merged.tif", folder = FolderFigures, width = n_conditions*1.5 + 2, height = 10)
+  ggsave_rawr(bp_prop_all_condition_charge, file = "bp_prop_all_condition_charge", folder = FolderFigures, width = n_conditions + 5, height = 10)
+  ggsave_rawr(bp_prop_short_condition_charge, file = "bp_prop_short_condition_charge", folder = FolderFigures, width = n_conditions + 5, height = 10)
+  ggsave_rawr(bp_prop_length_pep_condition, file = "bp_prop_length_pep_condition", folder = FolderFigures, width = n_conditions + 5, height = 10)
+  ggsave_rawr(bp_prop_length_pep_sample, file = "bp_prop_length_pep_sample", folder = FolderFigures, width = n_conditions + 5, height = 10)
+  for (i in seq_along(bp_count_length)) {
+    ggsave(bp_count_length[[i]],
+           filename = file.path(FolderFigures, paste0("bp_count_length_", names(bp_count_length[i]), ".png")),
+           width = n_conditions + 4, height = 10, units = "cm", device = "png")
+  }
+  for (i in seq_along(bp_count_length_sample)) {
+    ggsave(bp_count_length_sample[[i]],
+           filename = file.path(FolderFigures, paste0("bp_count_length_sample_", names(bp_count_length_sample[i]), ".png")),
+           width = n_conditions + 4, height = 10, units = "cm", device = "png")
+  }
+  for (i in seq_along(motifs_pepshort)) {
+    ggsave(motifs_pepshort[[i]],
+           filename = file.path(FolderFigures, paste0("motifs_pepshort_", names(motifs_pepshort[i]), ".png")),
+           width = 14, height = 12, units = "cm", device = "png")
+  }
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>

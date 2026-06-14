@@ -16,7 +16,7 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * reorder plots in a way that makes more sense
 * add functionality for peaks Xpro
 * homogenize sample annotation tables across software
-
+* Overlap intra-Condition (across replicates) is currently showing absolute count numbers. Add another section showing similar plots but with y axis as percentages.
 
 
 
@@ -81,4 +81,5 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * 2do by me change purple color of length plots to a dimmer one
 * Overlap intra-Condition (across replicates), split into individual plots for each length: plot_overlap_intra_condition() refactored to single-plot (df, id_col, title); report section now All peptides / Selected peptides nested tabsets (v0.5.0)
 * Peptides identified per charge +1 to +4, one plot for all peptides (pep_all) and one for selected length (pep_short), shown in an All / Selected tabset (v0.5.0)
+* multi-report framework instead of one big report: exported build_pep_all() (parse+cache step), shared inst/rmarkdown/shared/setup.Rmd child, and four focused templates 03_id_counts / 04_overlaps / 05_lcms_qc / 06_quant rendered against the cached pep_all; 01_mhc_report kept unchanged for retrocompatibility (v0.6.0)
 

@@ -12,8 +12,15 @@
 #' longer assumes a fixed project-root-relative layout, since it now lives
 #' inside an installed package and can be rendered from anywhere.
 #'
-#' @param template One of `"01_mhc_report"` (the main QC report) or
-#'   `"02_mhc_upsets"` (the secondary overlap/UpSet report).
+#' @param template Which report template to render. `"01_mhc_report"` is the
+#'   all-in-one QC report (it parses the raw search files itself). The remaining
+#'   templates are focused reports that render against a `pep_all` cache built
+#'   once by [build_pep_all()] (or by `01_mhc_report`):
+#'   `"02_mhc_upsets"` (per-sample overlap/UpSet), `"03_id_counts"` (general
+#'   identification QC: counts, size distributions, motifs), `"04_overlaps"`
+#'   (intra-Condition / cross-Condition / pairwise overlap), `"05_lcms_qc"`
+#'   (RT/1k0/mz distributions, Score/ppm QC, PTM profile), and `"06_quant"`
+#'   (log2(Area) correlation, Area %CV).
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`SampleSet`, `AnnotationFile`, `Subset`,
 #'   `FolderData`, `FolderResults`, `FolderFigures`, `Software`, `MHCclass`,
@@ -49,6 +56,20 @@
 #'   output_file = "01_report_main__hla1_dda_all.html"
 #' )
 #'
+#' # Focused-report framework: build the pep_all cache once, then render any
+#' # subset of the focused reports against it (no re-parsing per report).
+#' annot <- read_annot("1_documentation/sample_annotation_dda_all.csv")
+#' build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
+#'               annotation = annot, shortpep_range = c(8, 13),
+#'               file_rda = "2_data/dda_all_pep_all.rda")
+#' focused_params <- list(SampleSet = "MEGF_035", Subset = "dda_all",
+#'                        FolderData = "2_data", FolderResults = "3_results",
+#'                        FolderFigures = "4_figures", Software = "fragpipe_dda_combined")
+#' for (tmpl in c("03_id_counts", "04_overlaps", "05_lcms_qc", "06_quant")) {
+#'   run_howmahico_report(tmpl, params = focused_params,
+#'                        output_file = paste0(tmpl, "__dda_all.html"))
+#' }
+#'
 #' # Batch-rendering pattern (preserves 00_knit_reports.R's 6-subset loop):
 #' annot_jy <- derive_filtered_annotation("sample_annotation_dda_all.csv",
 #'                                        "1_documentation", "JY")
@@ -58,7 +79,9 @@
 #'                        output_file = paste0("01_report_main__hla1_", subset, ".html"))
 #' }
 #' }
-run_howmahico_report <- function(template = c("01_mhc_report", "02_mhc_upsets"),
+run_howmahico_report <- function(template = c("01_mhc_report", "02_mhc_upsets",
+                                              "03_id_counts", "04_overlaps",
+                                              "05_lcms_qc", "06_quant"),
                                  params, output_file, ...){
   template <- match.arg(template)
   skeleton <- system.file("rmarkdown", "templates", template, "skeleton", "skeleton.Rmd",

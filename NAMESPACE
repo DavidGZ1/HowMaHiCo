@@ -3,6 +3,7 @@
 export(annotate_diann)
 export(annotate_fragpipe)
 export(annotate_peaks)
+export(build_pep_all)
 export(check_file_exists)
 export(check_ids_global)
 export(check_output_exists)

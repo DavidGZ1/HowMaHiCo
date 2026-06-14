@@ -1,0 +1,8 @@
+name: 04_overlaps
+description: >
+  Focused identification-overlap report: intra-Condition overlap across
+  replicates, UpSet plots across Conditions, and Condition pairwise overlap
+  matrices/tables, for all peptides and the length-selected subset. Renders
+  against a cached `pep_all` table built by build_pep_all() (or by
+  01_mhc_report). Complements the per-sample 02_mhc_upsets report.
+create_dir: false

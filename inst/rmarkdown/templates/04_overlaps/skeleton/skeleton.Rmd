@@ -1,0 +1,337 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  TestMode: FALSE
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('04_overlaps | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **identification-overlap** report (intra-Condition replicate overlap,
+UpSet across Conditions, pairwise overlap) for immunopeptidomics experiments,
+provided by the Immunopeptidomics Platform (IPP).
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+# Overlap of identifications
+
+## Overlap intra-Condition (across replicates) {.tabset}
+
+### All peptides {.tabset}
+
+```{r plot-overlap-intra-condition-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+overlap_ids    <- c("Peptide", "Sequence", "Accession")
+overlap_labels <- c("Peptides", "Sequences", "Proteins")
+overlap_title_all <- c(Peptide   = "All Peptides",
+                       Sequence  = "All Sequences",
+                       Accession = "Proteins from all peptides")
+overlap_title_short <- c(
+  Peptide   = paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  Sequence  = paste0("Selected Sequences (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  Accession = paste0("Proteins from ", shortpep_range[1], " to ", shortpep_range[2], " AAs"))
+
+for (i in seq_along(overlap_ids)) {
+  cat("\n#### ", overlap_labels[i], "\n")
+  print(plot_overlap_intra_condition(pep_all, id_col = overlap_ids[i],
+                                     title = overlap_title_all[[overlap_ids[i]]]))
+  cat("\n\n")
+}
+```
+
+### Selected peptides {.tabset}
+
+```{r plot-overlap-intra-condition-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(overlap_ids)) {
+  cat("\n#### ", overlap_labels[i], "\n")
+  print(plot_overlap_intra_condition(pep_short, id_col = overlap_ids[i],
+                                     title = overlap_title_short[[overlap_ids[i]]]))
+  cat("\n\n")
+}
+```
+
+
+
+## Unique identifications across BioReplicates
+
+```{r upset-tables, echo=FALSE, message=FALSE, warning=FALSE}
+upset_table_pep <-
+  pep_all |>
+  mutate(Condition = as.character(Condition)) |>
+  distinct(Condition, Peptide, .keep_all= FALSE) |>
+  nest(Condition = Condition) |>
+  group_by(Condition)  |>
+  summarize(n_Peptide = n_distinct(Peptide), .groups = "drop") |>
+  rowwise() |>
+  mutate(n_Condition = nrow(Condition)) |>
+  mutate(Conditions= paste(Condition, collapse = ", ")) |>
+  select(Conditions, n_Condition, n_Peptide) |>
+  rbind(pep_all |>
+          group_by(BioReplicate) |>
+          summarize(Conditions = paste("Total", unique(BioReplicate)),
+                    n_Peptide = n_distinct(Peptide), .groups = "drop",
+                    n_Condition = 1) |>
+          select(-BioReplicate)) |>
+  rbind(pep_all |>
+          summarize(Conditions = "Total",
+                    n_Peptide = n_distinct(Peptide), .groups = "drop",
+                    n_Condition = 1) )
+
+upset_table_prot <-
+  pep_all |>
+  mutate(Condition = as.character(Condition)) |>
+  distinct(Condition, Accession, .keep_all= FALSE) |>
+  nest(Condition = Condition) |>
+  group_by(Condition)  |>
+  summarize(n_ProteinGroup = n_distinct(Accession), .groups = "drop") |>
+  rowwise() |>
+  mutate(n_Condition = nrow(Condition)) |>
+  mutate(Conditions = paste(Condition, collapse = ", ")) |>
+  select(Conditions, n_Condition, n_ProteinGroup) |>
+  rbind(pep_all |>
+          group_by(BioReplicate) |>
+          summarize(Conditions = paste("Total", unique(BioReplicate)),
+                    n_ProteinGroup = n_distinct(Accession), .groups = "drop",
+                    n_Condition = 1) |>
+          select(-BioReplicate)) |>
+  rbind(pep_all |>
+          summarize(Conditions = "Total",
+                    n_ProteinGroup = n_distinct(Accession), .groups = "drop",
+                    n_Condition = 1))
+
+upset_table_unique <-
+  full_join(upset_table_pep[upset_table_pep$n_Condition == 1, ] |>
+               select(-n_Condition),
+            upset_table_prot[upset_table_prot$n_Condition == 1, ]  |>
+               select(-n_Condition),
+             by = "Conditions") |>
+  rename_with(.fn =function(x) gsub("n_", "Unique_", x)) |>
+  rename(Condition = Conditions)
+
+upset_table_unique |>  kable() |>   kable_paper("hover", full_width = F)
+```
+
+
+# Upset plots - overlap across Conditions {.tabset}
+
+Below are shown the UpSet plots representing the overlap between the conditions evaluated.
+
+## All peptides {.tabset}
+
+```{r plot-upset-all, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
+var_levels <-  c("Peptide", "Sequence", "Accession")
+if (dplyr::n_distinct(pep_all$Condition) < 2) {
+  cat("\n_UpSet plots require at least two Conditions to show overlap; only one is present in this subset._\n")
+} else {
+  up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
+  for (i in 1:length(var_levels)) {
+    cat("\n### ", var_levels[i],"\n")
+    up_pep_all_list[i]  |>  print()
+    cat('\n\n')
+  }
+}
+
+```
+
+## Selected peptides {.tabset}
+
+```{r plot-upset-short, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
+if (dplyr::n_distinct(pep_short$Condition) < 2) {
+  cat("\n_UpSet plots require at least two Conditions to show overlap; only one is present in this subset._\n")
+} else {
+  up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
+  for (i in 1:length(var_levels)) {
+    cat("\n### ", var_levels[i],"\n")
+    up_pep_short_list[i]  |>  print()
+    cat('\n\n')
+  }
+}
+
+```
+
+# Condition pairwise overlap  {.tabset}
+
+
+```{r overlap-pairwise-data, echo=FALSE, warning=FALSE, fig.width=8}
+# calculations needed for Condition, Bioreplicate, and sample-wise overlap and uniqueness
+npep_all_overlap <- pep_all |>
+  dplyr::group_by(Condition) |>
+  dplyr::summarise(total_Peptides = dplyr::n_distinct(Peptide), .groups = "drop")
+
+#complete condition comparison with same condition in each side
+comp_condition_replicated <- c(combn(conditions, 2, simplify =  FALSE) ,
+                               as.list(as.data.frame(t(data.frame(x = conditions, y = conditions)))))
+#rename
+names(comp_condition_replicated) <-  sapply(comp_condition_replicated, function(x) paste0(x, collapse  = "_vs_"))
+
+
+
+pep_overlap <-
+  data.frame(n_Overlap = sapply(comp_condition_replicated,
+                                function(x) count_intersect(pep_all, variable = "Peptide",
+                                                            cond1 = x[1], cond2 = x[2])),
+             n_Total = sapply(comp_condition_replicated,
+                                function(x) count_merged(pep_all, variable = "Peptide",
+                                                            cond1 = x[1], cond2 = x[2]))) |>
+  tibble::rownames_to_column("Comparison") |>
+  separate(Comparison, into = c("Cond1", "Cond2"), sep = "_vs_") |>
+  mutate(prop_Overlap_Total = round(n_Overlap/n_Total, 3)) |>
+  # Add total IDs per condition and the proportion of overlap
+  full_join(npep_all_overlap |>  select(Condition, total_Peptides) |>
+              unique() |>
+              rename(n_Peptides_Cond1 = total_Peptides),
+            by = c("Cond1" = "Condition")) |>
+  full_join(npep_all_overlap |>  select(Condition, total_Peptides) |>
+              unique() |>
+              rename(n_Peptides_Cond2 = total_Peptides),
+            by = c("Cond2" = "Condition")) |>
+  mutate(prop_Overlap_Cond1 = round(n_Overlap / n_Peptides_Cond1, 3),
+         prop_Overlap_Cond2 = round(n_Overlap / n_Peptides_Cond2, 3))  |>
+  mutate(Cond1 = factor(Cond1, levels = conditions), #reorder levels
+         Cond2 = factor(Cond2, levels = conditions))
+```
+
+
+## Pairwise overlap matrix (counts)
+
+```{r plot-overlap-matrix-counts, echo=FALSE, warning=FALSE, fig.width=8}
+hm_overlap_matrix_count <-
+  rbind(pep_overlap,
+      # Get mirror numbers to complete the matrix
+      pep_overlap |> mutate(Cond1_temp = Cond1) |>
+        mutate(Cond1 = Cond2, Cond2 = Cond1_temp) |>
+        select(-Cond1_temp)) |>
+  ggplot(aes(y = Cond1, x = Cond2, fill = n_Overlap)) +
+  geom_tile() +
+  geom_text(aes(label = n_Overlap), size = 2) +
+  scale_fill_viridis(alpha = 0.9, option = "D", begin =  0.1) +
+  theme_rawr() +
+  rotate_x_text(35)+
+  ggtitle("Overlap of peptides identified across conditions")
+
+hm_overlap_matrix_count
+```
+
+## Pairwise overlap matrix (proportion from total)
+
+```{r plot-overlap-matrix-prop, echo=FALSE, warning=FALSE, fig.width=8}
+hm_overlap_matrix_prop <-
+  rbind(pep_overlap,
+      # Get mirror numbers to complete the matrix
+      pep_overlap |> mutate(Cond1_temp = Cond1) |>
+        mutate(Cond1 = Cond2, Cond2 = Cond1_temp) |>
+        select(-Cond1_temp)) |>
+  ggplot(aes(y = Cond1, x = Cond2, fill = prop_Overlap_Total)) +
+  geom_tile() +
+  geom_text(aes(label = prop_Overlap_Total), size = 2) +
+  scale_fill_viridis(alpha = 0.9, option = "D", begin =  0.1) +
+  theme_rawr() +
+  rotate_x_text(35)+
+  ggtitle("Overlap of peptides identified across conditions (proportion from pairwise total)")
+
+hm_overlap_matrix_prop
+```
+
+## Pairwise overlap table (counts and proportion)
+
+- n_Total = distinct peptides when combining both conditions
+- prop_Overlap_total = n_Overlap/n_Total
+- prop_Overlap_Cond1 and prop_Overlap_Cond2 are different because they are calculated based on the total for only that condition
+
+```{r table-overlap-pairwise, echo=FALSE}
+pep_overlap |>  kable() |> kable_paper("hover", full_width = F) |>
+  column_spec(6,  background = spec_color(pep_overlap$prop_Overlap_Cond1,
+                                          alpha = 0.8,  begin = 0.2,
+                                          direction = -1, scale_from = c(0,1))) |>
+  column_spec(7,  background = spec_color(pep_overlap$prop_Overlap_Cond2,
+                                          alpha = 0.8,  begin = 0.2,
+                                          direction = -1, scale_from = c(0,1)))
+```
+
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+write_input_params(params, folder = FolderResults, prefix = "04_overlaps")
+
+if (params$CsvSave) {
+  write.csv_rawr(upset_table_pep, folder = FolderResults)
+  write.csv_rawr(upset_table_prot, folder = FolderResults)
+  write.csv_rawr(upset_table_unique, folder = FolderResults)
+  write.csv_rawr(pep_overlap, folder = FolderResults)
+}
+
+if (params$PlotsSave) {
+  ggsave_rawr(hm_overlap_matrix_count, file = "hm_overlap_matrix_count", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_overlap_matrix_prop, file = "hm_overlap_matrix_prop", folder = FolderFigures, width = n_conditions + 5, height = 12)
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>

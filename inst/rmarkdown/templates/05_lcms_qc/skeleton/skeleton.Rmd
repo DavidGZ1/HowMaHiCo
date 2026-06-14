@@ -1,0 +1,238 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  TestMode: FALSE
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('05_lcms_qc | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **LC-MS / identification QC** report (RT / 1k0 / m/z distributions,
+Score and mass-error QC, PTM profile) for immunopeptidomics experiments,
+provided by the Immunopeptidomics Platform (IPP). Intended for advanced users.
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+# Peptide ID distribution across RT, 1/k0 and m/z {.tabset}
+
+## All peptides {.tabset}
+
+### n_Peptides Vs RT (Pseudochromatograms)
+
+```{r plot-chromato-all, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+chromato_pep_all <- plot_pseudochromatogram(pep_all,
+  "Peptide ID chromatogram: All peptides identified", ncol = phis_ncol)
+chromato_pep_all
+```
+
+### 1/k0 VS m/z
+
+```{r plot-invk0-mz-all, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_mz_all <- plot_2d_distribution(pep_all, "m_z", "invk0", c(10, 0.025),
+  "All peptides identified", x_lab = "m/z", y_lab = "1/k0", ncol = phis_ncol)
+hm_pep_invk0_mz_all
+```
+
+### 1/k0 VS RT
+
+```{r plot-invk0-rt-all, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_rt_all <- plot_2d_distribution(pep_all, "RT", "invk0", c(1, 0.025),
+  "All peptides identified", x_lab = "RT (min)", y_lab = "1/k0", ncol = phis_ncol)
+hm_pep_invk0_rt_all
+```
+
+### m/z VS RT
+
+```{r plot-mz-rt-all, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_mz_rt_all <- plot_2d_distribution(pep_all, "RT", "m_z", c(1, 10),
+  "All peptides identified", x_lab = "RT (min)", y_lab = "m/z", ncol = phis_ncol)
+hm_pep_mz_rt_all
+```
+
+## Selected peptides {.tabset}
+
+### n_Peptides Vs RT (Pseudochromatograms)
+
+```{r plot-chromato-short, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+chromato_pep_short <- plot_pseudochromatogram(pep_short,
+  paste0("Peptide ID chromatogram: Selected peptides (",
+         shortpep_range[1], " to ", shortpep_range[2], " AAs)"), ncol = phis_ncol)
+chromato_pep_short
+```
+
+### 1/k0 VS m/z
+
+```{r plot-invk0-mz-short, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_mz_short <- plot_2d_distribution(pep_short, "m_z", "invk0", c(10, 0.025),
+  paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  x_lab = "m/z", y_lab = "1/k0", ncol = phis_ncol)
+hm_pep_invk0_mz_short
+```
+
+### 1/k0 VS RT
+
+```{r plot-invk0-rt-short, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_invk0_rt_short <- plot_2d_distribution(pep_short, "RT", "invk0", c(1, 0.025),
+  paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  x_lab = "RT (min)", y_lab = "1/k0", ncol = phis_ncol)
+hm_pep_invk0_rt_short
+```
+
+### m/z VS RT
+
+```{r plot-mz-rt-short, echo=FALSE, fig.width=8, fig.height=4}
+hm_pep_mz_rt_short <- plot_2d_distribution(pep_short, "RT", "m_z", c(1, 10),
+  paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  x_lab = "RT (min)", y_lab = "m/z", ncol = phis_ncol)
+hm_pep_mz_rt_short
+```
+
+
+# Identification QC
+
+## Score per Condition {.tabset}
+
+### Violin & boxplots
+
+```{r plot-qc-score-violin, echo=FALSE, fig.width=8, fig.height=7}
+vp_score_score <- plot_qc_violin(pep_all, "Score", "Score distribution, and boxplot")
+vp_score_score
+```
+
+### Boxplots
+
+```{r plot-qc-score-box, echo=FALSE, fig.width=8, fig.height=7}
+bp_score_score <- plot_qc_box(pep_all, "Score", "Score boxplot")
+bp_score_score
+```
+
+## Mass eror per condition and charge {.tabset}
+
+### Violin & boxplots
+
+```{r plot-qc-masserror-violin, echo=FALSE, fig.width=8, fig.height=7}
+vp_masserror_ppm <- plot_qc_violin(pep_all, "ppm", "Mass error distribution, and boxplot")
+vp_masserror_ppm
+```
+
+### Boxplots alone
+
+```{r plot-qc-masserror-box, echo=FALSE, fig.width=8, fig.height=7}
+bp_masserror_ppm <- plot_qc_box(pep_all, "ppm", "Mass error boxplot")
+bp_masserror_ppm
+```
+
+# PTM profile selected Peptides `r paste0("(", shortpep_range[1]," to ", shortpep_range[2], " AAs)")` {.tabset}
+
+Note that numbers mean different things in function of the software
+- in PEAKS the numbers between [] are the delta mass
+- in Fragpipe and DIA-NN the numbers between () corrrespond to UniMode PTM codes
+
+
+## Count
+
+```{r plot-ptm-count, echo = FALSE, fig.width=8, fig.height=3.5}
+hm_ptm_count_cond <- plot_ptm_heatmap(pep_short, type = "count", shortpep_range = shortpep_range)
+hm_ptm_count_cond
+```
+
+## Proportion
+
+```{r plot-ptm-prop, echo = FALSE, fig.width=8, fig.height=3.5}
+hm_ptm_prop_cond <- plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = shortpep_range)
+hm_ptm_prop_cond
+```
+
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+write_input_params(params, folder = FolderResults, prefix = "05_lcms_qc")
+
+if (params$PlotsSave) {
+  ggsave_rawr(chromato_pep_all, file = "chromato_pep_all", folder = FolderFigures, width = n_conditions + 10, height = 12)
+  ggsave_rawr(hm_pep_invk0_mz_all, file = "hm_pep_invk0_mz_all", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_pep_invk0_rt_all, file = "hm_pep_invk0_rt_all", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_pep_mz_rt_all, file = "hm_pep_mz_rt_all", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(chromato_pep_short, file = "chromato_pep_short", folder = FolderFigures, width = n_conditions + 10, height = 12)
+  ggsave_rawr(hm_pep_invk0_mz_short, file = "hm_pep_invk0_mz_short", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_pep_invk0_rt_short, file = "hm_pep_invk0_rt_short", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_pep_mz_rt_short, file = "hm_pep_mz_rt_short", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(vp_score_score, file = "vp_score_score", folder = FolderFigures, width = 20, height = 12)
+  ggsave_rawr(vp_masserror_ppm, file = "vp_masserror_ppm", folder = FolderFigures, width = 20, height = 12)
+  ggsave_rawr(bp_score_score, file = "bp_score_score", folder = FolderFigures, width = 20, height = 12)
+  ggsave_rawr(bp_masserror_ppm, file = "bp_masserror_ppm", folder = FolderFigures, width = 20, height = 12)
+  ggsave_rawr(hm_ptm_count_cond, file = "hm_ptm_count_cond", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_ptm_prop_cond, file = "hm_ptm_prop_cond", folder = FolderFigures, width = n_conditions + 5, height = 12)
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>
