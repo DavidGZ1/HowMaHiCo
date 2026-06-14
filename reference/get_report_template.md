@@ -8,7 +8,7 @@ template copied in the working directory
 ``` r
 get_report_template(
   file = "HowMaHiCoReportTemplate",
-  template = "01_mhc_report",
+  template = "00_mhc_report",
   edit = FALSE,
   create_dir = FALSE
 )
@@ -40,6 +40,6 @@ None
 
 ``` r
 if (FALSE) { # \dontrun{
-get_report_template(file = "HowMaHiCoReportTemplate", template = "01_mhc_report", edit = TRUE, create_dir = FALSE)
+get_report_template(file = "HowMaHiCoReportTemplate", template = "00_mhc_report", edit = TRUE, create_dir = FALSE)
 } # }
 ```

@@ -3,8 +3,8 @@
 ## Render reports
 
 Entry points that build the cached pep_all table and render the
-parameterized QC report templates (01_mhc_report all-in-one, or the
-focused 03-06 reports)
+parameterized QC report templates (00_mhc_report all-in-one, or the
+focused 01-04 reports)
 
 - [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
   :

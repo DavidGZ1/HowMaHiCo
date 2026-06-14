@@ -3,9 +3,9 @@
 Reads, parses, and annotates LC-MS search-engine output into the unified
 long-format `pep_all` table, dispatching on `software` to the right
 loader family (FragPipe / DIA-NN / PEAKS). This is the parsing step that
-the `01_mhc_report` template runs inline; extracting it here lets the
-focused report templates (`03_id_counts`, `04_overlaps`, `05_lcms_qc`,
-`06_quant`) share one cached `pep_all` instead of each re-parsing the
+the `00_mhc_report` template runs inline; extracting it here lets the
+focused report templates (`01_id_counts`, `02_overlaps`, `03_lcms_qc`,
+`04_quant`) share one cached `pep_all` instead of each re-parsing the
 raw files: run `build_pep_all()` once (writing the `.rda` via
 `file_rda`), then render any subset of those reports, each of which
 simply [`load()`](https://rdrr.io/r/base/load.html)s the cache.
@@ -84,6 +84,6 @@ build_pep_all(
   file_rda       = "2_data/dda_all_pep_all.rda"
 )
 # then render any focused report against the cache:
-run_howmahico_report("03_id_counts", params = list(...), output_file = "03.html")
+run_howmahico_report("01_id_counts", params = list(...), output_file = "01.html")
 } # }
 ```

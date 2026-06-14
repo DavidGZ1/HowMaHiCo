@@ -8,19 +8,24 @@ search-engine output (FragPipe, DIA-NN, PEAKS), normalizes it into one
 unified long-format table (`pep_all`), and renders self-contained
 interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.6.1** — Phases 1–6 of the package conversion are
-complete. v0.6.1 moved the PTM profile from `05_lcms_qc` into
-`03_id_counts` and added an all-peptides (`pep_all`) variant alongside
-the selected-length one (All/Selected tabset). v0.6.0 added a
-multi-report framework: a new exported
+**Current version: 0.7.0** — Phases 1–6 of the package conversion are
+complete. v0.7.0 **renumbered all report templates** (breaking: the
+`template=` names change): `01_mhc_report`→`00_mhc_report`,
+`02_mhc_upsets`→`00_mhc_upsets`, `03_id_counts`→`01_id_counts`,
+`04_overlaps`→`02_overlaps`, `05_lcms_qc`→`03_lcms_qc`,
+`06_quant`→`04_quant`; and rewrote the LC-MS report’s RT/1k0/m_z section
+to a single looped `results='asis'` chunk (config list of views ×
+peptide sets) instead of eight hand-written chunks. The multi-report
+framework (v0.6.0): a new exported
 [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
-(`R/build-pep-all.R`) extracts the raw-file parse/cache step, and four
-focused report templates (`03_id_counts`, `04_overlaps`, `05_lcms_qc`,
-`06_quant`) each render a slice of the all-in-one `01_mhc_report`
-against the cached `pep_all` (loaded via the shared
+(`R/build-pep-all.R`) extracts the raw-file parse/cache step, and the
+four focused templates each render a slice of the all-in-one
+`00_mhc_report` against the cached `pep_all` (loaded via the shared
 `inst/rmarkdown/shared/setup.Rmd` knitr child). Build the cache once,
-then render any subset. `01_mhc_report`/`02_mhc_upsets` are unchanged.
-v0.5.0 split two report sections by length to match the “Average +/- sd”
+then render any subset. `00_mhc_report`/`00_mhc_upsets` are the
+all-in-one reports (parse the raw files themselves); v0.6.1 moved the
+PTM profile into `01_id_counts` with an all-peptides variant. v0.5.0
+split two report sections by length to match the “Average +/- sd”
 pattern:
 [`plot_overlap_intra_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_overlap_intra_condition.md)
 is now a single-plot function (breaking signature:
@@ -34,9 +39,10 @@ everywhere, previously `1` for FragPipe/DIA-NN and `NA` for PEAKS — a
 user-visible behavior change), `extract_run_name()` (POSIX-safe run-name
 extraction, no longer Windows-backslash-only), and `validate_pep_all()`
 (core-schema guard at each parser tail) — all internal helpers in
-`R/utils-loaders.R`. The `01_mhc_report` template degrades gracefully on
-partial subsets (single-Condition UpSets, no-replicate Area %CV), both
-templates gained a “Session & provenance” footer, and `02_mhc_upsets`
+`R/utils-loaders.R`. The `00_mhc_report` template (then named
+`01_mhc_report`) degrades gracefully on partial subsets
+(single-Condition UpSets, no-replicate Area %CV), both all-in-one
+templates gained a “Session & provenance” footer, and `00_mhc_upsets`
 now declares its `DataAcquisitionNames` param. v0.3.0 was a
 best-practices pass: base-package imports declared, all exports made
 public (no `@keywords internal`), `NEWS.md` added, internal code unified
@@ -74,7 +80,7 @@ anywhere: CI/Docker/installs).
 | Folder | Contents |
 |----|----|
 | `R/` | Package source: all exported functions (~40) + internal helpers |
-| `inst/rmarkdown/templates/` | `01_mhc_report/` and `02_mhc_upsets/` skeleton Rmds |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
 | `example/` | Legacy `0_code/`, `1_documentation/` pre-migration reference copies (gitignored) |
@@ -91,16 +97,20 @@ anywhere: CI/Docker/installs).
     pep_all  — unified long-format table, cached as <FolderData>/<subset>_pep_all.rda
           │
           ▼
-    inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd
+    inst/rmarkdown/templates/00_mhc_report/skeleton/skeleton.Rmd
           │   rendered via run_howmahico_report() → self-contained interactive HTML report
           │   (ID counts, overlaps, distributions, QC sections — see below)
           ▼
     <FolderResults>/<subset>/*.csv, *.xlsx, input_params.csv
           +   <FolderFigures>/<subset>/*.png (optional)
 
-`02_mhc_upsets` (`inst/rmarkdown/templates/02_mhc_upsets/`) is the
+`00_mhc_upsets` (`inst/rmarkdown/templates/00_mhc_upsets/`) is the
 secondary overlap/UpSet-only report template, rendered the same way with
-`template = "02_mhc_upsets"`.
+`template = "00_mhc_upsets"`. The focused reports (`01_id_counts`,
+`02_overlaps`, `03_lcms_qc`, `04_quant`) each render one slice of
+`00_mhc_report` against the cached `pep_all` (load it via
+[`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+first); see the v0.6.0 framework note above.
 
 ## Key files
 
@@ -139,7 +149,7 @@ secondary overlap/UpSet-only report template, rendered the same way with
   the internal PEAKS export-subfolder indexer used by
   [`read_peaks_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks_batch.md)
   (originally adapted from `deltaProtR`, now native)
-- **`inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd`**
+- **`inst/rmarkdown/templates/00_mhc_report/skeleton/skeleton.Rmd`**
   (~1100 lines) — the main QC report. Sections: total IDs
   (incl. decoys/contaminants) → ID counts (mean±sd, by length, by
   charge) → intra-condition replicate overlap → cross-condition UpSet
@@ -148,9 +158,14 @@ secondary overlap/UpSet-only report template, rendered the same way with
   “pseudochromatograms”) → log2(Area) Pearson correlation → Area %CV
   violin plots → identification QC (Score, ppm by condition & charge) →
   peptide motifs (seqlogo by length) → PTM profile → export block
-- **`inst/rmarkdown/templates/02_mhc_upsets/skeleton/skeleton.Rmd`** —
+- **`inst/rmarkdown/templates/00_mhc_upsets/skeleton/skeleton.Rmd`** —
   secondary report focused on overlap/UpSet plots (loads from cached
   `.rda`, same params)
+- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant}/`**
+  — the focused reports (each a slice of `00_mhc_report`), sharing
+  `inst/rmarkdown/shared/setup.Rmd` and loading the `pep_all` cache from
+  [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+  (`R/build-pep-all.R`)
 
 ## Annotation file schema (`1_documentation/sample_annotation_*.csv`)
 
@@ -217,7 +232,7 @@ get_annot_fragpipe(dir_data = "2_data") |>
 
 # Step 2 — render (title is auto-generated from SampleSet / Subset / MHCclass / date)
 run_howmahico_report(
-  template = "01_mhc_report",            # or "02_mhc_upsets"
+  template = "00_mhc_report",            # or "00_mhc_upsets"
   params = list(SampleSet = "MEGF_035",
                 AnnotationFile = "sample_annotation_dda_all.csv",
                 FolderDocumentation = "1_documentation",

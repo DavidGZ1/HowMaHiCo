@@ -11,12 +11,6 @@ they are moved to “to do”
 
 ## To do
 
-- Rename 01_mhc_report to 00_mhc_report
-- Rename 01_mhc_upsets to 00_mhc_upsets
-- In lcms_qc, Peptide ID distribution across RT, 1/k0 and m/z, change
-  the way chunks are plotted, use the looped structure used for other
-  sections, with results = “asis”
-
 ## In standby
 
 - one single parser function
@@ -180,3 +174,12 @@ create_dir = create_dir)
 - PTM profile moved from 05_lcms_qc to 03_id_counts, and extended to
   show all peptides (pep_all) alongside selected (pep_short) in an
   All/Selected tabset (v0.6.1)
+
+- renumbered all report templates: 01_mhc_report-\>00_mhc_report,
+  02_mhc_upsets-\>00_mhc_upsets, 03_id_counts-\>01_id_counts,
+  04_overlaps-\>02_overlaps, 05_lcms_qc-\>03_lcms_qc,
+  06_quant-\>04_quant (v0.7.0)
+
+- lcms_qc RT/1k0/m_z distribution section rewritten to a single looped
+  results=‘asis’ chunk (config list of views x peptide sets) instead of
+  8 hand-written chunks (v0.7.0)
