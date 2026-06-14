@@ -167,27 +167,6 @@ bp_masserror_ppm <- plot_qc_box(pep_all, "ppm", "Mass error boxplot")
 bp_masserror_ppm
 ```
 
-# PTM profile selected Peptides `r paste0("(", shortpep_range[1]," to ", shortpep_range[2], " AAs)")` {.tabset}
-
-Note that numbers mean different things in function of the software
-- in PEAKS the numbers between [] are the delta mass
-- in Fragpipe and DIA-NN the numbers between () corrrespond to UniMode PTM codes
-
-
-## Count
-
-```{r plot-ptm-count, echo = FALSE, fig.width=8, fig.height=3.5}
-hm_ptm_count_cond <- plot_ptm_heatmap(pep_short, type = "count", shortpep_range = shortpep_range)
-hm_ptm_count_cond
-```
-
-## Proportion
-
-```{r plot-ptm-prop, echo = FALSE, fig.width=8, fig.height=3.5}
-hm_ptm_prop_cond <- plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = shortpep_range)
-hm_ptm_prop_cond
-```
-
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 write_input_params(params, folder = FolderResults, prefix = "05_lcms_qc")
@@ -205,8 +184,6 @@ if (params$PlotsSave) {
   ggsave_rawr(vp_masserror_ppm, file = "vp_masserror_ppm", folder = FolderFigures, width = 20, height = 12)
   ggsave_rawr(bp_score_score, file = "bp_score_score", folder = FolderFigures, width = 20, height = 12)
   ggsave_rawr(bp_masserror_ppm, file = "bp_masserror_ppm", folder = FolderFigures, width = 20, height = 12)
-  ggsave_rawr(hm_ptm_count_cond, file = "hm_ptm_count_cond", folder = FolderFigures, width = n_conditions + 5, height = 12)
-  ggsave_rawr(hm_ptm_prop_cond, file = "hm_ptm_prop_cond", folder = FolderFigures, width = n_conditions + 5, height = 12)
 }
 ```
 

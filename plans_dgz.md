@@ -82,4 +82,5 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * Overlap intra-Condition (across replicates), split into individual plots for each length: plot_overlap_intra_condition() refactored to single-plot (df, id_col, title); report section now All peptides / Selected peptides nested tabsets (v0.5.0)
 * Peptides identified per charge +1 to +4, one plot for all peptides (pep_all) and one for selected length (pep_short), shown in an All / Selected tabset (v0.5.0)
 * multi-report framework instead of one big report: exported build_pep_all() (parse+cache step), shared inst/rmarkdown/shared/setup.Rmd child, and four focused templates 03_id_counts / 04_overlaps / 05_lcms_qc / 06_quant rendered against the cached pep_all; 01_mhc_report kept unchanged for retrocompatibility (v0.6.0)
+* PTM profile moved from 05_lcms_qc to 03_id_counts, and extended to show all peptides (pep_all) alongside selected (pep_short) in an All/Selected tabset (v0.6.1)
 

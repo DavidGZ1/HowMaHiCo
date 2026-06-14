@@ -467,6 +467,45 @@ for (i in 1:length(motifs_pepshort)) {
 ```
 
 
+# PTM profile {.tabset}
+
+Note that numbers mean different things in function of the software
+- in PEAKS the numbers between [] are the delta mass
+- in Fragpipe and DIA-NN the numbers between () corrrespond to UniMode PTM codes
+
+## All peptides {.tabset}
+
+### Count
+
+```{r plot-ptm-count-all, echo = FALSE, fig.width=8, fig.height=3.5}
+hm_ptm_count_all <- plot_ptm_heatmap(pep_all, type = "count", shortpep_range = shortpep_range)
+hm_ptm_count_all
+```
+
+### Proportion
+
+```{r plot-ptm-prop-all, echo = FALSE, fig.width=8, fig.height=3.5}
+hm_ptm_prop_all <- plot_ptm_heatmap(pep_all, type = "proportion", shortpep_range = shortpep_range)
+hm_ptm_prop_all
+```
+
+## Selected peptides `r paste0("(", shortpep_range[1]," to ", shortpep_range[2], " AAs)")` {.tabset}
+
+### Count
+
+```{r plot-ptm-count-short, echo = FALSE, fig.width=8, fig.height=3.5}
+hm_ptm_count_short <- plot_ptm_heatmap(pep_short, type = "count", shortpep_range = shortpep_range)
+hm_ptm_count_short
+```
+
+### Proportion
+
+```{r plot-ptm-prop-short, echo = FALSE, fig.width=8, fig.height=3.5}
+hm_ptm_prop_short <- plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = shortpep_range)
+hm_ptm_prop_short
+```
+
+
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters + the main long table and summaries
 write_input_params(params, folder = FolderResults, prefix = "03_id_counts")
@@ -495,6 +534,10 @@ if (params$PlotsSave) {
   ggsave_rawr(bp_prop_short_condition_charge, file = "bp_prop_short_condition_charge", folder = FolderFigures, width = n_conditions + 5, height = 10)
   ggsave_rawr(bp_prop_length_pep_condition, file = "bp_prop_length_pep_condition", folder = FolderFigures, width = n_conditions + 5, height = 10)
   ggsave_rawr(bp_prop_length_pep_sample, file = "bp_prop_length_pep_sample", folder = FolderFigures, width = n_conditions + 5, height = 10)
+  ggsave_rawr(hm_ptm_count_all, file = "hm_ptm_count_all", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_ptm_prop_all, file = "hm_ptm_prop_all", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_ptm_count_short, file = "hm_ptm_count_short", folder = FolderFigures, width = n_conditions + 5, height = 12)
+  ggsave_rawr(hm_ptm_prop_short, file = "hm_ptm_prop_short", folder = FolderFigures, width = n_conditions + 5, height = 12)
   for (i in seq_along(bp_count_length)) {
     ggsave(bp_count_length[[i]],
            filename = file.path(FolderFigures, paste0("bp_count_length_", names(bp_count_length[i]), ".png")),

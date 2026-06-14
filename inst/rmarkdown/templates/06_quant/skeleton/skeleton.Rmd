@@ -182,7 +182,7 @@ if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition â€
 if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate â€” Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
 ```
 
-## Slected peptides  {.tabset}
+## Selected peptides  {.tabset}
 
 ### Condition
 

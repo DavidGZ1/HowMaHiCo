@@ -3,6 +3,6 @@ description: >
   Focused LC-MS / identification QC report for advanced users: peptide ID
   distributions across RT, 1/k0 and m/z (pseudochromatograms and 2D maps),
   identification QC (Score and mass-error distributions per Condition and
-  charge), and the PTM profile. Renders against a cached `pep_all` table built
-  by build_pep_all() (or by 01_mhc_report).
+  charge). Renders against a cached `pep_all` table built by build_pep_all()
+  (or by 01_mhc_report).
 create_dir: false

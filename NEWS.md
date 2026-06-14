@@ -1,3 +1,11 @@
+# HowMaHiCo 0.6.1
+
+* Moved the PTM profile from `05_lcms_qc` to `03_id_counts` (it is a general
+  identification property, alongside peptide motifs), and extended it to show
+  **all peptides** (`pep_all`) in addition to the selected-length peptides
+  (`pep_short`), in an All / Selected tabset — matching the other dual sections.
+  `05_lcms_qc` now covers only the RT/1k0/mz distributions and Score/ppm QC.
+
 # HowMaHiCo 0.6.0
 
 ## Multi-report framework
