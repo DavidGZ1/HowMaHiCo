@@ -7,6 +7,9 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
+* Rename 01_mhc_report to 00_mhc_report
+* Rename 01_mhc_upsets to 00_mhc_upsets
+* In lcms_qc, Peptide ID distribution across RT, 1/k0 and m/z, change the way chunks are plotted, use the looped structure used for other sections, with results = “asis”
 
 
 ## In standby
@@ -17,6 +20,7 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * add functionality for peaks Xpro
 * homogenize sample annotation tables across software
 * Overlap intra-Condition (across replicates) is currently showing absolute count numbers. Add another section showing similar plots but with y axis as percentages.
+* Plan an advanced quantification report. Use Limma for the normalization and statisticla testing.
 
 
 
