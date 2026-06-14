@@ -1,7 +1,7 @@
-name: 06_quant
+name: 04_quant
 description: >
   Focused quantitative-data report: log2(Area) Pearson correlation (samples and
   bioreplicates) and Area %CV violin plots, for all peptides and the
   length-selected subset. Renders against a cached `pep_all` table built by
-  build_pep_all() (or by 01_mhc_report).
+  build_pep_all() (or by 00_mhc_report).
 create_dir: false

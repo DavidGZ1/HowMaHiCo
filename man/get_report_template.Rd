@@ -6,7 +6,7 @@
 \usage{
 get_report_template(
   file = "HowMaHiCoReportTemplate",
-  template = "01_mhc_report",
+  template = "00_mhc_report",
   edit = FALSE,
   create_dir = FALSE
 )
@@ -28,7 +28,7 @@ This is a wrapper using rmarkdown::draft to get the HowMaHiCo templates template
 }
 \examples{
 \dontrun{
-get_report_template(file = "HowMaHiCoReportTemplate", template = "01_mhc_report", edit = TRUE, create_dir = FALSE)
+get_report_template(file = "HowMaHiCoReportTemplate", template = "00_mhc_report", edit = TRUE, create_dir = FALSE)
 }
 
 }

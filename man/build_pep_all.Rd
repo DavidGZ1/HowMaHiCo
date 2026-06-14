@@ -45,8 +45,8 @@ The \code{pep_all} data frame, invisibly.
 Reads, parses, and annotates LC-MS search-engine output into the unified
 long-format \code{pep_all} table, dispatching on \code{software} to the right loader
 family (FragPipe / DIA-NN / PEAKS). This is the parsing step that the
-\verb{01_mhc_report} template runs inline; extracting it here lets the focused
-report templates (\verb{03_id_counts}, \verb{04_overlaps}, \verb{05_lcms_qc}, \verb{06_quant})
+\verb{00_mhc_report} template runs inline; extracting it here lets the focused
+report templates (\verb{01_id_counts}, \verb{02_overlaps}, \verb{03_lcms_qc}, \verb{04_quant})
 share one cached \code{pep_all} instead of each re-parsing the raw files: run
 \code{build_pep_all()} once (writing the \code{.rda} via \code{file_rda}), then render any
 subset of those reports, each of which simply \code{load()}s the cache.
@@ -62,6 +62,6 @@ build_pep_all(
   file_rda       = "2_data/dda_all_pep_all.rda"
 )
 # then render any focused report against the cache:
-run_howmahico_report("03_id_counts", params = list(...), output_file = "03.html")
+run_howmahico_report("01_id_counts", params = list(...), output_file = "01.html")
 }
 }

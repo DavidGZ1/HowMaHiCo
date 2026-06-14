@@ -28,7 +28,7 @@ params:
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
   CsvSave: FALSE
-title: "`r paste0('04_overlaps | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+title: "`r paste0('02_overlaps | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 
@@ -294,7 +294,7 @@ pep_overlap |>  kable() |> kable_paper("hover", full_width = F) |>
 
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
-write_input_params(params, folder = FolderResults, prefix = "04_overlaps")
+write_input_params(params, folder = FolderResults, prefix = "02_overlaps")
 
 if (params$CsvSave) {
   write.csv_rawr(upset_table_pep, folder = FolderResults)
