@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,54 @@
       <small>Source: <a href="https://github.com/DavidGZ1/HowMaHiCo/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.1" id="howmahico-061">HowMaHiCo 0.6.1<a class="anchor" aria-label="anchor" href="#howmahico-061"></a></h2>
+<ul><li>Moved the PTM profile from <code>05_lcms_qc</code> to <code>03_id_counts</code> (it is a general identification property, alongside peptide motifs), and extended it to show <strong>all peptides</strong> (<code>pep_all</code>) in addition to the selected-length peptides (<code>pep_short</code>), in an All / Selected tabset — matching the other dual sections. <code>05_lcms_qc</code> now covers only the RT/1k0/mz distributions and Score/ppm QC.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.6.0" id="howmahico-060">HowMaHiCo 0.6.0<a class="anchor" aria-label="anchor" href="#howmahico-060"></a></h2>
+<div class="section level3">
+<h3 id="multi-report-framework-0-6-0">Multi-report framework<a class="anchor" aria-label="anchor" href="#multi-report-framework-0-6-0"></a></h3>
+<ul><li>New exported <code><a href="../reference/build_pep_all.html">build_pep_all()</a></code> extracts the raw-file parsing step (the FragPipe / DIA-NN / PEAKS read → parse → annotate dispatch) into a standalone, unit-tested function that writes the <code>&lt;Subset&gt;_pep_all.rda</code> cache. Run it once, then render any of the focused reports against that cache instead of re-parsing the raw search files per report.</li>
+<li>Four new focused report templates, each a slice of the all-in-one <code>01_mhc_report</code>, rendered the same way via <code><a href="../reference/run_howmahico_report.html">run_howmahico_report()</a></code>:
+<ul><li>
+<code>03_id_counts</code> — total IDs, identification counts (mean±sd, by length, by charge, by sample), peptide size distributions, peptide motifs.</li>
+<li>
+<code>04_overlaps</code> — intra-Condition replicate overlap, UpSet across Conditions, and Condition pairwise overlap.</li>
+<li>
+<code>05_lcms_qc</code> — RT / 1k0 / m/z distributions, Score and mass-error identification QC, and the PTM profile (advanced LC-MS QC).</li>
+<li>
+<code>06_quant</code> — log2(Area) correlation and Area %CV violins.</li>
+</ul></li>
+<li>The focused reports share one setup fragment (<code>inst/rmarkdown/shared/setup.Rmd</code>, pulled in via a knitr <code>child</code>) that loads the cache and derives the common objects, instead of duplicating the boilerplate in every skeleton.</li>
+<li>
+<code>01_mhc_report</code> and <code>02_mhc_upsets</code> are unchanged — full retrocompatibility.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.5.0" id="howmahico-050">HowMaHiCo 0.5.0<a class="anchor" aria-label="anchor" href="#howmahico-050"></a></h2>
+<div class="section level3">
+<h3 id="report-per-length-splits-for-the-overlap-and-charge-sections-0-5-0">Report: per-length splits for the overlap and charge sections<a class="anchor" aria-label="anchor" href="#report-per-length-splits-for-the-overlap-and-charge-sections-0-5-0"></a></h3>
+<ul><li>
+<code><a href="../reference/plot_overlap_intra_condition.html">plot_overlap_intra_condition()</a></code> now returns a single replicate-overlap bar chart for one data frame and one ID level, instead of stacking all-vs-selected peptides into a two-row <code><a href="https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html" class="external-link">ggpubr::ggarrange()</a></code>. <strong>Breaking signature change</strong>: the arguments are now <code>(df, id_col, title = NULL, shortpep_range)</code> (previously <code>(pep_all, pep_short, id_col, shortpep_range)</code>). The main report’s “Overlap intra-Condition” section now presents All peptides and Selected peptides as separate nested tabsets (Peptides / Sequences / Proteins), matching the “Average +/- sd” section.</li>
+<li>The “Peptides identified per charge +1 to +4” section now renders a plot for the selected-length peptides (<code>pep_short</code>) alongside the all-peptides plot, in an All peptides / Selected peptides tabset. The selected-length plot is also written out when <code>PlotsSave = TRUE</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="howmahico-040">HowMaHiCo 0.4.0<a class="anchor" aria-label="anchor" href="#howmahico-040"></a></h2>
+<div class="section level3">
+<h3 id="loader-consistency--portability-0-4-0">Loader consistency &amp; portability<a class="anchor" aria-label="anchor" href="#loader-consistency--portability-0-4-0"></a></h3>
+<ul><li>Unified <code>Log2Area</code> zero-handling across all three loaders: a zero <code>Area</code>/<code>Intensity</code> now maps to <code>NA</code> everywhere. Previously FragPipe and DIA-NN mapped it to <code>1</code> while PEAKS mapped it to <code>NA</code>, so the same zero-area row behaved differently depending on the search engine. <strong>This changes FragPipe/DIA-NN output for zero-area rows</strong> — they no longer carry a fabricated <code>Log2Area = 1</code>. The shared logic now lives in an internal <code>compute_log2area()</code> helper.</li>
+<li>Run-name extraction (DIA-NN <code>File.Name</code>, Bruker HyStar <code>Result.Path</code>) is now separator-agnostic via an internal <code>extract_run_name()</code> helper, replacing a backslash-anchored regex that only worked on Windows-style paths. The loaders are now portable to Linux/macOS (and Docker).</li>
+<li>Each <code>parse_*()</code> validates its output against the core <code>pep_all</code> schema (<code>validate_pep_all()</code>), so a loader that drops/renames a core column or returns an empty table fails loudly at the source instead of producing a half-broken report several sections later.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="report-robustness--provenance-0-4-0">Report robustness &amp; provenance<a class="anchor" aria-label="anchor" href="#report-robustness--provenance-0-4-0"></a></h3>
+<ul><li>The main report (<code>01_mhc_report</code>) no longer aborts on partial subsets: the UpSet sections skip gracefully when fewer than two Conditions are present, and the Area %CV sections render an explanatory note instead of erroring when no replicates exist.</li>
+<li>Both report templates gained a “Session &amp; provenance” footer: the run parameters as a table, the package version, and a collapsible <code><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo()</a></code>, so a saved HTML is self-documenting.</li>
+<li>Declared the previously-undeclared <code>DataAcquisitionNames</code> parameter in the <code>02_mhc_upsets</code> template (it was referenced in the header but never defined in the YAML, so it rendered blank).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="howmahico-030">HowMaHiCo 0.3.0<a class="anchor" aria-label="anchor" href="#howmahico-030"></a></h2>
 <div class="section level3">

@@ -1,5 +1,97 @@
 # Changelog
 
+## HowMaHiCo 0.6.1
+
+- Moved the PTM profile from `05_lcms_qc` to `03_id_counts` (it is a
+  general identification property, alongside peptide motifs), and
+  extended it to show **all peptides** (`pep_all`) in addition to the
+  selected-length peptides (`pep_short`), in an All / Selected tabset —
+  matching the other dual sections. `05_lcms_qc` now covers only the
+  RT/1k0/mz distributions and Score/ppm QC.
+
+## HowMaHiCo 0.6.0
+
+### Multi-report framework
+
+- New exported
+  [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+  extracts the raw-file parsing step (the FragPipe / DIA-NN / PEAKS read
+  → parse → annotate dispatch) into a standalone, unit-tested function
+  that writes the `<Subset>_pep_all.rda` cache. Run it once, then render
+  any of the focused reports against that cache instead of re-parsing
+  the raw search files per report.
+- Four new focused report templates, each a slice of the all-in-one
+  `01_mhc_report`, rendered the same way via
+  [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md):
+  - `03_id_counts` — total IDs, identification counts (mean±sd, by
+    length, by charge, by sample), peptide size distributions, peptide
+    motifs.
+  - `04_overlaps` — intra-Condition replicate overlap, UpSet across
+    Conditions, and Condition pairwise overlap.
+  - `05_lcms_qc` — RT / 1k0 / m/z distributions, Score and mass-error
+    identification QC, and the PTM profile (advanced LC-MS QC).
+  - `06_quant` — log2(Area) correlation and Area %CV violins.
+- The focused reports share one setup fragment
+  (`inst/rmarkdown/shared/setup.Rmd`, pulled in via a knitr `child`)
+  that loads the cache and derives the common objects, instead of
+  duplicating the boilerplate in every skeleton.
+- `01_mhc_report` and `02_mhc_upsets` are unchanged — full
+  retrocompatibility.
+
+## HowMaHiCo 0.5.0
+
+### Report: per-length splits for the overlap and charge sections
+
+- [`plot_overlap_intra_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_overlap_intra_condition.md)
+  now returns a single replicate-overlap bar chart for one data frame
+  and one ID level, instead of stacking all-vs-selected peptides into a
+  two-row
+  [`ggpubr::ggarrange()`](https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html).
+  **Breaking signature change**: the arguments are now
+  `(df, id_col, title = NULL, shortpep_range)` (previously
+  `(pep_all, pep_short, id_col, shortpep_range)`). The main report’s
+  “Overlap intra-Condition” section now presents All peptides and
+  Selected peptides as separate nested tabsets (Peptides / Sequences /
+  Proteins), matching the “Average +/- sd” section.
+- The “Peptides identified per charge +1 to +4” section now renders a
+  plot for the selected-length peptides (`pep_short`) alongside the
+  all-peptides plot, in an All peptides / Selected peptides tabset. The
+  selected-length plot is also written out when `PlotsSave = TRUE`.
+
+## HowMaHiCo 0.4.0
+
+### Loader consistency & portability
+
+- Unified `Log2Area` zero-handling across all three loaders: a zero
+  `Area`/`Intensity` now maps to `NA` everywhere. Previously FragPipe
+  and DIA-NN mapped it to `1` while PEAKS mapped it to `NA`, so the same
+  zero-area row behaved differently depending on the search engine.
+  **This changes FragPipe/DIA-NN output for zero-area rows** — they no
+  longer carry a fabricated `Log2Area = 1`. The shared logic now lives
+  in an internal `compute_log2area()` helper.
+- Run-name extraction (DIA-NN `File.Name`, Bruker HyStar `Result.Path`)
+  is now separator-agnostic via an internal `extract_run_name()` helper,
+  replacing a backslash-anchored regex that only worked on Windows-style
+  paths. The loaders are now portable to Linux/macOS (and Docker).
+- Each `parse_*()` validates its output against the core `pep_all`
+  schema (`validate_pep_all()`), so a loader that drops/renames a core
+  column or returns an empty table fails loudly at the source instead of
+  producing a half-broken report several sections later.
+
+### Report robustness & provenance
+
+- The main report (`01_mhc_report`) no longer aborts on partial subsets:
+  the UpSet sections skip gracefully when fewer than two Conditions are
+  present, and the Area %CV sections render an explanatory note instead
+  of erroring when no replicates exist.
+- Both report templates gained a “Session & provenance” footer: the run
+  parameters as a table, the package version, and a collapsible
+  [`sessionInfo()`](https://rdrr.io/r/utils/sessionInfo.html), so a
+  saved HTML is self-documenting.
+- Declared the previously-undeclared `DataAcquisitionNames` parameter in
+  the `02_mhc_upsets` template (it was referenced in the header but
+  never defined in the YAML, so it rendered blank).
+
 ## HowMaHiCo 0.3.0
 
 ### Packaging & best-practices cleanup

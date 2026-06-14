@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@
     <div class="section level2">
       <h2 id="render-reports">Render reports<a class="anchor" aria-label="anchor" href="#render-reports"></a></h2>
 
-      <div class="section-desc"><p>Entry points that render the parameterized QC report templates end-to-end</p></div>
+      <div class="section-desc"><p>Entry points that build the cached pep_all table and render the parameterized QC report templates (01_mhc_report all-in-one, or the focused 03-06 reports)</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -42,6 +42,13 @@
 
 
       <dl><dt>
+
+          <code><a href="build_pep_all.html">build_pep_all()</a></code>
+
+        </dt>
+        <dd>Build (and optionally cache) the unified <code>pep_all</code> table from raw search output</dd>
+
+        <dt>
 
           <code><a href="run_howmahico_report.html">run_howmahico_report()</a></code>
 
@@ -399,7 +406,7 @@
           <code><a href="plot_overlap_intra_condition.html">plot_overlap_intra_condition()</a></code>
 
         </dt>
-        <dd>Stacked overlap barplot (all vs short peptides) for one ID level</dd>
+        <dd>Overlap barplot for one ID level</dd>
 
         <dt>
 

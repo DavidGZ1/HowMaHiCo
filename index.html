@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,7 +88,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </tr>
 <tr>
 <td><code>inst/rmarkdown/templates/</code></td>
-<td>The two parameterized Rmd report templates (<code>01_mhc_report</code>, <code>02_mhc_upsets</code>), packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>
+<td>The parameterized Rmd report templates — <code>01_mhc_report</code> (all-in-one), <code>02_mhc_upsets</code>, and the focused <code>03_id_counts</code>/<code>04_overlaps</code>/<code>05_lcms_qc</code>/<code>06_quant</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
 </td>
 </tr>
 <tr>
@@ -192,6 +192,25 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span>  output_file <span class="op">=</span> <span class="st">"01_report_main__hla1_dda_all.html"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code>FolderDocumentation</code>/<code>FolderData</code>/<code>FolderResults</code>/<code>FolderFigures</code> are absolute (or render-time-working-directory-relative) paths — the template ships inside an installed package and can be rendered from anywhere. One call renders one report; loop with <code><a href="reference/derive_filtered_annotation.html">derive_filtered_annotation()</a></code> for multi-subset batch runs (see the <code>\dontrun{}</code> example on <code>run_howmahico_report</code>).</p>
+<p><strong>Focused reports (instead of the all-in-one <code>01_mhc_report</code>)</strong> — build the <code>pep_all</code> cache once with <code><a href="reference/build_pep_all.html">build_pep_all()</a></code>, then render any subset of the smaller, purpose-focused templates against it (no re-parsing per report):</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">annot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_annot.html">read_annot</a></span><span class="op">(</span><span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/build_pep_all.html">build_pep_all</a></span><span class="op">(</span>software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span>, folder_data <span class="op">=</span> <span class="st">"2_data"</span>,</span>
+<span>              annotation <span class="op">=</span> <span class="va">annot</span>, shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span>,</span>
+<span>              file_rda <span class="op">=</span> <span class="st">"2_data/dda_all_pep_all.rda"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">tmpl</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03_id_counts"</span>,  <span class="co"># ID counts, size distributions, motifs</span></span>
+<span>               <span class="st">"04_overlaps"</span>,   <span class="co"># replicate / condition / pairwise overlap</span></span>
+<span>               <span class="st">"05_lcms_qc"</span>,    <span class="co"># RT/1k0/mz, Score/ppm, PTM (advanced)</span></span>
+<span>               <span class="st">"06_quant"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>   <span class="co"># log2(Area) correlation, Area %CV</span></span>
+<span>  <span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="va">tmpl</span>,</span>
+<span>                       params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SampleSet <span class="op">=</span> <span class="st">"project_id"</span>, Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span>
+<span>                                     FolderData <span class="op">=</span> <span class="st">"2_data"</span>, FolderResults <span class="op">=</span> <span class="st">"3_results"</span>,</span>
+<span>                                     FolderFigures <span class="op">=</span> <span class="st">"4_figures"</span>,</span>
+<span>                                     Software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span><span class="op">)</span>,</span>
+<span>                       output_file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">tmpl</span>, <span class="st">"__dda_all.html"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+<p><code>01_mhc_report</code> (all-in-one) and <code>02_mhc_upsets</code> are unchanged and still parse the raw files themselves.</p>
 <p>Reports are written to <code>output_file</code> (HTML), and result tables/figures are written under <code>&lt;FolderResults&gt;/&lt;subset&gt;/</code> and <code>&lt;FolderFigures&gt;/&lt;subset&gt;/</code>.</p>
 </div>
 <div class="section level2">

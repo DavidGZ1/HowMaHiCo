@@ -2,13 +2,22 @@
 
 ## Render reports
 
-Entry points that render the parameterized QC report templates
-end-to-end
+Entry points that build the cached pep_all table and render the
+parameterized QC report templates (01_mhc_report all-in-one, or the
+focused 03-06 reports)
+
+- [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+  :
+
+  Build (and optionally cache) the unified `pep_all` table from raw
+  search output
 
 - [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)
   : Render a HowMaHiCo QC report from the installed package templates
+
 - [`derive_filtered_annotation()`](https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.md)
   : Derive a Condition-filtered copy of a sample annotation file
+
 - [`get_report_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.md)
   : Get the HowMaHiCo templates
 
@@ -188,7 +197,7 @@ correlation
   : Stacked bar chart of charge-state proportions by group
 
 - [`plot_overlap_intra_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_overlap_intra_condition.md)
-  : Stacked overlap barplot (all vs short peptides) for one ID level
+  : Overlap barplot for one ID level
 
 - [`plot_upset()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_upset.md)
   : UpSet plot of overlap between groups for a given variable

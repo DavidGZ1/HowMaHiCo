@@ -11,15 +11,25 @@ they are moved to “to do”
 
 ## To do
 
+- Rename 01_mhc_report to 00_mhc_report
+- Rename 01_mhc_upsets to 00_mhc_upsets
+- In lcms_qc, Peptide ID distribution across RT, 1/k0 and m/z, change
+  the way chunks are plotted, use the looped structure used for other
+  sections, with results = “asis”
+
 ## In standby
 
-- 2do by me change purple color of length plots to a dimmer one
 - one single parser function
 - 2do by me, check Overlap intra-Condition seems to be showing peptides
   in sequences, and sequences+proteins in proteins
 - reorder plots in a way that makes more sense
 - add functionality for peaks Xpro
 - homogenize sample annotation tables across software
+- Overlap intra-Condition (across replicates) is currently showing
+  absolute count numbers. Add another section showing similar plots but
+  with y axis as percentages.
+- Plan an advanced quantification report. Use Limma for the
+  normalization and statisticla testing.
 
 ## Done
 
@@ -148,3 +158,25 @@ create_dir = create_dir)
 - unify the two report templates (01_mhc_report, 02_mhc_upsets
   skeleton.Rmd) on the native \|\> pipe (181 %\>% converted; verified
   via knitr::purl + parse) (v0.3.0)
+
+- 2do by me change purple color of length plots to a dimmer one
+
+- Overlap intra-Condition (across replicates), split into individual
+  plots for each length: plot_overlap_intra_condition() refactored to
+  single-plot (df, id_col, title); report section now All peptides /
+  Selected peptides nested tabsets (v0.5.0)
+
+- Peptides identified per charge +1 to +4, one plot for all peptides
+  (pep_all) and one for selected length (pep_short), shown in an All /
+  Selected tabset (v0.5.0)
+
+- multi-report framework instead of one big report: exported
+  build_pep_all() (parse+cache step), shared
+  inst/rmarkdown/shared/setup.Rmd child, and four focused templates
+  03_id_counts / 04_overlaps / 05_lcms_qc / 06_quant rendered against
+  the cached pep_all; 01_mhc_report kept unchanged for
+  retrocompatibility (v0.6.0)
+
+- PTM profile moved from 05_lcms_qc to 03_id_counts, and extended to
+  show all peptides (pep_all) alongside selected (pep_short) in an
+  All/Selected tabset (v0.6.1)

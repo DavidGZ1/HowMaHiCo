@@ -15,7 +15,7 @@ Docker-idiomatic (&quot;one container run = one job&quot;)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.6.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,8 @@ Docker-idiomatic ("one container run = one job").</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">run_howmahico_report</span><span class="op">(</span></span>
-<span>  template <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"01_mhc_report"</span>, <span class="st">"02_mhc_upsets"</span><span class="op">)</span>,</span>
+<span>  template <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"01_mhc_report"</span>, <span class="st">"02_mhc_upsets"</span>, <span class="st">"03_id_counts"</span>, <span class="st">"04_overlaps"</span>,</span>
+<span>    <span class="st">"05_lcms_qc"</span>, <span class="st">"06_quant"</span><span class="op">)</span>,</span>
 <span>  <span class="va">params</span>,</span>
 <span>  <span class="va">output_file</span>,</span>
 <span>  <span class="va">...</span></span>
@@ -64,8 +65,15 @@ Docker-idiomatic ("one container run = one job").</p>
 
 
 <dl><dt id="arg-template">template<a class="anchor" aria-label="anchor" href="#arg-template"></a></dt>
-<dd><p>One of <code>"01_mhc_report"</code> (the main QC report) or
-<code>"02_mhc_upsets"</code> (the secondary overlap/UpSet report).</p></dd>
+<dd><p>Which report template to render. <code>"01_mhc_report"</code> is the
+all-in-one QC report (it parses the raw search files itself). The remaining
+templates are focused reports that render against a <code>pep_all</code> cache built
+once by <code><a href="build_pep_all.html">build_pep_all()</a></code> (or by <code>01_mhc_report</code>):
+<code>"02_mhc_upsets"</code> (per-sample overlap/UpSet), <code>"03_id_counts"</code> (general
+identification QC: counts, size distributions, motifs), <code>"04_overlaps"</code>
+(intra-Condition / cross-Condition / pairwise overlap), <code>"05_lcms_qc"</code>
+(RT/1k0/mz distributions, Score/ppm QC, PTM profile), and <code>"06_quant"</code>
+(log2(Area) correlation, Area %CV).</p></dd>
 
 
 <dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
@@ -120,6 +128,20 @@ inside an installed package and can be rendered from anywhere.</p>
 <span class="r-in"><span>                Software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  output_file <span class="op">=</span> <span class="st">"01_report_main__hla1_dda_all.html"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Focused-report framework: build the pep_all cache once, then render any</span></span></span>
+<span class="r-in"><span><span class="co"># subset of the focused reports against it (no re-parsing per report).</span></span></span>
+<span class="r-in"><span><span class="va">annot</span> <span class="op">&lt;-</span> <span class="fu"><a href="read_annot.html">read_annot</a></span><span class="op">(</span><span class="st">"1_documentation/sample_annotation_dda_all.csv"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="build_pep_all.html">build_pep_all</a></span><span class="op">(</span>software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span>, folder_data <span class="op">=</span> <span class="st">"2_data"</span>,</span></span>
+<span class="r-in"><span>              annotation <span class="op">=</span> <span class="va">annot</span>, shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>              file_rda <span class="op">=</span> <span class="st">"2_data/dda_all_pep_all.rda"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">focused_params</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SampleSet <span class="op">=</span> <span class="st">"MEGF_035"</span>, Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span></span>
+<span class="r-in"><span>                       FolderData <span class="op">=</span> <span class="st">"2_data"</span>, FolderResults <span class="op">=</span> <span class="st">"3_results"</span>,</span></span>
+<span class="r-in"><span>                       FolderFigures <span class="op">=</span> <span class="st">"4_figures"</span>, Software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="kw">for</span> <span class="op">(</span><span class="va">tmpl</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03_id_counts"</span>, <span class="st">"04_overlaps"</span>, <span class="st">"05_lcms_qc"</span>, <span class="st">"06_quant"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu">run_howmahico_report</span><span class="op">(</span><span class="va">tmpl</span>, params <span class="op">=</span> <span class="va">focused_params</span>,</span></span>
+<span class="r-in"><span>                       output_file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">tmpl</span>, <span class="st">"__dda_all.html"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Batch-rendering pattern (preserves 00_knit_reports.R's 6-subset loop):</span></span></span>
 <span class="r-in"><span><span class="va">annot_jy</span> <span class="op">&lt;-</span> <span class="fu"><a href="derive_filtered_annotation.html">derive_filtered_annotation</a></span><span class="op">(</span><span class="st">"sample_annotation_dda_all.csv"</span>,</span></span>
