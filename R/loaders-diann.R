@@ -128,7 +128,7 @@ parse_diann <- function(input, shortpep_range = c(8, 13)){
     dplyr::mutate(
       PeptideID = paste0(All.Mapped.Proteins, "_", round(Precursor.Mz, 1), "_", as.numeric(Precursor.Charge)),
       OrganismFirst = gsub(".*_(.+).*", "\\1", All.Mapped.Proteins),
-      Log2Area = ifelse(Ms1.Area == 0, 1, log2(Ms1.Area)),
+      Log2Area = compute_log2area(Ms1.Area),
       Charge = as.factor(paste0("+ ", Precursor.Charge)),
       PTM = apply(stringr::str_extract_all(Modified.Sequence, "\\([^()]+\\)", simplify = TRUE),
                   1,
@@ -142,7 +142,7 @@ parse_diann <- function(input, shortpep_range = c(8, 13)){
       Cter = as.factor(stringr::str_sub(Stripped.Sequence, -1, -1)),
       Mass = ((Precursor.Mz - 1.007276) * Precursor.Charge),
       ppm = 0, # DIA-NN does not give a calculated mz
-      Source_file = gsub(".*\\\\(.+)[.].*", "\\1", File.Name),
+      Source_file = extract_run_name(File.Name),
       Found_By = "DIA-NN"
     ) |>
     dplyr::select(Sample_fp,
@@ -220,7 +220,8 @@ parse_diann <- function(input, shortpep_range = c(8, 13)){
                   Predicted.IM,
                   Predicted.iIM,
                   All.Mapped.Genes
-    )
+    ) |>
+    validate_pep_all("DIA-NN")
 }
 
 #' Join parsed DIA-NN results to the sample annotation table

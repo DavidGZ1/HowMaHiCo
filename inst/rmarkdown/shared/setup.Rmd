@@ -1,0 +1,95 @@
+<!--
+Shared setup for the focused HowMaHiCo report templates (03_id_counts,
+04_overlaps, 05_lcms_qc, 06_quant). Included from each skeleton via:
+
+    ```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+    ```
+
+It loads libraries, derives the shortpep range / palettes / output folders, then
+LOADS the cached `pep_all` (built once by build_pep_all() or by 01_mhc_report)
+and derives `pep_short` plus the grouping vectors every section reuses. This is a
+document fragment: it has no YAML header and runs in the parent's environment.
+-->
+
+```{r setup, include=FALSE, echo=FALSE}
+require("knitr")
+knitr::opts_chunk$set(echo = FALSE)
+if (!is.null(params$ProjectDir) && nzchar(params$ProjectDir))
+  knitr::opts_knit$set(root.dir = normalizePath(params$ProjectDir, mustWork = FALSE))
+```
+
+```{r initialize, message=FALSE, include=FALSE}
+library(HowMaHiCo)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(kableExtra)
+library(ggpubr)
+library(viridis)
+library(plotly)
+library(openxlsx)
+library(DT)
+
+# handy settings
+mhcclass_ranges <- list(MHC1 = c(8L, 13L), MHC2 = c(12L, 25L))
+shortpep_range <- if (params$MHCclass %in% names(mhcclass_ranges)) {
+  mhcclass_ranges[[params$MHCclass]]
+} else {
+  c(params$ShortPeptideLengthMin, params$ShortPeptideLengthMax)
+}
+
+mhcclass_palettes <- list(MHC1 = c("#fde725", "#440154"), MHC2 = c("#21918c", "#440154"))
+shortpep_palette <- mhcclass_palettes[[if (params$MHCclass %in% names(mhcclass_palettes))
+                                         params$MHCclass else "MHC1"]]
+shortpep_colors <- setNames(shortpep_palette,
+  c(paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"), "others"))
+
+if(params$Subset == ""){
+  subset <- params$Subset
+  FolderResults <- params$FolderResults
+  FolderFigures <- params$FolderFigures
+}else{
+  subset <- paste0(params$Subset, "_")
+  dir.create(file.path(params$FolderResults, params$Subset), showWarnings = FALSE)
+  dir.create(file.path(params$FolderFigures, params$Subset), showWarnings = FALSE)
+  FolderResults <- file.path(params$FolderResults, params$Subset)
+  FolderFigures <- file.path(params$FolderFigures, params$Subset)
+}
+
+file_rda <- file.path(params$FolderData, paste0(subset, "pep_all.rda"))
+
+# pre-check to avoid overwriting prior outputs (the focused reports read, not
+# write, the pep_all cache, so only the output folder is guarded here)
+check_output_exists(params$FolderResults, overwrite = params$ResultsOverwrite)
+```
+
+```{r load-pep-all, message=TRUE, warning=TRUE}
+# Focused reports consume the cached pep_all produced by build_pep_all()
+# (or by 01_mhc_report) rather than re-parsing the raw search files.
+if (!file.exists(file_rda)) {
+  stop("pep_all cache not found at '", file_rda, "'.\n",
+       "Build it first with build_pep_all(..., file_rda = '", file_rda, "'), ",
+       "or render 01_mhc_report (which writes the cache).")
+}
+load(file_rda)   # restores `pep_all`
+
+pep_short <- pep_all |>
+  filter(Length >= shortpep_range[1], Length <= shortpep_range[2])
+
+# simplified info reused across sections
+samples <- levels(pep_all$Sample)
+conditions <- levels(pep_all$Condition)
+n_conditions <- length(conditions)
+bioreplicates <- levels(pep_all$BioReplicate)
+comp_condition <- combn(conditions, 2) |> as.data.frame() |> as.list()
+
+# facet layout reused by the size-distribution, RT/1k0/mz and motif sections
+if (length(conditions) <= 3) {
+  phis_nrow <- 1
+  phis_ncol <- length(conditions)
+} else {
+  phis_nrow <- 3
+  phis_ncol <- ceiling(length(conditions) / 3)
+}
+```

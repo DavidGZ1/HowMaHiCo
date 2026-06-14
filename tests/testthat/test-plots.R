@@ -78,6 +78,15 @@ test_that("plot_violin_areacv builds a violin/boxplot of Area %CV by group", {
   suppressWarnings(expect_s3_class(plot_violin_areacv(areacv, Condition), "gg"))
 })
 
+test_that("plot_overlap_intra_condition builds one replicate-overlap bar chart per ID level", {
+  pep_all <- make_pep_all()
+  expect_s3_class(plot_overlap_intra_condition(pep_all, "Peptide"), "gg")
+  expect_s3_class(plot_overlap_intra_condition(pep_all, "Sequence"), "gg")
+  expect_s3_class(
+    plot_overlap_intra_condition(pep_all, "Accession", title = "Proteins from all peptides"),
+    "gg")
+})
+
 test_that("plot_corr builds a correlation heatmap from a correlation matrix", {
   pep_all <- make_pep_all()
   mat <- get_mat_log2area(pep_all, PeptideID, Sample)

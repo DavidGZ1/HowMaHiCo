@@ -5,8 +5,11 @@ template:
 
 reference:
 - title: Render reports
-  desc: Entry points that render the parameterized QC report templates end-to-end
+  desc: >
+    Entry points that build the cached pep_all table and render the parameterized
+    QC report templates (01_mhc_report all-in-one, or the focused 03-06 reports)
   contents:
+  - build_pep_all
   - run_howmahico_report
   - derive_filtered_annotation
   - get_report_template

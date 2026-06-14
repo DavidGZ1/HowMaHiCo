@@ -7,7 +7,28 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.3.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.6.1** — Phases 1–6 of the package conversion are complete.
+v0.6.1 moved the PTM profile from `05_lcms_qc` into `03_id_counts` and added an
+all-peptides (`pep_all`) variant alongside the selected-length one (All/Selected
+tabset). v0.6.0 added a multi-report framework: a new exported `build_pep_all()`
+(`R/build-pep-all.R`) extracts the raw-file parse/cache step, and four focused
+report templates (`03_id_counts`, `04_overlaps`, `05_lcms_qc`, `06_quant`) each
+render a slice of the all-in-one `01_mhc_report` against the cached `pep_all`
+(loaded via the shared `inst/rmarkdown/shared/setup.Rmd` knitr child). Build the
+cache once, then render any subset. `01_mhc_report`/`02_mhc_upsets` are unchanged.
+v0.5.0 split two report sections by length to match the "Average +/- sd" pattern:
+`plot_overlap_intra_condition()` is now a single-plot function (breaking signature:
+`(df, id_col, title, shortpep_range)` — was `(pep_all, pep_short, id_col, ...)`),
+and the "Overlap intra-Condition" + "Peptides identified per charge" report sections
+now show All peptides / Selected peptides (`pep_short`) as separate nested tabsets.
+v0.4.0 was a loader-consistency + report-robustness pass: the three loaders now share
+`compute_log2area()` (zero `Area` → `NA` everywhere, previously `1` for FragPipe/DIA-NN
+and `NA` for PEAKS — a user-visible behavior change), `extract_run_name()` (POSIX-safe
+run-name extraction, no longer Windows-backslash-only), and `validate_pep_all()`
+(core-schema guard at each parser tail) — all internal helpers in `R/utils-loaders.R`.
+The `01_mhc_report` template degrades gracefully on partial subsets (single-Condition
+UpSets, no-replicate Area %CV), both templates gained a "Session & provenance" footer,
+and `02_mhc_upsets` now declares its `DataAcquisitionNames` param.
 v0.3.0 was a best-practices pass: base-package imports declared, all exports made
 public (no `@keywords internal`), `NEWS.md` added, internal code unified on the
 native `|>` pipe (R floor raised to 4.1.0).

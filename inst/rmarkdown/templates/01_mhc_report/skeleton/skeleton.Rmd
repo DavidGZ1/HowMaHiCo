@@ -483,59 +483,95 @@ bp_prop_length_pep_sample
 
 ## Peptides identified per charge +1 to +4 {.tabset}
 
-### charge proportion condition
-
-```{r plot-charge-proportion, results='asis', echo=FALSE, fig.height=3.5, fig.width=8, warning=TRUE}
-count_all_condition_charge <- 
+```{r charge-proportion-data, echo=FALSE, warning=TRUE}
+# Build the charge-state proportion table for a given peptide set (all or selected)
+.charge_prop_table <- function(pep) {
   bind_rows(
-    pep_all |> 
-      get_charge_group() |> 
-      group_by(Condition, Charge_group) |> 
-      count_ids() |> 
-        arrange(Condition, Charge_group),
-    pep_all |> 
-      get_charge_group() |> 
-      group_by(Condition) |> 
-      count_ids() |> 
+    pep |>
+      get_charge_group() |>
+      group_by(Condition, Charge_group) |>
+      count_ids() |>
+      arrange(Condition, Charge_group),
+    pep |>
+      get_charge_group() |>
+      group_by(Condition) |>
+      count_ids() |>
       mutate(Charge_group = "Total")
-  ) |> 
-  mutate(Charge_group = factor(Charge_group, rev(unique(Charge_group))) )
-  
-prop_all_condition_charge <- 
-  count_all_condition_charge |>
-  get_proportion_charge()
-bp_prop_all_condition_charge <- 
-  prop_all_condition_charge |> 
+  ) |>
+    mutate(Charge_group = factor(Charge_group, rev(unique(Charge_group)))) |>
+    get_proportion_charge()
+}
+
+prop_all_condition_charge   <- .charge_prop_table(pep_all)
+prop_short_condition_charge <- .charge_prop_table(pep_short)
+
+bp_prop_all_condition_charge <-
+  prop_all_condition_charge |>
   plot_charge_proportions(Condition) +
   rotate_x_text(70) +
   ggtitle("Charge proportion all peptides")
-# check if % > 100
-tmp_prop_total <- 
-  prop_all_condition_charge |> 
-  filter(Charge_group != "Total") |> 
-  group_by(Condition, Level) |> 
-  summarise(Proportion_Total = sum(Proportion), .groups = "drop")  
+bp_prop_short_condition_charge <-
+  prop_short_condition_charge |>
+  plot_charge_proportions(Condition) +
+  rotate_x_text(70) +
+  ggtitle("Charge proportion selected peptides")
+
+# check if % > 100, per set (peptides can be reported with multiple charge states)
+tmp_prop_total <-
+  bind_rows(all = prop_all_condition_charge, short = prop_short_condition_charge, .id = "set") |>
+  filter(Charge_group != "Total") |>
+  group_by(set, Condition, Level) |>
+  summarise(Proportion_Total = sum(Proportion), .groups = "drop")
 if(any(tmp_prop_total$Proportion_Total > 1)){
   warning("The total percentage is > 100% in some cases. This may be because some peptides can be reported with multiple charge states (e.g. in Fragpipe)")
 }
 rm(tmp_prop_total)
+```
 
+### All peptides
+
+```{r plot-charge-proportion-all, echo=FALSE, fig.height=3.5, fig.width=8}
 bp_prop_all_condition_charge
+```
+
+### Selected peptides
+
+```{r plot-charge-proportion-short, echo=FALSE, fig.height=3.5, fig.width=8}
+bp_prop_short_condition_charge
 ```
 
 # Overlap of identifications
 
 ## Overlap intra-Condition (across replicates) {.tabset}
 
-```{r plot-overlap-intra-condition, results='asis', echo=FALSE, fig.height=6, fig.width=8, warning=FALSE}
+### All peptides {.tabset}
+
+```{r plot-overlap-intra-condition-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
 overlap_ids    <- c("Peptide", "Sequence", "Accession")
 overlap_labels <- c("Peptides", "Sequences", "Proteins")
+overlap_title_all <- c(Peptide   = "All Peptides",
+                       Sequence  = "All Sequences",
+                       Accession = "Proteins from all peptides")
+overlap_title_short <- c(
+  Peptide   = paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  Sequence  = paste0("Selected Sequences (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+  Accession = paste0("Proteins from ", shortpep_range[1], " to ", shortpep_range[2], " AAs"))
 
 for (i in seq_along(overlap_ids)) {
-  cat("\n### ", overlap_labels[i], "\n")
-  print(plot_overlap_intra_condition(pep_all, pep_short,
-                                     id_col         = overlap_ids[i],
-                                     shortpep_range = shortpep_range))
+  cat("\n#### ", overlap_labels[i], "\n")
+  print(plot_overlap_intra_condition(pep_all, id_col = overlap_ids[i],
+                                     title = overlap_title_all[[overlap_ids[i]]]))
+  cat("\n\n")
+}
+```
+
+### Selected peptides {.tabset}
+
+```{r plot-overlap-intra-condition-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(overlap_ids)) {
+  cat("\n#### ", overlap_labels[i], "\n")
+  print(plot_overlap_intra_condition(pep_short, id_col = overlap_ids[i],
+                                     title = overlap_title_short[[overlap_ids[i]]]))
   cat("\n\n")
 }
 ```
@@ -610,11 +646,15 @@ Below are shown the UpSet plots representing the overlap between the conditions 
 
 ```{r plot-upset-all, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 var_levels <-  c("Peptide", "Sequence", "Accession")
-up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
-for (i in 1:length(var_levels)) {
-  cat("\n### ", var_levels[i],"\n")
-  up_pep_all_list[i]  |>  print()
-  cat('\n\n')
+if (dplyr::n_distinct(pep_all$Condition) < 2) {
+  cat("\n_UpSet plots require at least two Conditions to show overlap; only one is present in this subset._\n")
+} else {
+  up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
+  for (i in 1:length(var_levels)) {
+    cat("\n### ", var_levels[i],"\n")
+    up_pep_all_list[i]  |>  print()
+    cat('\n\n')
+  }
 }
 
 ```
@@ -622,11 +662,15 @@ for (i in 1:length(var_levels)) {
 ## Selected peptides {.tabset}
 
 ```{r plot-upset-short, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
-up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
-for (i in 1:length(var_levels)) {
-  cat("\n### ", var_levels[i],"\n")
-  up_pep_short_list[i]  |>  print()
-  cat('\n\n')
+if (dplyr::n_distinct(pep_short$Condition) < 2) {
+  cat("\n_UpSet plots require at least two Conditions to show overlap; only one is present in this subset._\n")
+} else {
+  up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
+  for (i in 1:length(var_levels)) {
+    cat("\n### ", var_levels[i],"\n")
+    up_pep_short_list[i]  |>  print()
+    cat('\n\n')
+  }
 }
 
 ```
@@ -975,6 +1019,10 @@ pep_all_summ_area_cond <- summarise_area(pep_all, Condition)
 pep_all_summ_area_biorep <- summarise_area(pep_all,  BioReplicate)
 pep_short_summ_area_cond <- summarise_area(pep_short, Condition)
 pep_short_summ_area_biorep <- summarise_area(pep_short,  BioReplicate)
+# Initialise to NULL so the print chunks below have something to test against
+# when a branch is skipped (no replicates) instead of an undefined-object error.
+pviolin_areacv_cond_all <- pviolin_areacv_cond_short <-
+  pviolin_areacv_biorep_all <- pviolin_areacv_biorep_short <- NULL
 if(all(is.na(pep_all_summ_area_cond$Area_CV))){
   warning("Area CV plots cannot be generated for conditions. No replicates found")
 }else{
@@ -994,27 +1042,27 @@ if(all(is.na(pep_all_summ_area_biorep$Area_CV))){
 ### Condition
 
 ```{r plot-areacv-all-condition}
-ggprint_rawr(pviolin_areacv_cond_all)
+if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-all-biorep}
-ggprint_rawr(pviolin_areacv_biorep_all)
+if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
 ```
 
-## Slected peptides  {.tabset}
+## Selected peptides  {.tabset}
 
 ### Condition
 
 ```{r plot-areacv-short-condition}
-ggprint_rawr(pviolin_areacv_cond_short)
+if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-short-biorep}
-ggprint_rawr(pviolin_areacv_biorep_short)
+if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short)
 ```
 
 # Identification QC
@@ -1183,6 +1231,8 @@ if(params$PlotsSave == TRUE){
 
   ggsave_rawr(bp_prop_all_condition_charge,  file = "bp_prop_all_condition_charge", folder = FolderFigures,
              width = n_conditions + 5, height  = 10)
+  ggsave_rawr(bp_prop_short_condition_charge,  file = "bp_prop_short_condition_charge", folder = FolderFigures,
+             width = n_conditions + 5, height  = 10)
   ggsave_rawr(bp_prop_length_pep_condition,  file = "bp_prop_length_pep_condition", folder = FolderFigures,
              width = n_conditions + 5, height  = 10)
   
@@ -1208,6 +1258,33 @@ if(params$PlotsSave == TRUE){
   }
 }
 ```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>
 
 
 

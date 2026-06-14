@@ -136,7 +136,7 @@ parse_fragpipe <- function(input, shortpep_range = c(8, 13)){
   ## reformat column names, create new ones, then use select to select, rename and reorder columns
 
   if(all(input$Intensity == 0)){
-    warning("All Intensity (Area) values were 0. Log2Area will be inputed to 1 to avoid -Inf values")
+    warning("All Intensity (Area) values were 0. Log2Area will be NA for those rows (a zero Area has no defined log2)")
   }
 
   input |>
@@ -147,7 +147,7 @@ parse_fragpipe <- function(input, shortpep_range = c(8, 13)){
       Modified_Peptide = ifelse(is.na(Modified_Peptide), Peptide, Modified_Peptide), # Modified_Peptide is na if not modified
       PeptideID = paste0(Protein, "_", round(Calibrated_Observed_M.Z, 1), "_", as.numeric(Charge)),
       OrganismFirst = sub(".*_", "", Entry_Name),
-      Log2Area = ifelse(Intensity == 0, 1, log2(Intensity)),
+      Log2Area = compute_log2area(Intensity),
       Charge = as.factor(paste0("+ ", Charge)),
       Length_range = dplyr::case_when(Peptide_Length >= shortpep_range[1] & Peptide_Length <= shortpep_range[2] ~
                                         paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"),
@@ -195,7 +195,8 @@ parse_fragpipe <- function(input, shortpep_range = c(8, 13)){
                   Is_Decoy,
                   Is_Contaminant,
                   Is_Unique
-    )
+    ) |>
+    validate_pep_all("FragPipe")
 }
 
 #' Join parsed FragPipe results to the sample annotation table
