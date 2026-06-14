@@ -28,7 +28,7 @@ params:
   ResultsOverwrite: TRUE # FALSE throws error when output files already exist to avoid overwriting
   PlotsSave: FALSE #Saves all the plots as .png
   CsvSave: FALSE # TRUE = saves all intermediary csvs, FALSE = saves only essential
-title: "`r paste0('01_mhc_report | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+title: "`r paste0('00_mhc_report | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 

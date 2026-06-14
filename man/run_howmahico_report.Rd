@@ -5,22 +5,22 @@
 \title{Render a HowMaHiCo QC report from the installed package templates}
 \usage{
 run_howmahico_report(
-  template = c("01_mhc_report", "02_mhc_upsets", "03_id_counts", "04_overlaps",
-    "05_lcms_qc", "06_quant"),
+  template = c("00_mhc_report", "00_mhc_upsets", "01_id_counts", "02_overlaps",
+    "03_lcms_qc", "04_quant"),
   params,
   output_file,
   ...
 )
 }
 \arguments{
-\item{template}{Which report template to render. \code{"01_mhc_report"} is the
+\item{template}{Which report template to render. \code{"00_mhc_report"} is the
 all-in-one QC report (it parses the raw search files itself). The remaining
 templates are focused reports that render against a \code{pep_all} cache built
-once by \code{\link[=build_pep_all]{build_pep_all()}} (or by \verb{01_mhc_report}):
-\code{"02_mhc_upsets"} (per-sample overlap/UpSet), \code{"03_id_counts"} (general
-identification QC: counts, size distributions, motifs), \code{"04_overlaps"}
-(intra-Condition / cross-Condition / pairwise overlap), \code{"05_lcms_qc"}
-(RT/1k0/mz distributions, Score/ppm QC, PTM profile), and \code{"06_quant"}
+once by \code{\link[=build_pep_all]{build_pep_all()}} (or by \verb{00_mhc_report}):
+\code{"00_mhc_upsets"} (per-sample overlap/UpSet), \code{"01_id_counts"} (general
+identification QC: counts, size distributions, motifs, PTM), \code{"02_overlaps"}
+(intra-Condition / cross-Condition / pairwise overlap), \code{"03_lcms_qc"}
+(RT/1k0/mz distributions, Score/ppm QC), and \code{"04_quant"}
 (log2(Area) correlation, Area \%CV).}
 
 \item{params}{Named list of report parameters, as declared in the
@@ -62,7 +62,7 @@ inside an installed package and can be rendered from anywhere.
 \examples{
 \dontrun{
 run_howmahico_report(
-  template = "01_mhc_report",
+  template = "00_mhc_report",
   params = list(SampleSet = "MEGF_035_K251128",
                 AnnotationFile = "sample_annotation_dda_all.csv",
                 Subset = "dda_all",
@@ -82,7 +82,7 @@ build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
 focused_params <- list(SampleSet = "MEGF_035", Subset = "dda_all",
                        FolderData = "2_data", FolderResults = "3_results",
                        FolderFigures = "4_figures", Software = "fragpipe_dda_combined")
-for (tmpl in c("03_id_counts", "04_overlaps", "05_lcms_qc", "06_quant")) {
+for (tmpl in c("01_id_counts", "02_overlaps", "03_lcms_qc", "04_quant")) {
   run_howmahico_report(tmpl, params = focused_params,
                        output_file = paste0(tmpl, "__dda_all.html"))
 }
@@ -91,7 +91,7 @@ for (tmpl in c("03_id_counts", "04_overlaps", "05_lcms_qc", "06_quant")) {
 annot_jy <- derive_filtered_annotation("sample_annotation_dda_all.csv",
                                        "1_documentation", "JY")
 for (subset in c("dda_all", "dda_jy", "dda_plasma")) {
-  run_howmahico_report(template = "01_mhc_report",
+  run_howmahico_report(template = "00_mhc_report",
                        params = list(Subset = subset, ...),
                        output_file = paste0("01_report_main__hla1_", subset, ".html"))
 }

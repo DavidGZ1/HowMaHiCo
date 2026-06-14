@@ -1,0 +1,184 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  TestMode: FALSE
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('03_lcms_qc | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **LC-MS / identification QC** report (RT / 1k0 / m/z distributions,
+Score and mass-error QC, PTM profile) for immunopeptidomics experiments,
+provided by the Immunopeptidomics Platform (IPP). Intended for advanced users.
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+# Peptide ID distribution across RT, 1/k0 and m/z {.tabset}
+
+```{r lcms-dist-config, echo=FALSE}
+# Each "view" is one inner tab: a label + a builder closure (df, title) -> plot.
+# The first view is a pseudochromatogram; the other three are 2D density maps.
+lcms_views <- list(
+  chromato = list(
+    tab = "n_Peptides Vs RT (Pseudochromatograms)",
+    fun = function(df, title) plot_pseudochromatogram(df, paste0("Peptide ID chromatogram: ", title), ncol = phis_ncol)),
+  invk0_mz = list(
+    tab = "1/k0 VS m/z",
+    fun = function(df, title) plot_2d_distribution(df, "m_z", "invk0", c(10, 0.025), title, x_lab = "m/z", y_lab = "1/k0", ncol = phis_ncol)),
+  invk0_rt = list(
+    tab = "1/k0 VS RT",
+    fun = function(df, title) plot_2d_distribution(df, "RT", "invk0", c(1, 0.025), title, x_lab = "RT (min)", y_lab = "1/k0", ncol = phis_ncol)),
+  mz_rt = list(
+    tab = "m/z VS RT",
+    fun = function(df, title) plot_2d_distribution(df, "RT", "m_z", c(1, 10), title, x_lab = "RT (min)", y_lab = "m/z", ncol = phis_ncol))
+)
+
+lcms_sets <- list(
+  all   = list(name  = "All peptides",
+               df    = pep_all,
+               title = "All peptides identified"),
+  short = list(name  = paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
+               df    = pep_short,
+               title = paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"))
+)
+
+lcms_dist_plots <- list()  # collected for the export block
+```
+
+```{r plot-lcms-dist, results='asis', echo=FALSE, fig.width=8, fig.height=4, warning=FALSE}
+for (set_key in names(lcms_sets)) {
+  s <- lcms_sets[[set_key]]
+  cat("\n## ", s$name, " {.tabset}\n")
+  for (view_key in names(lcms_views)) {
+    v <- lcms_views[[view_key]]
+    cat("\n### ", v$tab, "\n")
+    p <- v$fun(s$df, s$title)
+    print(p)
+    lcms_dist_plots[[paste0(view_key, "_", set_key)]] <- p
+    cat("\n\n")
+  }
+}
+```
+
+
+# Identification QC
+
+## Score per Condition {.tabset}
+
+### Violin & boxplots
+
+```{r plot-qc-score-violin, echo=FALSE, fig.width=8, fig.height=7}
+vp_score_score <- plot_qc_violin(pep_all, "Score", "Score distribution, and boxplot")
+vp_score_score
+```
+
+### Boxplots
+
+```{r plot-qc-score-box, echo=FALSE, fig.width=8, fig.height=7}
+bp_score_score <- plot_qc_box(pep_all, "Score", "Score boxplot")
+bp_score_score
+```
+
+## Mass eror per condition and charge {.tabset}
+
+### Violin & boxplots
+
+```{r plot-qc-masserror-violin, echo=FALSE, fig.width=8, fig.height=7}
+vp_masserror_ppm <- plot_qc_violin(pep_all, "ppm", "Mass error distribution, and boxplot")
+vp_masserror_ppm
+```
+
+### Boxplots alone
+
+```{r plot-qc-masserror-box, echo=FALSE, fig.width=8, fig.height=7}
+bp_masserror_ppm <- plot_qc_box(pep_all, "ppm", "Mass error boxplot")
+bp_masserror_ppm
+```
+
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+write_input_params(params, folder = FolderResults, prefix = "03_lcms_qc")
+
+if (params$PlotsSave) {
+  for (nm in names(lcms_dist_plots)) {
+    ggsave_rawr(lcms_dist_plots[[nm]], file = nm, folder = FolderFigures,
+                width = n_conditions + 8, height = 12)
+  }
+  ggsave_rawr(vp_score_score, file = "vp_score_score", folder = FolderFigures, width = 20, height = 12)
+  ggsave_rawr(vp_masserror_ppm, file = "vp_masserror_ppm", folder = FolderFigures, width = 20, height = 12)
+  ggsave_rawr(bp_score_score, file = "bp_score_score", folder = FolderFigures, width = 20, height = 12)
+  ggsave_rawr(bp_masserror_ppm, file = "bp_masserror_ppm", folder = FolderFigures, width = 20, height = 12)
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>

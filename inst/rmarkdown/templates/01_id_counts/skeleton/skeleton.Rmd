@@ -28,7 +28,7 @@ params:
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
   CsvSave: FALSE
-title: "`r paste0('03_id_counts | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+title: "`r paste0('01_id_counts | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 
@@ -508,7 +508,7 @@ hm_ptm_prop_short
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters + the main long table and summaries
-write_input_params(params, folder = FolderResults, prefix = "03_id_counts")
+write_input_params(params, folder = FolderResults, prefix = "01_id_counts")
 
 seq_by_condition <- list_sequences(by = "Condition", input = pep_all)
 write.xlsx(seq_by_condition, file.path(FolderResults, "seq_by_condition.xlsx"), overwrite = params$ResultsOverwrite)

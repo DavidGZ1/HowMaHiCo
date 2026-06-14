@@ -1,12 +1,12 @@
 <!--
-Shared setup for the focused HowMaHiCo report templates (03_id_counts,
-04_overlaps, 05_lcms_qc, 06_quant). Included from each skeleton via:
+Shared setup for the focused HowMaHiCo report templates (01_id_counts,
+02_overlaps, 03_lcms_qc, 04_quant). Included from each skeleton via:
 
     ```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
     ```
 
 It loads libraries, derives the shortpep range / palettes / output folders, then
-LOADS the cached `pep_all` (built once by build_pep_all() or by 01_mhc_report)
+LOADS the cached `pep_all` (built once by build_pep_all() or by 00_mhc_report)
 and derives `pep_short` plus the grouping vectors every section reuses. This is a
 document fragment: it has no YAML header and runs in the parent's environment.
 -->
@@ -66,11 +66,11 @@ check_output_exists(params$FolderResults, overwrite = params$ResultsOverwrite)
 
 ```{r load-pep-all, message=TRUE, warning=TRUE}
 # Focused reports consume the cached pep_all produced by build_pep_all()
-# (or by 01_mhc_report) rather than re-parsing the raw search files.
+# (or by 00_mhc_report) rather than re-parsing the raw search files.
 if (!file.exists(file_rda)) {
   stop("pep_all cache not found at '", file_rda, "'.\n",
        "Build it first with build_pep_all(..., file_rda = '", file_rda, "'), ",
-       "or render 01_mhc_report (which writes the cache).")
+       "or render 00_mhc_report (which writes the cache).")
 }
 load(file_rda)   # restores `pep_all`
 

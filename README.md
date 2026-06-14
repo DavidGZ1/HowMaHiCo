@@ -21,7 +21,7 @@ LC-MS search output (FragPipe psm.tsv, DIA-NN report.tsv, PEAKS peptide.csv)
 pep_all  — unified long-format peptide table
       │
       ▼
-inst/rmarkdown/templates/01_mhc_report/skeleton/skeleton.Rmd
+inst/rmarkdown/templates/00_mhc_report/skeleton/skeleton.Rmd
       │   rendered via run_howmahico_report() — self-contained interactive HTML
       │   (ID counts, replicate/condition overlaps, size & charge distributions,
       │    RT/ion-mobility/m_z "pseudochromatograms", Area correlation & %CV,
@@ -39,7 +39,7 @@ conditions and replicates.
 | Folder | Contents |
 |---|---|
 | `R/` | Package source — the ~40 functions (loaders, annotation, counting, plotting, export) plus the `run_howmahico_report()`/`derive_filtered_annotation()` entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `01_mhc_report` (all-in-one), `02_mhc_upsets`, and the focused `03_id_counts`/`04_overlaps`/`05_lcms_qc`/`06_quant` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
 | `man/` | Generated roxygen2 documentation (`.Rd`) |
 | `1_documentation/` | Sample annotation CSVs (one per analysis subset) |
@@ -110,14 +110,14 @@ afterwards.
 **4. (Optional) Get a local copy of the report template to customise**
 
 ```r
-get_report_template("MyReport", template = "01_mhc_report")
+get_report_template("MyReport", template = "00_mhc_report")
 ```
 
 **5. Render a report**
 
 ```r
 run_howmahico_report(
-  template = "01_mhc_report",          # or "02_mhc_upsets"
+  template = "00_mhc_report",          # or "00_mhc_upsets"
   params = list(
     Title            = "MHC1 immunopeptidomics — DDA all",
     SampleSet        = "project_id",
@@ -148,7 +148,7 @@ installed package and can be rendered from anywhere. One call renders one report
 loop with `derive_filtered_annotation()` for multi-subset batch runs (see the
 `\dontrun{}` example on `run_howmahico_report`).
 
-**Focused reports (instead of the all-in-one `01_mhc_report`)** — build the
+**Focused reports (instead of the all-in-one `00_mhc_report`)** — build the
 `pep_all` cache once with `build_pep_all()`, then render any subset of the
 smaller, purpose-focused templates against it (no re-parsing per report):
 
@@ -158,10 +158,10 @@ build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
               annotation = annot, shortpep_range = c(8, 13),
               file_rda = "2_data/dda_all_pep_all.rda")
 
-for (tmpl in c("03_id_counts",  # ID counts, size distributions, motifs
-               "04_overlaps",   # replicate / condition / pairwise overlap
-               "05_lcms_qc",    # RT/1k0/mz, Score/ppm, PTM (advanced)
-               "06_quant")) {   # log2(Area) correlation, Area %CV
+for (tmpl in c("01_id_counts",  # ID counts, size distributions, motifs, PTM
+               "02_overlaps",   # replicate / condition / pairwise overlap
+               "03_lcms_qc",    # RT/1k0/mz, Score/ppm (advanced)
+               "04_quant")) {   # log2(Area) correlation, Area %CV
   run_howmahico_report(tmpl,
                        params = list(SampleSet = "project_id", Subset = "dda_all",
                                      FolderData = "2_data", FolderResults = "3_results",
@@ -171,7 +171,7 @@ for (tmpl in c("03_id_counts",  # ID counts, size distributions, motifs
 }
 ```
 
-`01_mhc_report` (all-in-one) and `02_mhc_upsets` are unchanged and still parse
+`00_mhc_report` (all-in-one) and `00_mhc_upsets` are unchanged and still parse
 the raw files themselves.
 
 Reports are written to `output_file` (HTML), and result tables/figures are written

@@ -28,7 +28,7 @@ params:
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
   CsvSave: FALSE
-title: "`r paste0('06_quant | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+title: "`r paste0('04_quant | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 
@@ -198,7 +198,7 @@ if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioRepli
 
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
-write_input_params(params, folder = FolderResults, prefix = "06_quant")
+write_input_params(params, folder = FolderResults, prefix = "04_quant")
 
 if (params$CsvSave) {
   write.csv_rawr(pep_all_log2area_tr, folder = FolderResults)

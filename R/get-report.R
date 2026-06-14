@@ -11,11 +11,11 @@
 #'
 #' @examples
 #' \dontrun{
-#' get_report_template(file = "HowMaHiCoReportTemplate", template = "01_mhc_report", edit = TRUE, create_dir = FALSE)
+#' get_report_template(file = "HowMaHiCoReportTemplate", template = "00_mhc_report", edit = TRUE, create_dir = FALSE)
 #' }
 #'
 #' @export
-get_report_template <- function(file = "HowMaHiCoReportTemplate", template = "01_mhc_report", edit = FALSE, create_dir = FALSE) {
+get_report_template <- function(file = "HowMaHiCoReportTemplate", template = "00_mhc_report", edit = FALSE, create_dir = FALSE) {
   rmarkdown::draft(file = file,
                    template = template,
                    edit = edit,
