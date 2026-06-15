@@ -18,6 +18,7 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * homogenize sample annotation tables across software
 * Overlap intra-Condition (across replicates) is currently showing absolute count numbers. Add another section showing similar plots but with y axis as percentages.
 * Plan an advanced quantification report. Use Limma for the normalization and statisticla testing.
+* include MaHiCoBench dataset for LFQbench-style plots
 
 
 ## Done
