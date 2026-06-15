@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,12 +45,13 @@
 <div class="section level2">
 <h2 id="in-standby">In standby<a class="anchor" aria-label="anchor" href="#in-standby"></a></h2>
 <ul><li>one single parser function</li>
-<li>2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins</li>
+<li>2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report</li>
 <li>reorder plots in a way that makes more sense</li>
 <li>add functionality for peaks Xpro</li>
 <li>homogenize sample annotation tables across software</li>
 <li>Overlap intra-Condition (across replicates) is currently showing absolute count numbers. Add another section showing similar plots but with y axis as percentages.</li>
 <li>Plan an advanced quantification report. Use Limma for the normalization and statisticla testing.</li>
+<li>include MaHiCoBench dataset for LFQbench-style plots</li>
 </ul></div>
 <div class="section level2">
 <h2 id="done">Done<a class="anchor" aria-label="anchor" href="#done"></a></h2>
@@ -109,6 +110,9 @@
 <li><p>PTM profile moved from 05_lcms_qc to 03_id_counts, and extended to show all peptides (pep_all) alongside selected (pep_short) in an All/Selected tabset (v0.6.1)</p></li>
 <li><p>renumbered all report templates: 01_mhc_report-&gt;00_mhc_report, 02_mhc_upsets-&gt;00_mhc_upsets, 03_id_counts-&gt;01_id_counts, 04_overlaps-&gt;02_overlaps, 05_lcms_qc-&gt;03_lcms_qc, 06_quant-&gt;04_quant (v0.7.0)</p></li>
 <li><p>lcms_qc RT/1k0/m_z distribution section rewritten to a single looped results=‘asis’ chunk (config list of views x peptide sets) instead of 8 hand-written chunks (v0.7.0)</p></li>
+<li><p>fixed “Duplicate chunk label ‘setup’” parse error in the focused reports: shared setup.Rmd had a fenced r-chunk example inside its leading HTML comment (knitr parses chunks even in comments -&gt; recursive re-include); comment is now prose + regression guard test (v0.7.1)</p></li>
+<li><p>focused reports gained PepAllSource param (cached / rda / build) so each can load the default cache, load an explicit .rda (PepAllFile), or self-build from raw results via build_pep_all(); default = cached = prior behavior (v0.8.0)</p></li>
+<li><p>added simulated FragPipe data (inst/extdata/sim_fragpipe_dda, moved out of data/) + test-sim-fragpipe.R: build_pep_all assertion + first end-to-end render test of a focused report (v0.8.0)</p></li>
 </ul></div>
 </div>
 

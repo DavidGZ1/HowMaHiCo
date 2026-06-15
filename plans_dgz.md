@@ -15,7 +15,8 @@ they are moved to “to do”
 
 - one single parser function
 - 2do by me, check Overlap intra-Condition seems to be showing peptides
-  in sequences, and sequences+proteins in proteins
+  in sequences, and sequences+proteins in proteins - corrected in the
+  individual reports, but not in the legacy main report
 - reorder plots in a way that makes more sense
 - add functionality for peaks Xpro
 - homogenize sample annotation tables across software
@@ -24,6 +25,7 @@ they are moved to “to do”
   with y axis as percentages.
 - Plan an advanced quantification report. Use Limma for the
   normalization and statisticla testing.
+- include MaHiCoBench dataset for LFQbench-style plots
 
 ## Done
 
@@ -183,3 +185,18 @@ create_dir = create_dir)
 - lcms_qc RT/1k0/m_z distribution section rewritten to a single looped
   results=‘asis’ chunk (config list of views x peptide sets) instead of
   8 hand-written chunks (v0.7.0)
+
+- fixed “Duplicate chunk label ‘setup’” parse error in the focused
+  reports: shared setup.Rmd had a fenced r-chunk example inside its
+  leading HTML comment (knitr parses chunks even in comments -\>
+  recursive re-include); comment is now prose + regression guard test
+  (v0.7.1)
+
+- focused reports gained PepAllSource param (cached / rda / build) so
+  each can load the default cache, load an explicit .rda (PepAllFile),
+  or self-build from raw results via build_pep_all(); default = cached =
+  prior behavior (v0.8.0)
+
+- added simulated FragPipe data (inst/extdata/sim_fragpipe_dda, moved
+  out of data/) + test-sim-fragpipe.R: build_pep_all assertion + first
+  end-to-end render test of a focused report (v0.8.0)

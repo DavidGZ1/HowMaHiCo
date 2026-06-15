@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.7.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -210,6 +210,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span>                                     Software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span><span class="op">)</span>,</span>
 <span>                       output_file <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">tmpl</span>, <span class="st">"__dda_all.html"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
+<p>Each focused report chooses how to obtain <code>pep_all</code> via the <code>PepAllSource</code> param: <code>"cached"</code> (default — load the <code>&lt;Subset&gt;_pep_all.rda</code> cache), <code>"rda"</code> (load an explicit <code>PepAllFile</code>), or <code>"build"</code> (parse the raw search output itself, no separate <code><a href="reference/build_pep_all.html">build_pep_all()</a></code> call). So to render a single focused report directly from results, pass <code>PepAllSource = "build"</code> (plus <code>Software</code>, <code>AnnotationFile</code>, <code>FolderDocumentation</code>) and skip the <code><a href="reference/build_pep_all.html">build_pep_all()</a></code> step above.</p>
 <p><code>00_mhc_report</code> (all-in-one) and <code>00_mhc_upsets</code> are unchanged and still parse the raw files themselves.</p>
 <p>Reports are written to <code>output_file</code> (HTML), and result tables/figures are written under <code>&lt;FolderResults&gt;/&lt;subset&gt;/</code> and <code>&lt;FolderFigures&gt;/&lt;subset&gt;/</code>.</p>
 </div>
