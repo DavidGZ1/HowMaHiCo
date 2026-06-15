@@ -7,7 +7,19 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.7.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.8.0** — Phases 1–6 of the package conversion are complete.
+v0.8.0 gave the four focused reports a `PepAllSource` param (`"cached"` |
+`"rda"` | `"build"`, via `inst/rmarkdown/shared/setup.Rmd`) so each can load the
+default cache, load an explicit `.rda` (`PepAllFile`), or self-build from raw
+results via `build_pep_all()`; and added a simulated FragPipe dataset
+(`inst/extdata/sim_fragpipe_dda/`, moved out of `data/`) with
+`tests/testthat/test-sim-fragpipe.R` (a `build_pep_all` assertion + the first
+end-to-end render test of a focused report).
+v0.7.1 fixed a "Duplicate chunk label 'setup'" parse error that aborted all four
+focused reports: the shared `inst/rmarkdown/shared/setup.Rmd` had a fenced r-chunk
+example inside its leading HTML comment, and knitr parses chunk headers even inside
+comments (re-including the file → duplicate `setup`). Comment is now prose;
+`tests/testthat/test-report-templates.R` guards against it.
 v0.7.0 **renumbered all report templates** (breaking: the `template=` names change):
 `01_mhc_report`→`00_mhc_report`, `02_mhc_upsets`→`00_mhc_upsets`,
 `03_id_counts`→`01_id_counts`, `04_overlaps`→`02_overlaps`,
@@ -223,6 +235,8 @@ didn't need (they hardcoded `1_documentation/`):
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
+| `PepAllSource` | **Focused reports only** (the four `01`–`04` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |
 | `MHCclass` | `"MHC1"` (8–13 AA, default) or `"MHC2"` (12–25 AA) — sets `shortpep_range`; overrides `ShortPeptideLengthMin/Max` |
 | `ShortPeptideLengthMin/Max` | Custom `pep_short` window; used only when `MHCclass` is not a recognised value |

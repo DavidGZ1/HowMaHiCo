@@ -1,9 +1,11 @@
 <!--
 Shared setup for the focused HowMaHiCo report templates (01_id_counts,
-02_overlaps, 03_lcms_qc, 04_quant). Included from each skeleton via:
-
-    ```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
-    ```
+02_overlaps, 03_lcms_qc, 04_quant). Each focused skeleton pulls it in with a
+knitr child chunk whose only option is
+child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo").
+(Do not paste that as a fenced r-chunk example in this comment: knitr parses
+chunk headers even inside HTML comments, so an example fence would re-include
+this file and duplicate the 'setup' chunk label.)
 
 It loads libraries, derives the shortpep range / palettes / output folders, then
 LOADS the cached `pep_all` (built once by build_pep_all() or by 00_mhc_report)
@@ -65,14 +67,44 @@ check_output_exists(params$FolderResults, overwrite = params$ResultsOverwrite)
 ```
 
 ```{r load-pep-all, message=TRUE, warning=TRUE}
-# Focused reports consume the cached pep_all produced by build_pep_all()
-# (or by 00_mhc_report) rather than re-parsing the raw search files.
-if (!file.exists(file_rda)) {
-  stop("pep_all cache not found at '", file_rda, "'.\n",
-       "Build it first with build_pep_all(..., file_rda = '", file_rda, "'), ",
-       "or render 00_mhc_report (which writes the cache).")
+# pep_all source is selected by params$PepAllSource (default "cached"):
+#   cached -> load the conventional <Subset>_pep_all.rda cache (file_rda)
+#   rda    -> load an explicit .rda file given by params$PepAllFile
+#   build  -> parse the raw search output via build_pep_all() and write the cache
+.load_pep_all_rda <- function(path) {
+  e <- new.env()
+  load(path, envir = e)            # restores `pep_all`
+  if (!exists("pep_all", envir = e))
+    stop("'", path, "' does not contain a 'pep_all' object")
+  e$pep_all
 }
-load(file_rda)   # restores `pep_all`
+.pep_all_source <- if (is.null(params$PepAllSource) || !nzchar(params$PepAllSource))
+  "cached" else params$PepAllSource
+
+pep_all <- switch(.pep_all_source,
+  cached = {
+    if (!file.exists(file_rda))
+      stop("pep_all cache not found at '", file_rda, "'.\n",
+           "Build it first with build_pep_all(..., file_rda = '", file_rda, "'), ",
+           "render 00_mhc_report (which writes the cache), or set ",
+           "PepAllSource = 'build' to parse the raw results here.")
+    .load_pep_all_rda(file_rda)
+  },
+  rda = {
+    f <- params$PepAllFile
+    if (is.null(f) || !nzchar(f) || !file.exists(f))
+      stop("PepAllSource = 'rda' but PepAllFile '", f, "' was not found.")
+    .load_pep_all_rda(f)
+  },
+  build = {
+    annot <- read_annot(file.path(params$FolderDocumentation, params$AnnotationFile))
+    build_pep_all(software = params$Software, folder_data = params$FolderData,
+                  annotation = annot, shortpep_range = shortpep_range,
+                  instrument = params$Instrument, test_mode = params$TestMode,
+                  file_rda = file_rda)
+  },
+  stop("Unknown PepAllSource '", .pep_all_source, "'. Use 'cached', 'rda', or 'build'.")
+)
 
 pep_short <- pep_all |>
   filter(Length >= shortpep_range[1], Length <= shortpep_range[2])

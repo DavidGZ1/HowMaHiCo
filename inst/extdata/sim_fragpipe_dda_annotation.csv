@@ -1,0 +1,7 @@
+"Condition","BioReplicate","TechReplicate","Sample","Sample_ID","Sample_fp","Source_file"
+"CTRL","CTRL_bio1","1","CTRL_1_1","CTRL_1_1","CTRL_1_1","CTRL_1_1"
+"CTRL","CTRL_bio2","1","CTRL_2_1","CTRL_2_1","CTRL_2_1","CTRL_2_1"
+"CTRL","CTRL_bio3","1","CTRL_3_1","CTRL_3_1","CTRL_3_1","CTRL_3_1"
+"TREAT","TREAT_bio1","1","TREAT_1_1","TREAT_1_1","TREAT_1_1","TREAT_1_1"
+"TREAT","TREAT_bio2","1","TREAT_2_1","TREAT_2_1","TREAT_2_1","TREAT_2_1"
+"TREAT","TREAT_bio3","1","TREAT_3_1","TREAT_3_1","TREAT_3_1","TREAT_3_1"

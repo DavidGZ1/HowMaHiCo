@@ -16,6 +16,8 @@ params:
   AnnotationFile: "samples_annotation.csv"
   Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
   FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  PepAllSource: "cached" # how to obtain pep_all: "cached" (<Subset>_pep_all.rda), "rda" (PepAllFile), or "build" (parse raw via build_pep_all)
+  PepAllFile: "" # explicit .rda path; used only when PepAllSource = "rda"
   FolderResults: "3_results"
   FolderFigures: "4_figures"
   ProjectDir: ~
