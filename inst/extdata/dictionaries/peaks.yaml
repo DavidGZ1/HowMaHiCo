@@ -1,0 +1,37 @@
+# Reference dictionary: PEAKS peptide.csv -> pep_all  (REFERENCE ONLY)
+# --------------------------------------------------------------------
+# PEAKS is the least dictionary-friendly of the three built-ins: read_peaks()
+# pivots per-sample Area columns into long format, computes Charge from Mass/m_z,
+# parses ion mobility per Instrument, and splits the Accession into
+# ProteinFirst/GeneFirst/OrganismFirst -- none of which a rename-only dictionary
+# can do. ALWAYS use the built-in PEAKS loader (software = "peaks_xpro") for real
+# PEAKS data. This file only documents the column correspondence (names shown are
+# post-read_peaks, after its dots -> underscores cleanup).
+
+software: peaks_xpro
+found_by: "PEAKS"
+mode: individual_files
+
+read:
+  file: peptide.csv
+  delim: ","
+
+columns:
+  Accession:    Accession
+  Sequence:     Sequence
+  Peptide:      Peptide
+  Length:       Length
+  Score:        Score          # PEAKS -10lgP, renamed from X_10lgP by read_peaks()
+  Area:         Area
+  Charge:       Charge
+  RT:           RT
+  m_z:          m_z
+  Mass:         Mass
+  ppm:          ppm
+  PTM:          PTM
+  invk0:        invk0
+
+derive:
+  length_from_sequence: false
+  format_charge: false                    # read_peaks() already builds "+ N" charges
+  peptide_id: [Accession, m_z, Charge]

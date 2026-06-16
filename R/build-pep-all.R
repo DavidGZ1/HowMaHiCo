@@ -10,8 +10,9 @@
 #' subset of those reports, each of which simply `load()`s the cache.
 #'
 #' @param software One of `"fragpipe_dda_combined"`, `"fragpipe_dda_individual"`,
-#'   `"diann"`, or `"peaks_xpro"` — selects the loader branch (and, for FragPipe,
-#'   the combined-vs-individual annotation mode).
+#'   `"diann"`, `"peaks_xpro"`, or `"custom"` — selects the loader branch (and,
+#'   for FragPipe, the combined-vs-individual annotation mode). `"custom"` routes
+#'   through the dictionary-driven parser (see `dictionary`).
 #' @param folder_data Path to the folder holding the per-sample search output
 #'   (the report's `FolderData`).
 #' @param annotation Annotation data frame (e.g. from [read_annot()]); used to
@@ -25,6 +26,11 @@
 #'   per file (fast iteration). Ignored by the PEAKS loader.
 #' @param file_rda Optional path. When non-`NULL`, `pep_all` is `save()`d there
 #'   (as the object name `pep_all`) so report templates can `load()` it.
+#' @param dictionary Required when `software = "custom"`: either a path to a YAML
+#'   parser dictionary or an already-loaded dictionary list (see
+#'   [read_dictionary()] / [get_dictionary_template()]). Its `read:` block sets
+#'   the per-sample filename and delimiter, and its `mode:` the annotation join.
+#'   Ignored for the built-in loaders.
 #'
 #' @return The `pep_all` data frame, invisibly.
 #'
@@ -45,7 +51,7 @@
 #' }
 build_pep_all <- function(software, folder_data, annotation,
                           shortpep_range = c(8, 13), instrument = "tims_tof",
-                          test_mode = FALSE, file_rda = NULL) {
+                          test_mode = FALSE, file_rda = NULL, dictionary = NULL) {
   if (grepl("fragpipe_dda", software)) {
     annot_mode <- if (grepl("combined", software)) {
       "combined_file"
@@ -70,9 +76,19 @@ build_pep_all <- function(software, folder_data, annotation,
                                 instrument = instrument) |>
       parse_peaks(shortpep_range = shortpep_range) |>
       annotate_peaks(annotation)
+  } else if (software == "custom") {
+    if (is.null(dictionary)) {
+      stop("software = \"custom\" requires a 'dictionary' (a YAML path or a dictionary list).")
+    }
+    dict <- if (is.character(dictionary)) read_dictionary(dictionary) else validate_dictionary(dictionary)
+    pep_all <- read_custom_batch(folder = folder_data, annotation = annotation,
+                                 file = dict$read$file, delim = dict$read$delim,
+                                 testmode = test_mode) |>
+      parse_unified(dict, shortpep_range = shortpep_range) |>
+      annotate_unified(annotation, mode = dict$mode)
   } else {
     stop("Unknown 'software': ", software,
-         ". Expected one of fragpipe_dda_combined, fragpipe_dda_individual, diann, peaks_xpro.")
+         ". Expected one of fragpipe_dda_combined, fragpipe_dda_individual, diann, peaks_xpro, custom.")
   }
 
   if (!is.null(file_rda)) save(pep_all, file = file_rda)

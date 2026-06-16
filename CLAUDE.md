@@ -7,7 +7,26 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.8.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.9.0** — Phases 1–6 of the package conversion are complete.
+v0.9.0 added a **dictionary-driven unified parser** so a tabular search-engine
+export from a tool with no built-in loader can be ingested by editing a YAML
+dictionary (no R coding, no new loader). New `build_pep_all()` branch
+`software = "custom"` (with a `dictionary` arg) runs
+`read_custom_batch()` → `parse_unified()` → `annotate_unified()`. The dictionary
+maps raw→`pep_all` columns, sets the `Found_By` constant, and derives the shared
+recipe (`Log2Area`, `Length_range`, `Nter`/`Cter`, `PeptideID`, `Charge`
+formatting); per-tool transforms (unit conversions, regex extraction, accession
+splitting) are pre-clean responsibilities, not dictionary-expressible. New
+exports: `read_dictionary()`, `parse_unified()` (`R/parse-unified.R`),
+`read_custom_batch()`, `annotate_unified()` (`R/loaders-custom.R`),
+`get_dictionary_template()` (`R/get-dictionary.R`). Reference dictionaries ship
+in `inst/extdata/dictionaries/` (`custom_template.yaml` + `fragpipe.yaml` /
+`diann.yaml` / `peaks.yaml`); the three built-in loaders are unchanged.
+`tests/testthat/test-parse-unified.R` round-trips `parse_unified()` against the
+FragPipe loader. New dependency: `yaml` (transitive via `rmarkdown`). Custom
+software has no inline-parsing path in the two `00_*` reports — run
+`build_pep_all("custom", dictionary=...)` once, then render the focused reports
+with `PepAllSource = "cached"`.
 v0.8.0 gave the four focused reports a `PepAllSource` param (`"cached"` |
 `"rda"` | `"build"`, via `inst/rmarkdown/shared/setup.Rmd`) so each can load the
 default cache, load an explicit `.rda` (`PepAllFile`), or self-build from raw
@@ -78,6 +97,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 |---|---|
 | `R/` | Package source: all exported functions (~40) + internal helpers |
 | `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
 | `example/` | Legacy `0_code/`, `1_documentation/` pre-migration reference copies (gitignored) |
@@ -134,6 +154,13 @@ note above.
 - **`R/io.R`** — `write.csv_rawr`, `write_input_params`
 - **`R/run-report.R`** — `run_howmahico_report`, `derive_filtered_annotation`
 - **`R/get-report.R`** — `get_report_template` (copies a skeleton to the working dir)
+- **`R/parse-unified.R`** — `read_dictionary()` + `parse_unified()`: the
+  dictionary-driven parser for the `software = "custom"` path (rename +
+  `Found_By` + shared derived recipe + `validate_pep_all` guard)
+- **`R/loaders-custom.R`** — `read_custom_batch()` (generic configurable
+  per-sample reader) + `annotate_unified()` (generic annotation join)
+- **`R/get-dictionary.R`** — `get_dictionary_template` (copies the YAML dictionary
+  template to the working dir)
 - **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
   export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
   `deltaProtR`, now native)
@@ -229,7 +256,7 @@ didn't need (they hardcoded `1_documentation/`):
 
 | Param | Purpose |
 |---|---|
-| `Software` | `fragpipe_dda_combined` \| `fragpipe_dda_individual` \| `diann` \| `peaks_xpro` — selects the loader branch |
+| `Software` | `fragpipe_dda_combined` \| `fragpipe_dda_individual` \| `diann` \| `peaks_xpro` \| `custom` — selects the loader branch (`custom` = dictionary-driven via `build_pep_all`) |
 | `SampleSet` | Human-readable experiment name; used in the auto-generated report title |
 | `Subset` | Subset name; becomes a filename prefix and a subfolder under `FolderResults`/`FolderFigures` |
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
@@ -263,7 +290,10 @@ natively in `R/loaders-peaks-dirs.R`.
 - **`Software` drives everything downstream** — the loader branch in the Rmd's
   "Loading files" chunk dispatches on this string (`grepl("fragpipe_dda", ...)`,
   `== "diann"`, `== "peaks_xpro"`). Valid combined-vs-individual mode is inferred from
-  whether `"combined"`/`"individual"` appears in the `Software` string.
+  whether `"combined"`/`"individual"` appears in the `Software` string. The
+  `"custom"` value is handled only in `build_pep_all()` (not the inline-parsing
+  `00_*` reports): it dispatches on the YAML `dictionary` instead of hard-coded
+  loader logic.
 - **FragPipe currently reads `psm.tsv`**, not peptide-level results — this means FDR is
   applied only at the PSM level, not the peptide level (a `warning()` documents this
   explicitly in the template; treat FragPipe peptide counts with that caveat in mind).

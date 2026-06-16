@@ -7,18 +7,25 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
-
+* For PTM plots, translate unimod code into modification name
 
 ## In standby
 
-* one single parser function
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
 * reorder plots in a way that makes more sense
 * add functionality for peaks Xpro
 * homogenize sample annotation tables across software
 * Overlap intra-Condition (across replicates) is currently showing absolute count numbers. Add another section showing similar plots but with y axis as percentages.
-* Plan an advanced quantification report. Use Limma for the normalization and statisticla testing.
+* bigger font
+* plot unclustered motifs from 7 to 25
+* Peptides identified per charge, add black lines on bars
+
+
+
+
+## advanced plans
 * include MaHiCoBench dataset for LFQbench-style plots
+* Plan an advanced quantification report. Use Limma for the normalization and statistical testing.
 
 
 ## Done
@@ -89,4 +96,5 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * fixed "Duplicate chunk label 'setup'" parse error in the focused reports: shared setup.Rmd had a fenced r-chunk example inside its leading HTML comment (knitr parses chunks even in comments -> recursive re-include); comment is now prose + regression guard test (v0.7.1)
 * focused reports gained PepAllSource param (cached / rda / build) so each can load the default cache, load an explicit .rda (PepAllFile), or self-build from raw results via build_pep_all(); default = cached = prior behavior (v0.8.0)
 * added simulated FragPipe data (inst/extdata/sim_fragpipe_dda, moved out of data/) + test-sim-fragpipe.R: build_pep_all assertion + first end-to-end render test of a focused report (v0.8.0)
+* unified parser using dictionaries with option to enter a custom entry from other software: dictionary-driven parse_unified() + read_custom_batch() + annotate_unified() + read_dictionary()/get_dictionary_template(), wired into build_pep_all(software="custom", dictionary=...); YAML dictionaries in inst/extdata/dictionaries (custom_template + fragpipe/diann/peaks reference); built-in loaders untouched; test-parse-unified.R round-trips against the FragPipe loader (v0.9.0)
 

@@ -1,3 +1,27 @@
+# HowMaHiCo 0.9.0
+
+* Added a dictionary-driven **unified parser** so a tabular search-engine export
+  from a tool HowMaHiCo has no built-in loader for can be ingested by editing a
+  YAML dictionary — no R coding, no new loader. New `build_pep_all()` branch
+  `software = "custom"` (with a `dictionary` argument) routes through
+  `read_custom_batch()` → `parse_unified()` → `annotate_unified()`. The
+  dictionary maps raw → `pep_all` columns, sets the `Found_By` constant, and
+  derives the shared recipe (`Log2Area`, `Length_range`, `Nter`/`Cter`,
+  `PeptideID`, `Charge` formatting); per-tool transforms (unit conversions,
+  regex extraction, accession splitting) are pre-clean responsibilities, not
+  expressed in the dictionary.
+* New exports: `read_dictionary()`, `parse_unified()`, `read_custom_batch()`,
+  `annotate_unified()`, and `get_dictionary_template()` (copies a fill-in
+  template to the working dir, sibling of `get_report_template()`).
+* Shipped reference dictionaries in `inst/extdata/dictionaries/`
+  (`custom_template.yaml` + `fragpipe.yaml` / `diann.yaml` / `peaks.yaml`
+  documenting the directly-mappable subset of each built-in loader). The three
+  built-in loaders are unchanged.
+* `tests/testthat/test-parse-unified.R`: asserts `parse_unified()` reproduces the
+  built-in FragPipe loader on the directly-mappable columns of the simulated
+  dataset, plus dictionary validation and the custom `build_pep_all()` path.
+* New dependency: `yaml` (already transitive via `rmarkdown`).
+
 # HowMaHiCo 0.8.0
 
 * The four focused reports (`01_id_counts`, `02_overlaps`, `03_lcms_qc`,

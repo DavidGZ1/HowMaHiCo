@@ -1,0 +1,35 @@
+# Reference dictionary: DIA-NN report.tsv -> pep_all
+# ---------------------------------------------------
+# Documents the directly-mappable subset of the built-in DIA-NN loader
+# (R/loaders-diann.R). The built-in loader remains canonical for DIA-NN: it also
+# computes Mass from Precursor.Mz/Charge, sets ppm = 0 (DIA-NN reports no
+# calculated m/z), extracts PTMs by regex from Modified.Sequence, and derives
+# OrganismFirst -- none of which a rename-only dictionary expresses. Reference /
+# starting point only.
+
+software: diann
+found_by: "DIA-NN"
+mode: combined_file
+
+read:
+  file: report.tsv
+  delim: "\t"
+
+columns:
+  Accession:    All.Mapped.Proteins
+  ProteinFirst: Protein.Group
+  GeneFirst:    Genes
+  Sequence:     Stripped.Sequence
+  Peptide:      Modified.Sequence
+  Score:        Q.Value
+  Area:         Ms1.Area
+  Charge:       Precursor.Charge
+  RT:           RT
+  m_z:          Precursor.Mz
+  invk0:        IM
+  Source_file:  Run
+
+derive:
+  length_from_sequence: true              # Length <- nchar(Stripped.Sequence)
+  format_charge: true
+  peptide_id: [Accession, m_z, Charge]
