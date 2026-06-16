@@ -7,7 +7,6 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
-* For PTM plots, translate unimod code into modification name
 
 ## In standby
 
@@ -19,7 +18,7 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * bigger font
 * plot unclustered motifs from 7 to 25
 * Peptides identified per charge, add black lines on bars
-
+* For PTM plots, translate unimod code into modification name
 
 
 
