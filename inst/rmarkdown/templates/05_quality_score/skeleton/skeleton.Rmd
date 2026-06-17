@@ -143,6 +143,19 @@ scores |>
   print_annot()
 ```
 
+# Cross-class contamination
+
+Peptide-length distribution per sample, highlighting peptides that fall in the
+**other** MHC class's length range (MHC-II ligands contaminating an MHC-I pulldown,
+or vice versa). A prominent red region indicates cross-class co-enrichment. This is
+the `frac_cross_class` sub-score above; it is undefined (and omitted) for custom
+length windows.
+
+```{r plot-cross-class, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE, message=FALSE}
+p_cross_class_length <- plot_cross_class_length(pep_all, shortpep_range, params$MHCclass)
+p_cross_class_length
+```
+
 # Methods
 
 Each dimension, its scoring direction, the thresholds in force, and its weight in
@@ -170,6 +183,10 @@ thresholds_used |>
   C-terminal anchor, the overall C-terminal K/R fraction is reported only as a
   low-weight diagnostic; the scored signal isolates tryptic contamination in the
   long-peptide tail.
+- **Cross-class contamination** — fraction of peptides in the *other* MHC class's
+  length range, outside the current window (MHC-II co-enrichment in an MHC-I run, or
+  vice versa). Low weight (a small tail is biologically normal) and `NA` for custom
+  length windows.
 - **Charge 1+/2+** — short HLA-I ligands ionise predominantly as 1+/2+.
 - **Depth** — unique peptides / in-window peptides / source proteins; scored only
   in `qc_relative` mode (absolute yield is not comparable without per-input
@@ -186,6 +203,8 @@ if (params$PlotsSave) {
   ggsave_rawr(p_quality_composite, "p_quality_composite", folder = FolderFigures,
               width = nrow(scores) + 6, height = 10)
   ggsave_rawr(p_quality_heatmap, "p_quality_heatmap", folder = FolderFigures,
+              width = nrow(scores) + 6, height = 12)
+  ggsave_rawr(p_cross_class_length, "p_cross_class_length", folder = FolderFigures,
               width = nrow(scores) + 6, height = 12)
 }
 ```

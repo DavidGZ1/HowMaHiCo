@@ -7,7 +7,17 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.10.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.11.0** — Phases 1–6 of the package conversion are complete.
+v0.11.0 added a **cross-class (MHC1↔MHC2) contamination** dimension to the quality
+score: `frac_cross_class` flags MHC-II ligands co-enriched in an MHC-I pulldown
+(and vice versa) by their length signature — the fraction of peptides in the
+*other* class's canonical window (MHC1 8–13, MHC2 12–25) that falls outside the
+current window (the internal `.cross_class_range()` is the single source of truth;
+the "outside-current" qualifier handles the 12–13 AA overlap). Scored
+`lower_better` at low weight (a small tail is biologically normal), `NA`/dropped
+for custom length windows. New plot `plot_cross_class_length()` (per-sample length
+histogram with the cross-class region highlighted) + a "Cross-class contamination"
+section in the `05_quality_score` report.
 v0.10.0 added a per-sample **immunopeptidomics quality score** (inspired by the
 author's HowDirty contamination score, but inverted — it scores how strongly a
 sample resembles a real HLA immunopeptidome). New engine `R/quality-score.R`
@@ -185,8 +195,11 @@ note above.
 - **`R/quality-score.R`** — the immunopeptidomics quality-score engine:
   `qc_metrics_by_sample()`, `anchor_information_content()`, `score_curve()`,
   `quality_thresholds_default()`, `calibrate_thresholds_from_qc()`,
-  `score_sample_quality()` (consumed by the `05_quality_score` report;
-  `plot_quality_heatmap()`/`plot_quality_composite()` live in `R/plots.R`)
+  `score_sample_quality()` plus the internal `.cross_class_range()`
+  (MHC1↔MHC2 cross-class window) feeding the `frac_cross_class` metric
+  (consumed by the `05_quality_score` report;
+  `plot_quality_heatmap()`/`plot_quality_composite()`/`plot_cross_class_length()`
+  live in `R/plots.R`)
 - **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
   export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
   `deltaProtR`, now native)

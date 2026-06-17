@@ -59,8 +59,8 @@ utils::globalVariables(c(
   "found",
   "iIM", "iRT", "invk0_end", "invk0_start",
   "m_z",
-  "n_Peptides", "n_Proteins", "n_Samples", "n_Sequences",
+  "n", "n_Peptides", "n_Proteins", "n_Samples", "n_Sequences",
   "path_full", "ppm",
-  "metric", "res_file", "score", "var",
+  "metric", "region", "res_file", "score", "var",
   ":=", "Result.Path", "Sample.Comment", "in_range", "ind", "values"
 ))

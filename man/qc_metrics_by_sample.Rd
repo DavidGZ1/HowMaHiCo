@@ -23,8 +23,8 @@ out of the composite downstream.}
 \value{
 A data frame with one row per \code{Sample} and columns: \code{frac_in_window},
 \code{frac_9mer}, \code{frac_cterm_KR}, \code{frac_cterm_KR_longonly}, \code{anchor_information},
-\code{frac_charge_1_2}, \code{n_unique_pep}, \code{n_unique_pep_in_window},
-\code{n_source_proteins}, \code{median_abs_ppm}.
+\code{frac_cross_class}, \code{frac_charge_1_2}, \code{n_unique_pep},
+\code{n_unique_pep_in_window}, \code{n_source_proteins}, \code{median_abs_ppm}.
 }
 \description{
 Computes, for each \code{Sample} in a \code{pep_all} table, the raw (un-scored) quality

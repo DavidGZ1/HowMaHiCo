@@ -1200,3 +1200,63 @@ plot_quality_composite <- function(scores) {
     ggpubr::rotate_x_text(70) +
     ggplot2::ggtitle("Composite quality score per sample")
 }
+
+#' Per-sample peptide-length histogram highlighting cross-class contamination
+#'
+#' Faceted (by `Sample`) count histogram of distinct-peptide lengths, with each
+#' length bar coloured by region: the current class's expected window, the
+#' **cross-class** region (the other MHC class's length range falling outside the
+#' current window — i.e. MHC-II ligands contaminating an MHC-I pulldown, or vice
+#' versa), and everything else. Visualises the `frac_cross_class` metric of
+#' [score_sample_quality()]. For a custom length window (MHCclass neither `"MHC1"`
+#' nor `"MHC2"`) the cross-class region is undefined and an informative empty plot
+#' is returned.
+#'
+#' @param pep_all A unified `pep_all` data frame with `Sample`, `Peptide`,
+#'   `Length`.
+#' @param shortpep_range Length-2 numeric `c(min, max)` — the current class's
+#'   expected ligand-length window.
+#' @param mhcclass `"MHC1"` or `"MHC2"`.
+#'
+#' @return A ggplot2 faceted histogram.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_cross_class_length(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1")
+#' }
+plot_cross_class_length <- function(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1") {
+  cross_rng <- .cross_class_range(mhcclass, shortpep_range)
+  if (is.null(cross_rng)) {
+    return(
+      ggplot2::ggplot() +
+        ggplot2::annotate("text", x = 0, y = 0,
+                          label = "Cross-class contamination is undefined\nfor a custom length window (MHCclass must be MHC1 or MHC2).") +
+        ggplot2::theme_void()
+    )
+  }
+
+  cur_lab <- paste0("Current (", shortpep_range[1], "-", shortpep_range[2], " AAs)")
+  cross_lab <- paste0("Cross-class (", cross_rng[1], "-", cross_rng[2], " AAs)")
+  region_levels <- c(cur_lab, cross_lab, "Other")
+
+  df <- pep_all |>
+    dplyr::distinct(Sample, Peptide, Length) |>
+    dplyr::mutate(region = factor(dplyr::case_when(
+      Length >= shortpep_range[1] & Length <= shortpep_range[2] ~ cur_lab,
+      Length >= cross_rng[1] & Length <= cross_rng[2] ~ cross_lab,
+      TRUE ~ "Other"), levels = region_levels)) |>
+    dplyr::count(Sample, Length, region)
+
+  region_colors <- stats::setNames(c("#2c7fb8", "#d7191c", "grey75"), region_levels)
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Length, y = n, fill = region)) +
+    ggplot2::geom_col(color = "black", linewidth = 0.1, alpha = 0.85) +
+    ggplot2::facet_wrap(~Sample, scales = "free_y") +
+    ggplot2::scale_fill_manual(values = region_colors, drop = FALSE, name = "Length region") +
+    ggplot2::scale_x_continuous(n.breaks = 8) +
+    ggplot2::xlab("Peptide length (AAs)") + ggplot2::ylab("Unique peptides") +
+    theme_howmahico() +
+    ggplot2::ggtitle("Peptide length distribution and cross-class contamination")
+}

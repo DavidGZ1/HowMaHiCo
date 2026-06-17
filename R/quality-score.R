@@ -66,6 +66,27 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
   if (all(is.na(ic))) NA_real_ else sum(ic, na.rm = TRUE)
 }
 
+# Length range of the *other* MHC class that falls outside the current window,
+# used by the cross-class co-enrichment metric and plot. MHC1 ligands are short
+# (8-13), MHC2 long (12-25); contamination by the other class shows up as an
+# excess of peptides in that other window beyond the current one. Returns
+# c(lo, hi) (inclusive) or NULL when the class is not MHC1/MHC2 (no defined
+# "other class", so the metric/plot are undefined).
+.cross_class_range <- function(mhcclass, shortpep_range = c(8, 13)) {
+  windows <- list(MHC1 = c(8L, 13L), MHC2 = c(12L, 25L))
+  if (!mhcclass %in% names(windows)) return(NULL)
+  cur <- shortpep_range
+  if (mhcclass == "MHC1") {
+    other_hi <- windows$MHC2[2]
+    rng <- c(cur[2] + 1, other_hi)          # MHC2 contamination: above the MHC1 window
+  } else {
+    other_lo <- windows$MHC1[1]
+    rng <- c(other_lo, cur[1] - 1)          # MHC1 contamination: below the MHC2 window
+  }
+  if (rng[1] > rng[2]) return(NULL)
+  rng
+}
+
 #' Raw per-sample immunopeptidomics quality metrics
 #'
 #' Computes, for each `Sample` in a `pep_all` table, the raw (un-scored) quality
@@ -85,8 +106,8 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 #'
 #' @return A data frame with one row per `Sample` and columns: `frac_in_window`,
 #'   `frac_9mer`, `frac_cterm_KR`, `frac_cterm_KR_longonly`, `anchor_information`,
-#'   `frac_charge_1_2`, `n_unique_pep`, `n_unique_pep_in_window`,
-#'   `n_source_proteins`, `median_abs_ppm`.
+#'   `frac_cross_class`, `frac_charge_1_2`, `n_unique_pep`,
+#'   `n_unique_pep_in_window`, `n_source_proteins`, `median_abs_ppm`.
 #'
 #' @export
 #'
@@ -97,6 +118,7 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1") {
   is_mhc1 <- identical(mhcclass, "MHC1")
   lo <- shortpep_range[1]; hi <- shortpep_range[2]
+  cross_rng <- .cross_class_range(mhcclass, shortpep_range)
   has_ppm <- "ppm" %in% names(pep_all)
 
   samples <- if (is.factor(pep_all$Sample)) levels(pep_all$Sample) else unique(pep_all$Sample)
@@ -135,6 +157,8 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
       frac_9mer = if (!is_mhc1 || n_pep == 0) NA_real_ else mean(pep$Length == 9),
       frac_cterm_KR = if (n_pep == 0) NA_real_ else mean(kr),
       frac_cterm_KR_longonly = if (sum(out_win) == 0) NA_real_ else mean(kr[out_win]),
+      frac_cross_class = if (is.null(cross_rng) || n_pep == 0) NA_real_ else
+        mean(pep$Length >= cross_rng[1] & pep$Length <= cross_rng[2]),
       anchor_information = if (!is_mhc1) NA_real_ else
         anchor_information_content(pep$Sequence[pep$Length == 9]),
       frac_charge_1_2 = frac_charge_1_2,
@@ -170,20 +194,21 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
 quality_thresholds_default <- function() {
   data.frame(
     metric = c("frac_in_window", "frac_9mer", "frac_cterm_KR_longonly",
-               "frac_cterm_KR", "anchor_information", "frac_charge_1_2",
-               "n_unique_pep", "n_unique_pep_in_window", "n_source_proteins",
-               "median_abs_ppm"),
+               "frac_cterm_KR", "anchor_information", "frac_cross_class",
+               "frac_charge_1_2", "n_unique_pep", "n_unique_pep_in_window",
+               "n_source_proteins", "median_abs_ppm"),
     label = c("Length in window", "9-mer fraction", "Tryptic background (long peptides)",
-              "C-terminal K/R (diagnostic)", "Anchor motif clarity", "Charge 1+/2+",
+              "C-terminal K/R (diagnostic)", "Anchor motif clarity",
+              "Cross-class contamination", "Charge 1+/2+",
               "Unique peptides", "Unique peptides in window", "Source proteins",
               "Median |ppm|"),
     direction = c("higher_better", "higher_better", "lower_better",
-                  "lower_better", "higher_better", "higher_better",
+                  "lower_better", "higher_better", "lower_better", "higher_better",
                   "higher_better", "higher_better", "higher_better",
                   "lower_better"),
-    green = c(0.80, 0.35, 0.30, 0.30, 2.0, 0.85, NA, NA, NA, 5),
-    amber = c(0.60, 0.20, 0.50, 0.50, 1.0, 0.70, NA, NA, NA, 10),
-    weight = c(3, 1.5, 1, 0, 3, 1.5, 0.5, 0.5, 0.5, 1),
+    green = c(0.80, 0.35, 0.30, 0.30, 2.0, 0.05, 0.85, NA, NA, NA, 5),
+    amber = c(0.60, 0.20, 0.50, 0.50, 1.0, 0.15, 0.70, NA, NA, NA, 10),
+    weight = c(3, 1.5, 1, 0, 3, 0.5, 1.5, 0.5, 0.5, 0.5, 1),
     stringsAsFactors = FALSE
   )
 }

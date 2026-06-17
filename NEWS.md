@@ -1,3 +1,19 @@
+# HowMaHiCo 0.11.0
+
+* Added a **cross-class (MHC1↔MHC2) contamination** dimension to the quality
+  score: `frac_cross_class` flags MHC-II ligands co-enriched in an MHC-I pulldown
+  (and vice versa) via their length signature — the fraction of peptides in the
+  *other* class's canonical window (MHC1 8-13, MHC2 12-25) that falls outside the
+  current window (so the 12-13 AA overlap is handled cleanly). Scored
+  `lower_better` at low weight (a small tail is biologically normal) and `NA`
+  (dropped) for custom length windows. New internal helper `.cross_class_range()`
+  is the single source of truth for the windows.
+* New plot `plot_cross_class_length()`: per-sample faceted length histogram with
+  the cross-class region highlighted, and a matching "Cross-class contamination"
+  section + Methods bullet in the `05_quality_score` report.
+* `tests/testthat/test-quality-score.R`: covers `.cross_class_range()`, the new
+  `quality_thresholds_default()` row, and `frac_cross_class` on an inline fixture.
+
 # HowMaHiCo 0.10.0
 
 * Added a per-sample **immunopeptidomics quality score** (inspired by the
