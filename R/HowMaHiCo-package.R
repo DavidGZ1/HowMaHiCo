@@ -37,7 +37,7 @@ utils::globalVariables(c(
   "IM", "Intensity", "Ion_Mobility", "Is_Contaminant", "Is_Decoy", "Is_Unique",
   "Length", "Length_range", "Level", "Lib.Index", "Lib.PG.Q.Value", "Lib.Q.Value",
   "Log2Area",
-  "MS2.Scan", "Mapped_Genes", "Mapped_Proteins", "Mass", "Mass.Evidence",
+  "MS2.Scan", "Mapped_Genes", "Mapped_Proteins", "Mass", "Mass.Evidence", "Metric",
   "Modified.Sequence", "Modified_Peptide", "Ms1.Area", "Ms1.Profile.Corr", "Ms1.Translated",
   "Nextscore", "Nter",
   "OrganismFirst",
@@ -61,6 +61,6 @@ utils::globalVariables(c(
   "m_z",
   "n_Peptides", "n_Proteins", "n_Samples", "n_Sequences",
   "path_full", "ppm",
-  "res_file", "var",
+  "metric", "res_file", "score", "var",
   ":=", "Result.Path", "Sample.Comment", "in_range", "ind", "values"
 ))

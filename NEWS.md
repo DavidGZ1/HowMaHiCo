@@ -1,3 +1,33 @@
+# HowMaHiCo 0.10.0
+
+* Added a per-sample **immunopeptidomics quality score** (inspired by the
+  author's HowDirty contamination score, but inverted: it scores how strongly a
+  sample resembles a real HLA immunopeptidome rather than its contaminant load).
+  New scoring engine in `R/quality-score.R`, all from the `pep_all` schema with
+  no external data and no new dependency.
+* New exports: `score_sample_quality()` (per-sample composite + traffic-light
+  category), `qc_metrics_by_sample()` (raw signals: length-window fidelity,
+  9-mer dominance, anchor-motif clarity, non-tryptic specificity, charge
+  plausibility, depth, mass accuracy), `anchor_information_content()`,
+  `score_curve()`, `quality_thresholds_default()`,
+  `calibrate_thresholds_from_qc()`, plus plots `plot_quality_heatmap()` and
+  `plot_quality_composite()`.
+* The non-tryptic signal is deliberately low-weight and split: because some
+  HLA-I alleles legitimately use K/R as a C-terminal anchor, the overall
+  C-terminal K/R fraction is a low-weight diagnostic, while the scored metric
+  isolates tryptic background in the out-of-window (long-peptide) tail.
+* Thresholds use built-in literature defaults **or** are calibrated from samples
+  tagged as experiment QC controls via an optional annotation `QC` column
+  (`ThresholdMode = "qc_relative"`) — no external benchmark dataset needed.
+  Undefined dimensions (e.g. MHC-II anchors, DIA-NN dummy `ppm`) drop out of the
+  weighted composite rather than penalising the sample.
+* New focused report template `05_quality_score`
+  (`inst/rmarkdown/templates/05_quality_score/`): traffic-light overview,
+  composite bar chart, per-metric breakdown and a self-documenting Methods
+  section, rendered against the cached `pep_all` like the other focused reports.
+* `tests/testthat/test-quality-score.R`: pure-math boundary checks of
+  `score_curve()` (no synthetic peptide data required).
+
 # HowMaHiCo 0.9.0
 
 * Added a dictionary-driven **unified parser** so a tabular search-engine export

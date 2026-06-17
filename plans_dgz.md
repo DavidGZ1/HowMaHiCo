@@ -7,6 +7,7 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
+* sometimes, MHC1 experiments may be contaminated by co-enrichment of MHC2, and MHC2 experiments may be contaminated with co-enrichment of MHC1. Add this to the scoring system.
 
 ## In standby
 
@@ -96,4 +97,5 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * focused reports gained PepAllSource param (cached / rda / build) so each can load the default cache, load an explicit .rda (PepAllFile), or self-build from raw results via build_pep_all(); default = cached = prior behavior (v0.8.0)
 * added simulated FragPipe data (inst/extdata/sim_fragpipe_dda, moved out of data/) + test-sim-fragpipe.R: build_pep_all assertion + first end-to-end render test of a focused report (v0.8.0)
 * unified parser using dictionaries with option to enter a custom entry from other software: dictionary-driven parse_unified() + read_custom_batch() + annotate_unified() + read_dictionary()/get_dictionary_template(), wired into build_pep_all(software="custom", dictionary=...); YAML dictionaries in inst/extdata/dictionaries (custom_template + fragpipe/diann/peaks reference); built-in loaders untouched; test-parse-unified.R round-trips against the FragPipe loader (v0.9.0)
+* immunopeptidomics sample quality score (HowDirty-inspired, inverted): R/quality-score.R (score_sample_quality + qc_metrics_by_sample + anchor_information_content + score_curve + quality_thresholds_default + calibrate_thresholds_from_qc), plot_quality_heatmap/plot_quality_composite, focused report 05_quality_score; thresholds from literature defaults or in-experiment QC samples (annotation QC column, ThresholdMode=qc_relative); non-tryptic K/R signal split into low-weight diagnostic + out-of-window scored metric; no external data/deps; test-quality-score.R covers score_curve/anchor_information_content (v0.10.0)
 

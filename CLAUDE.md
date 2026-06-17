@@ -7,7 +7,28 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.9.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.10.0** — Phases 1–6 of the package conversion are complete.
+v0.10.0 added a per-sample **immunopeptidomics quality score** (inspired by the
+author's HowDirty contamination score, but inverted — it scores how strongly a
+sample resembles a real HLA immunopeptidome). New engine `R/quality-score.R`
+exports `score_sample_quality()` (per-sample composite 0–100 + traffic-light
+category), `qc_metrics_by_sample()` (raw signals: length-window fidelity, 9-mer
+dominance, anchor-motif clarity via `anchor_information_content()`, non-tryptic
+specificity, charge plausibility, depth, mass accuracy — all from `pep_all`, no
+external data, no new dependency), `score_curve()`, `quality_thresholds_default()`,
+`calibrate_thresholds_from_qc()`; plus `plot_quality_heatmap()` /
+`plot_quality_composite()` in `R/plots.R`. The non-tryptic signal is split:
+overall C-terminal K/R fraction is a low-weight *diagnostic* (some HLA-I alleles
+use K/R anchors), while the *scored* metric isolates tryptic background in the
+out-of-window long-peptide tail. Thresholds use literature defaults **or** are
+calibrated from samples tagged as QC controls via an optional annotation `QC`
+column (`ThresholdMode = "qc_relative"`); undefined dimensions (MHC-II anchors,
+DIA-NN dummy `ppm`) drop out of the weighted composite instead of penalising the
+sample. New focused report `05_quality_score`
+(`inst/rmarkdown/templates/05_quality_score/`) renders the score against the
+cached `pep_all` like the other focused reports.
+`tests/testthat/test-quality-score.R` covers `score_curve()` /
+`anchor_information_content()` (pure math, no synthetic peptide data).
 v0.9.0 added a **dictionary-driven unified parser** so a tabular search-engine
 export from a tool with no built-in loader can be ingested by editing a YAML
 dictionary (no R coding, no new loader). New `build_pep_all()` branch
@@ -96,7 +117,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (~40) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
@@ -161,6 +182,11 @@ note above.
   per-sample reader) + `annotate_unified()` (generic annotation join)
 - **`R/get-dictionary.R`** — `get_dictionary_template` (copies the YAML dictionary
   template to the working dir)
+- **`R/quality-score.R`** — the immunopeptidomics quality-score engine:
+  `qc_metrics_by_sample()`, `anchor_information_content()`, `score_curve()`,
+  `quality_thresholds_default()`, `calibrate_thresholds_from_qc()`,
+  `score_sample_quality()` (consumed by the `05_quality_score` report;
+  `plot_quality_heatmap()`/`plot_quality_composite()` live in `R/plots.R`)
 - **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
   export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
   `deltaProtR`, now native)
@@ -173,10 +199,11 @@ note above.
   charge) → peptide motifs (seqlogo by length) → PTM profile → export block
 - **`inst/rmarkdown/templates/00_mhc_upsets/skeleton/skeleton.Rmd`** — secondary
   report focused on overlap/UpSet plots (loads from cached `.rda`, same params)
-- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant}/`** —
-  the focused reports (each a slice of `00_mhc_report`), sharing
-  `inst/rmarkdown/shared/setup.Rmd` and loading the `pep_all` cache from
-  `build_pep_all()` (`R/build-pep-all.R`)
+- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant,05_quality_score}/`** —
+  the focused reports (`01`–`04` each a slice of `00_mhc_report`;
+  `05_quality_score` is the per-sample quality-score report from
+  `R/quality-score.R`), sharing `inst/rmarkdown/shared/setup.Rmd` and loading the
+  `pep_all` cache from `build_pep_all()` (`R/build-pep-all.R`)
 
 ## Annotation file schema (`1_documentation/sample_annotation_*.csv`)
 
@@ -187,6 +214,10 @@ Required columns (checked by `read_annot`):
 - `Source_file` — required when `mode = "combined_file"` (FragPipe combined PSM, DIA-NN);
   matches the spectrum/run name within that subfolder
 - `Sample_ID` — free-text human-readable identifier
+- `QC` *(optional)* — flags experiment quality-control samples (`TRUE`/`"QC"`);
+  consumed by the `05_quality_score` report to mark QC samples and, with
+  `ThresholdMode = "qc_relative"`, to calibrate the score thresholds. `read_annot`
+  passes it through untouched (no schema change needed)
 
 Matching key for joining annotation ↔ data: `Sample_fp` alone for
 `fragpipe_dda_individual`; `Sample_fp` + `Source_file` for `combined_file` mode and
@@ -262,7 +293,8 @@ didn't need (they hardcoded `1_documentation/`):
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
-| `PepAllSource` | **Focused reports only** (the four `01`–`04` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PepAllSource` | **Focused reports only** (the five `01`–`05` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |
 | `MHCclass` | `"MHC1"` (8–13 AA, default) or `"MHC2"` (12–25 AA) — sets `shortpep_range`; overrides `ShortPeptideLengthMin/Max` |

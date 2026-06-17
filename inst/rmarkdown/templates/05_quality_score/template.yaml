@@ -1,0 +1,10 @@
+name: 05_quality_score
+description: >
+  Focused sample-quality report: a per-sample composite immunopeptidomics
+  quality score (length-window fidelity, 9-mer dominance, anchor-motif clarity,
+  non-tryptic specificity, charge plausibility, depth, mass accuracy) with a
+  traffic-light overview, composite bar chart and per-metric breakdown.
+  Thresholds use built-in defaults or are calibrated from samples tagged as QC
+  controls (annotation `QC` column). Renders against a cached `pep_all` table
+  built by build_pep_all() (or by 00_mhc_report).
+create_dir: false

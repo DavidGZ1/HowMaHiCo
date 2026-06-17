@@ -19,8 +19,9 @@
 #'   `"00_mhc_upsets"` (per-sample overlap/UpSet), `"01_id_counts"` (general
 #'   identification QC: counts, size distributions, motifs, PTM), `"02_overlaps"`
 #'   (intra-Condition / cross-Condition / pairwise overlap), `"03_lcms_qc"`
-#'   (RT/1k0/mz distributions, Score/ppm QC), and `"04_quant"`
-#'   (log2(Area) correlation, Area %CV).
+#'   (RT/1k0/mz distributions, Score/ppm QC), `"04_quant"`
+#'   (log2(Area) correlation, Area %CV), and `"05_quality_score"` (per-sample
+#'   immunopeptidomics quality score with a traffic-light overview).
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`SampleSet`, `AnnotationFile`, `Subset`,
 #'   `FolderData`, `FolderResults`, `FolderFigures`, `Software`, `MHCclass`,

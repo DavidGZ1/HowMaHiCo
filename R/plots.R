@@ -1112,3 +1112,91 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
       ggplot2::ggtitle("PTM profile, proportion of modified peptides vs total")
   }
 }
+
+#' Traffic-light heatmap of per-sample quality sub-scores
+#'
+#' Renders the `score_<metric>` columns of a [score_sample_quality()] table as a
+#' samples × metrics tile heatmap, filled on a red→amber→green 0–100 gradient and
+#' annotated with the rounded sub-score. Metric rows are labelled with their
+#' human-readable names and QC samples are marked with a trailing asterisk.
+#'
+#' @param scores Output of [score_sample_quality()].
+#' @param thresholds Scoring table used to label/order the metric rows (default
+#'   [quality_thresholds_default()]).
+#'
+#' @return A ggplot2 tile heatmap.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_quality_heatmap(score_sample_quality(pep_all, c(8, 13), "MHC1"))
+#' }
+plot_quality_heatmap <- function(scores, thresholds = quality_thresholds_default()) {
+  score_metrics <- thresholds$metric[paste0("score_", thresholds$metric) %in% names(scores)]
+  labels <- stats::setNames(thresholds$label, thresholds$metric)[score_metrics]
+
+  long <- scores |>
+    dplyr::mutate(Sample = ifelse(.data[["is_QC"]],
+                                  paste0(as.character(Sample), " *"),
+                                  as.character(Sample))) |>
+    dplyr::select(Sample, dplyr::all_of(paste0("score_", score_metrics))) |>
+    tidyr::pivot_longer(cols = -Sample, names_to = "metric", values_to = "score",
+                        names_prefix = "score_") |>
+    dplyr::mutate(
+      Sample = factor(Sample, levels = unique(Sample)),
+      Metric = factor(labels[metric], levels = rev(unname(labels))))
+
+  ggplot2::ggplot(long, ggplot2::aes(x = Sample, y = Metric, fill = score)) +
+    ggplot2::geom_tile(color = "white") +
+    ggplot2::geom_text(ggplot2::aes(label = ifelse(is.na(score), "NA", round(score))),
+                       size = 2.5) +
+    ggplot2::scale_fill_gradientn(colours = c("#d7191c", "#fdae61", "#1a9641"),
+                                  limits = c(0, 100), na.value = "grey85",
+                                  name = "Score") +
+    ggplot2::xlab("Sample") + ggplot2::ylab(NULL) +
+    theme_howmahico() +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle("Quality sub-scores (0-100)")
+}
+
+#' Per-sample composite quality-score bar chart
+#'
+#' Plots the `composite_score` of a [score_sample_quality()] table as a bar per
+#' sample, coloured by traffic-light `category` (Pass/Warning/Fail), with dashed
+#' reference lines at the 70 (Pass) and 40 (Warning) cut-offs. QC samples are
+#' marked with a trailing asterisk.
+#'
+#' @param scores Output of [score_sample_quality()].
+#'
+#' @return A ggplot2 bar chart.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_quality_composite(score_sample_quality(pep_all, c(8, 13), "MHC1"))
+#' }
+plot_quality_composite <- function(scores) {
+  cat_colors <- c(Pass = "#1a9641", Warning = "#fdae61", Fail = "#d7191c")
+  df <- scores |>
+    dplyr::mutate(Sample = ifelse(.data[["is_QC"]],
+                                  paste0(as.character(Sample), " *"),
+                                  as.character(Sample))) |>
+    dplyr::arrange(dplyr::desc(.data[["composite_score"]])) |>
+    dplyr::mutate(Sample = factor(Sample, levels = Sample))
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Sample, y = .data[["composite_score"]],
+                                   fill = .data[["category"]])) +
+    ggplot2::geom_col(alpha = 0.85, color = "black", linewidth = 0.2) +
+    ggplot2::geom_text(ggplot2::aes(label = .data[["composite_score"]]),
+                       vjust = -0.4, size = 2.5) +
+    ggplot2::geom_hline(yintercept = 70, linetype = "dashed", alpha = 0.5) +
+    ggplot2::geom_hline(yintercept = 40, linetype = "dotted", alpha = 0.5) +
+    ggplot2::scale_fill_manual(values = cat_colors, drop = FALSE, name = "Category") +
+    ggplot2::scale_y_continuous(limits = c(0, 105), n.breaks = 6) +
+    ggplot2::xlab("Sample") + ggplot2::ylab("Composite score") +
+    theme_howmahico() +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle("Composite quality score per sample")
+}
