@@ -7,21 +7,19 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
-
-* in the rmd templates, add a boolean option (TRUE/FALSE) for InteractivePlots. If true, all the plots compatible should be plotted using ggplotly.
-
-
-
+* For PTM plots, translate unimod code into modification name
 
 
 ## In standby
+* InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot_heatmap.
 * homogenize sample annotation tables across software
-* For PTM plots, translate unimod code into modification name
 * Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
 * add other proporties such as GRAVY
 * add data completeness plots
 * for quantitative report: heatmap with and without clustering, dynamic range, volcano plots
 * Total by Condition /BioReplicate / Sample in tabs
+* Add an advanced quantification report using statistica testing to compare between conditions. Use Limma for the normalization and statistical testing. Include  heatmap with and without clustering, volcano plots, summaries of number of peptides with significant changes between conditions
+
 
 ### to be done by DGZ 
 * Check and complete glosary
@@ -40,7 +38,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 ## advanced plans
 
 * include MaHiCoBench dataset for LFQbench-style plots
-* Plan an advanced quantification report. Use Limma for the normalization and statistical testing.
 * Dataset: use the JY hla1 and hla2 from Annica and Julian
 * Simple summary of HowMaHiCo ala HowDirty
 * Push a v1 and publication with this dataset before adding many more functionalities
