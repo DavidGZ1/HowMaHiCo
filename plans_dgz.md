@@ -7,10 +7,10 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
-* For PTM plots, translate unimod code into modification name
 
 
 ## In standby
+* For PTM plots, translate unimod code into modification name — deferred (full implementation design saved in memory/project_ptm_translation_plan.md). Scope chosen: translate BOTH UniMod accessions AND delta masses to names. Key gotcha: only DIA-NN stores UniMod codes (UniMod:NN); FragPipe (default/sim) and PEAKS store delta masses. Plan: new R/ptm.R with ptm_reference() + translate_ptm(), wired into plot_ptm_heatmap() as a display-time translate=TRUE arg; correct the wrong PTM note in 01_id_counts skeleton.
 * InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot_heatmap.
 * homogenize sample annotation tables across software
 * Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
@@ -19,7 +19,10 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * for quantitative report: heatmap with and without clustering, dynamic range, volcano plots
 * Total by Condition /BioReplicate / Sample in tabs
 * Add an advanced quantification report using statistica testing to compare between conditions. Use Limma for the normalization and statistical testing. Include  heatmap with and without clustering, volcano plots, summaries of number of peptides with significant changes between conditions
-
+* more explicit errors, e.g.,  when files are not found
+* readme point 3 is redundant, getting sampleid
+* autogenerate Sample by concatenating the others
+* maybe generate a report in long format
 
 ### to be done by DGZ 
 * Check and complete glosary
@@ -32,11 +35,15 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
 * reorder plots in a way that makes more sense
 * manual checking and re-writing text by me
+* add more detailed instructions to the readme
+* make a runnable R code with instructions based on the readme, use render instead of opening the report
+* check way sample_annotation is named in the reports, should be the same as in the example
+* check which column is used as quant for each software
+
 
 
 
 ## advanced plans
-
 * include MaHiCoBench dataset for LFQbench-style plots
 * Dataset: use the JY hla1 and hla2 from Annica and Julian
 * Simple summary of HowMaHiCo ala HowDirty
