@@ -1,3 +1,25 @@
+# HowMaHiCo 0.12.0
+
+* `01_id_counts`: new **Average +/- sd per BioReplicate** section mirroring the
+  per-Condition one (mean ± SD across the TechReplicate samples within each
+  BioReplicate). `plot_count_mean_sd()` gains a `group_var` argument (default
+  `"Condition"`; pass `"BioReplicate"`) controlling the x-axis/fill.
+* `01_id_counts`: **Proportion by length** is now its own top-level section with
+  Condition / BioReplicate / Sample tabs (was two nested subsections under the
+  Total-by-Condition / Total-by-Sample sections).
+* `02_overlaps`: new **Overlap intra-Condition (%)** section showing the
+  replicate-overlap bars as a per-Condition percentage (stacked to 100%).
+  `plot_overlap_intra_condition()` gains a `value` argument
+  (`"count"` default, or `"percent"`).
+* Report headers reading "Selected peptides" now show the active length window
+  (e.g. "Selected peptides (8 to 13 AAs)"), derived from `shortpep_range`,
+  across the focused templates.
+* Renamed the "Proteins" ID-level **headers/labels** to "Parent proteins" in the
+  focused `01_id_counts` / `02_overlaps` reports (display only; the data keys and
+  plot axis labels are unchanged).
+* `tests/testthat/test-plots.R`: smoke coverage for `plot_count_mean_sd()`
+  (both `group_var` modes) and `plot_overlap_intra_condition(value = "percent")`.
+
 # HowMaHiCo 0.11.0
 
 * Added a **cross-class (MHC1↔MHC2) contamination** dimension to the quality

@@ -68,14 +68,14 @@ provided by the Immunopeptidomics Platform (IPP).
 
 ```{r plot-overlap-intra-condition-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
 overlap_ids    <- c("Peptide", "Sequence", "Accession")
-overlap_labels <- c("Peptides", "Sequences", "Proteins")
+overlap_labels <- c("Peptides", "Sequences", "Parent proteins")
 overlap_title_all <- c(Peptide   = "All Peptides",
                        Sequence  = "All Sequences",
-                       Accession = "Proteins from all peptides")
+                       Accession = "Parent proteins from all peptides")
 overlap_title_short <- c(
   Peptide   = paste0("Selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
   Sequence  = paste0("Selected Sequences (", shortpep_range[1], " to ", shortpep_range[2], " AAs)"),
-  Accession = paste0("Proteins from ", shortpep_range[1], " to ", shortpep_range[2], " AAs"))
+  Accession = paste0("Parent proteins from ", shortpep_range[1], " to ", shortpep_range[2], " AAs"))
 
 for (i in seq_along(overlap_ids)) {
   cat("\n#### ", overlap_labels[i], "\n")
@@ -85,13 +85,42 @@ for (i in seq_along(overlap_ids)) {
 }
 ```
 
-### Selected peptides {.tabset}
+### Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")` {.tabset}
 
 ```{r plot-overlap-intra-condition-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
 for (i in seq_along(overlap_ids)) {
   cat("\n#### ", overlap_labels[i], "\n")
   print(plot_overlap_intra_condition(pep_short, id_col = overlap_ids[i],
                                      title = overlap_title_short[[overlap_ids[i]]]))
+  cat("\n\n")
+}
+```
+
+## Overlap intra-Condition (%) {.tabset}
+
+Same replicate-overlap counts as above, expressed as the percentage of each
+Condition's IDs found in 1, 2, … replicates (stacked to 100%).
+
+### All peptides {.tabset}
+
+```{r plot-overlap-intra-condition-perc-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(overlap_ids)) {
+  cat("\n#### ", overlap_labels[i], "\n")
+  print(plot_overlap_intra_condition(pep_all, id_col = overlap_ids[i],
+                                     title = overlap_title_all[[overlap_ids[i]]],
+                                     value = "percent"))
+  cat("\n\n")
+}
+```
+
+### Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")` {.tabset}
+
+```{r plot-overlap-intra-condition-perc-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(overlap_ids)) {
+  cat("\n#### ", overlap_labels[i], "\n")
+  print(plot_overlap_intra_condition(pep_short, id_col = overlap_ids[i],
+                                     title = overlap_title_short[[overlap_ids[i]]],
+                                     value = "percent"))
   cat("\n\n")
 }
 ```
@@ -179,7 +208,7 @@ if (dplyr::n_distinct(pep_all$Condition) < 2) {
 
 ```
 
-## Selected peptides {.tabset}
+## Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")` {.tabset}
 
 ```{r plot-upset-short, echo=FALSE,  fig.height=3.5, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 if (dplyr::n_distinct(pep_short$Condition) < 2) {

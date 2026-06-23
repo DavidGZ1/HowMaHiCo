@@ -858,6 +858,11 @@ plot_corr <- function(mat){
 #' @param level One of `"Peptides"`, `"Sequences"`, `"Proteins"`.
 #' @param lim_level Upper y-axis limit (e.g. looked up from a `count_lim`
 #'   table by `Level`/`"Limit_mean"`).
+#' @param group_var Name of the column mapped to the x-axis (and fill), across
+#'   which the mean ± SD is computed. Default `"Condition"` (mean across the
+#'   replicate samples per Condition); pass `"BioReplicate"` for a per-
+#'   BioReplicate variant (mean across the TechReplicate samples per
+#'   BioReplicate).
 #'
 #' @return A `ggpubr` barplot with mean ± SD error bars and viridis fill.
 #'
@@ -866,13 +871,14 @@ plot_corr <- function(mat){
 #' @examples
 #' \dontrun{
 #' plot_count_mean_sd(counts_size, "Peptides", lim_level = 30000)
+#' plot_count_mean_sd(counts_size, "Peptides", 30000, group_var = "BioReplicate")
 #' }
-plot_count_mean_sd <- function(df, level, lim_level) {
+plot_count_mean_sd <- function(df, level, lim_level, group_var = "Condition") {
   nlevel <- paste0("n_", level)
   df |>
     dplyr::filter(Length_range != "others") |>
     droplevels() |>
-    ggpubr::ggbarplot(x = "Condition", y = nlevel, fill = "Condition",
+    ggpubr::ggbarplot(x = group_var, y = nlevel, fill = group_var,
                       facet.by = "Length_range", add = "mean_sd", scales = "free_x",
                       label = TRUE, alpha = 0.5,
                       lab.vjust = -2, lab.nb.digits = 0, lab.size = 2.5, nrow = 2) +
@@ -882,9 +888,9 @@ plot_count_mean_sd <- function(df, level, lim_level) {
                                 # labels = scales::label_number(suffix = " k", scale = 1e-3)
                                 n.breaks = 5) +
     ggplot2::ylab(paste0("Nb ", level)) +
-    ggplot2::xlab("Condition") +
+    ggplot2::xlab(group_var) +
     ggpubr::rotate_x_text(70) +
-    ggplot2::labs(fill = "Condition") +
+    ggplot2::labs(fill = group_var) +
     ggplot2::scale_fill_viridis_d(end = 1) +
     ggplot2::theme(legend.position = "none") +
     ggplot2::ggtitle(paste0("Unique ", level, " (mean +/- sd)"))
@@ -907,6 +913,9 @@ plot_count_mean_sd <- function(df, level, lim_level) {
 #' @param shortpep_range Length-2 numeric vector `c(min, max)`; retained for API
 #'   compatibility (no longer used to build a subtitle now that all/short are
 #'   plotted separately).
+#' @param value Y-axis mode: `"count"` (default, absolute number of IDs) or
+#'   `"percent"` (the share of each Condition's IDs found in 1, 2, … replicates,
+#'   stacked to 100%).
 #'
 #' @return A ggplot2 barplot of IDs by number of replicates, per Condition.
 #'
@@ -916,9 +925,12 @@ plot_count_mean_sd <- function(df, level, lim_level) {
 #' \dontrun{
 #' plot_overlap_intra_condition(pep_all, "Peptide", title = "All Peptides")
 #' plot_overlap_intra_condition(pep_short, "Accession")
+#' plot_overlap_intra_condition(pep_all, "Peptide", value = "percent")
 #' }
 plot_overlap_intra_condition <- function(df, id_col, title = NULL,
-                                         shortpep_range = c(8, 13)) {
+                                         shortpep_range = c(8, 13),
+                                         value = c("count", "percent")) {
+  value <- match.arg(value)
   n_col  <- dplyr::case_when(id_col == "Peptide"   ~ "n_Peptides",
                               id_col == "Sequence"  ~ "n_Sequences",
                               id_col == "Accession" ~ "n_Accessions")
@@ -941,27 +953,45 @@ plot_overlap_intra_condition <- function(df, id_col, title = NULL,
     dplyr::arrange(Condition, dplyr::desc(n_Samples)) |>
     dplyr::group_by(Condition) |>
     dplyr::mutate(
-      tot_val = sum(.data[[n_col]]),
-      perc    = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
-      cum     = cumsum(.data[[n_col]])) |>
+      tot_val  = sum(.data[[n_col]]),
+      perc     = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
+      perc_num = 100 * .data[[n_col]] / sum(.data[[n_col]]),
+      cum      = cumsum(.data[[n_col]]),
+      cum_perc = cumsum(perc_num)) |>
     dplyr::rename_with(.fn = ~tot_col, .cols = "tot_val")
 
-  ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
-  df_ov |>
-    ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
-                      label = FALSE, lab.pos = "in",
-                      lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
-    ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
-                       size = 2.5, nudge_y = -nudge) +
-    ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
-                       size = 2.5, nudge_y = nudge) +
-    theme_howmahico() +
-    ggplot2::ylab(ylabel) +
-    ggplot2::xlab("Condition") +
-    ggpubr::rotate_x_text(70) +
-    ggplot2::scale_y_continuous(limits = c(0, ylim_ov), n.breaks = 5) +
-    ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
-    ggplot2::ggtitle(title)
+  if (value == "percent") {
+    df_ov |>
+      ggpubr::ggbarplot(x = "Condition", y = "perc_num", fill = "n_Samples",
+                        label = FALSE, lab.pos = "in",
+                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[["cum_perc"]], label = .data[["perc"]]),
+                         size = 2.5, nudge_y = -3) +
+      theme_howmahico() +
+      ggplot2::ylab(sub("^Nb ", "% ", ylabel)) +
+      ggplot2::xlab("Condition") +
+      ggpubr::rotate_x_text(70) +
+      ggplot2::scale_y_continuous(limits = c(0, 100), n.breaks = 5) +
+      ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
+      ggplot2::ggtitle(title)
+  } else {
+    ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
+    df_ov |>
+      ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
+                        label = FALSE, lab.pos = "in",
+                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
+                         size = 2.5, nudge_y = -nudge) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
+                         size = 2.5, nudge_y = nudge) +
+      theme_howmahico() +
+      ggplot2::ylab(ylabel) +
+      ggplot2::xlab("Condition") +
+      ggpubr::rotate_x_text(70) +
+      ggplot2::scale_y_continuous(limits = c(0, ylim_ov), n.breaks = 5) +
+      ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
+      ggplot2::ggtitle(title)
+  }
 }
 
 #' Violin + overlaid boxplot of Score or mass error per Condition and charge

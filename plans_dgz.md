@@ -8,23 +8,50 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
-## In standby
+* in the rmd templates, add a boolean option (TRUE/FALSE) for InteractivePlots. If true, all the plots compatible should be plotted using ggplotly.
 
-* 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
-* reorder plots in a way that makes more sense
-* add functionality for peaks Xpro
+
+
+
+
+## In standby
 * homogenize sample annotation tables across software
-* Overlap intra-Condition (across replicates) is currently showing absolute count numbers. Add another section showing similar plots but with y axis as percentages.
+* For PTM plots, translate unimod code into modification name
+* Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
+* add other proporties such as GRAVY
+* add data completeness plots
+* for quantitative report: heatmap with and without clustering, dynamic range, volcano plots
+* Total by Condition /BioReplicate / Sample in tabs
+
+### to be done by DGZ 
+* Check and complete glosary
+* check/add functionality for peaks Xpro
+* pseudomobilogram
+* pseudochromatogram color by density
+* Peptides identified per charge, add black lines on bars
 * bigger font
 * plot unclustered motifs from 7 to 25
-* Peptides identified per charge, add black lines on bars
-* For PTM plots, translate unimod code into modification name
+* 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
+* reorder plots in a way that makes more sense
+* manual checking and re-writing text by me
 
 
 
 ## advanced plans
+
 * include MaHiCoBench dataset for LFQbench-style plots
 * Plan an advanced quantification report. Use Limma for the normalization and statistical testing.
+* Dataset: use the JY hla1 and hla2 from Annica and Julian
+* Simple summary of HowMaHiCo ala HowDirty
+* Push a v1 and publication with this dataset before adding many more functionalities
+* Maybe switch TechRep to InjRep
+* Standardize headers, include a function to convert from old to new headers
+* Wheremahico = peptide distribution in the protein. Add a widget to show location of peptides in specific protein
+* Whichmahico = detect which alleles
+* Ismahico= binding prediction
+* HowConta = summary of common contaminants
+* Another idea: hla allotyping from hla peptides in the ip data
+
 
 
 ## Done
@@ -82,20 +109,25 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * # Identification counts ## Average +/- sd: all peptides and selected peptides shown separately in nested tabsets
 * "# Peptide ID distribution across RT, 1/k0 and m/z": extracted to plot\_pseudochromatogram() and plot\_2d\_distribution(); skeleton simplified to 1-2 lines per chunk
 * 2do by me,Identification counts, average +/-sd, split into individual plots for each length
-* add to the readme as optional subpoint in complete the annotation csv: complete the annotation table with the Sample_ID from the Hystar sample list using get_annot_sampleid
-* de-vendor get_dirs_index_peaks: removed the vendored/deltaProtR provenance, renamed R/vendored-deltaprotr.R to R/loaders-peaks-dirs.R, converted its pipes to |> (v0.3.0)
-* unify the two report templates (01_mhc_report, 02_mhc_upsets skeleton.Rmd) on the native |> pipe (181 %>% converted; verified via knitr::purl + parse) (v0.3.0)
+* add to the readme as optional subpoint in complete the annotation csv: complete the annotation table with the Sample\_ID from the Hystar sample list using get\_annot\_sampleid
+* de-vendor get\_dirs\_index\_peaks: removed the vendored/deltaProtR provenance, renamed R/vendored-deltaprotr.R to R/loaders-peaks-dirs.R, converted its pipes to |> (v0.3.0)
+* unify the two report templates (01\_mhc\_report, 02\_mhc\_upsets skeleton.Rmd) on the native |> pipe (181 %>% converted; verified via knitr::purl + parse) (v0.3.0)
 * 2do by me change purple color of length plots to a dimmer one
-* Overlap intra-Condition (across replicates), split into individual plots for each length: plot_overlap_intra_condition() refactored to single-plot (df, id_col, title); report section now All peptides / Selected peptides nested tabsets (v0.5.0)
-* Peptides identified per charge +1 to +4, one plot for all peptides (pep_all) and one for selected length (pep_short), shown in an All / Selected tabset (v0.5.0)
-* multi-report framework instead of one big report: exported build_pep_all() (parse+cache step), shared inst/rmarkdown/shared/setup.Rmd child, and four focused templates 03_id_counts / 04_overlaps / 05_lcms_qc / 06_quant rendered against the cached pep_all; 01_mhc_report kept unchanged for retrocompatibility (v0.6.0)
-* PTM profile moved from 05_lcms_qc to 03_id_counts, and extended to show all peptides (pep_all) alongside selected (pep_short) in an All/Selected tabset (v0.6.1)
-* renumbered all report templates: 01_mhc_report->00_mhc_report, 02_mhc_upsets->00_mhc_upsets, 03_id_counts->01_id_counts, 04_overlaps->02_overlaps, 05_lcms_qc->03_lcms_qc, 06_quant->04_quant (v0.7.0)
-* lcms_qc RT/1k0/m_z distribution section rewritten to a single looped results='asis' chunk (config list of views x peptide sets) instead of 8 hand-written chunks (v0.7.0)
+* Overlap intra-Condition (across replicates), split into individual plots for each length: plot\_overlap\_intra\_condition() refactored to single-plot (df, id\_col, title); report section now All peptides / Selected peptides nested tabsets (v0.5.0)
+* Peptides identified per charge +1 to +4, one plot for all peptides (pep\_all) and one for selected length (pep\_short), shown in an All / Selected tabset (v0.5.0)
+* multi-report framework instead of one big report: exported build\_pep\_all() (parse+cache step), shared inst/rmarkdown/shared/setup.Rmd child, and four focused templates 03\_id\_counts / 04\_overlaps / 05\_lcms\_qc / 06\_quant rendered against the cached pep\_all; 01\_mhc\_report kept unchanged for retrocompatibility (v0.6.0)
+* PTM profile moved from 05\_lcms\_qc to 03\_id\_counts, and extended to show all peptides (pep\_all) alongside selected (pep\_short) in an All/Selected tabset (v0.6.1)
+* renumbered all report templates: 01\_mhc\_report->00\_mhc\_report, 02\_mhc\_upsets->00\_mhc\_upsets, 03\_id\_counts->01\_id\_counts, 04\_overlaps->02\_overlaps, 05\_lcms\_qc->03\_lcms\_qc, 06\_quant->04\_quant (v0.7.0)
+* lcms\_qc RT/1k0/m\_z distribution section rewritten to a single looped results='asis' chunk (config list of views x peptide sets) instead of 8 hand-written chunks (v0.7.0)
 * fixed "Duplicate chunk label 'setup'" parse error in the focused reports: shared setup.Rmd had a fenced r-chunk example inside its leading HTML comment (knitr parses chunks even in comments -> recursive re-include); comment is now prose + regression guard test (v0.7.1)
-* focused reports gained PepAllSource param (cached / rda / build) so each can load the default cache, load an explicit .rda (PepAllFile), or self-build from raw results via build_pep_all(); default = cached = prior behavior (v0.8.0)
-* added simulated FragPipe data (inst/extdata/sim_fragpipe_dda, moved out of data/) + test-sim-fragpipe.R: build_pep_all assertion + first end-to-end render test of a focused report (v0.8.0)
-* unified parser using dictionaries with option to enter a custom entry from other software: dictionary-driven parse_unified() + read_custom_batch() + annotate_unified() + read_dictionary()/get_dictionary_template(), wired into build_pep_all(software="custom", dictionary=...); YAML dictionaries in inst/extdata/dictionaries (custom_template + fragpipe/diann/peaks reference); built-in loaders untouched; test-parse-unified.R round-trips against the FragPipe loader (v0.9.0)
-* immunopeptidomics sample quality score (HowDirty-inspired, inverted): R/quality-score.R (score_sample_quality + qc_metrics_by_sample + anchor_information_content + score_curve + quality_thresholds_default + calibrate_thresholds_from_qc), plot_quality_heatmap/plot_quality_composite, focused report 05_quality_score; thresholds from literature defaults or in-experiment QC samples (annotation QC column, ThresholdMode=qc_relative); non-tryptic K/R signal split into low-weight diagnostic + out-of-window scored metric; no external data/deps; test-quality-score.R covers score_curve/anchor_information_content (v0.10.0)
-* cross-class MHC1<->MHC2 contamination metric: frac_cross_class (fraction of peptides in the other class's length window outside the current one; .cross_class_range helper; lower_better, low weight, NA for custom windows) + plot_cross_class_length per-sample length histogram with cross-class region highlighted, wired into qc_metrics_by_sample/quality_thresholds_default and the 05_quality_score report (v0.11.0)
+* focused reports gained PepAllSource param (cached / rda / build) so each can load the default cache, load an explicit .rda (PepAllFile), or self-build from raw results via build\_pep\_all(); default = cached = prior behavior (v0.8.0)
+* added simulated FragPipe data (inst/extdata/sim\_fragpipe\_dda, moved out of data/) + test-sim-fragpipe.R: build\_pep\_all assertion + first end-to-end render test of a focused report (v0.8.0)
+* unified parser using dictionaries with option to enter a custom entry from other software: dictionary-driven parse\_unified() + read\_custom\_batch() + annotate\_unified() + read\_dictionary()/get\_dictionary\_template(), wired into build\_pep\_all(software="custom", dictionary=...); YAML dictionaries in inst/extdata/dictionaries (custom\_template + fragpipe/diann/peaks reference); built-in loaders untouched; test-parse-unified.R round-trips against the FragPipe loader (v0.9.0)
+* immunopeptidomics sample quality score (HowDirty-inspired, inverted): R/quality-score.R (score\_sample\_quality + qc\_metrics\_by\_sample + anchor\_information\_content + score\_curve + quality\_thresholds\_default + calibrate\_thresholds\_from\_qc), plot\_quality\_heatmap/plot\_quality\_composite, focused report 05\_quality\_score; thresholds from literature defaults or in-experiment QC samples (annotation QC column, ThresholdMode=qc\_relative); non-tryptic K/R signal split into low-weight diagnostic + out-of-window scored metric; no external data/deps; test-quality-score.R covers score\_curve/anchor\_information\_content (v0.10.0)
+* cross-class MHC1<->MHC2 contamination metric: frac\_cross\_class (fraction of peptides in the other class's length window outside the current one; .cross\_class\_range helper; lower\_better, low weight, NA for custom windows) + plot\_cross\_class\_length per-sample length histogram with cross-class region highlighted, wired into qc\_metrics\_by\_sample/quality\_thresholds\_default and the 05\_quality\_score report (v0.11.0)
+* Average +/- sd per BioReplicate: new section in 01\_id\_counts mirroring per-Condition; plot\_count\_mean\_sd() gained group\_var arg (default "Condition", pass "BioReplicate") (v0.12.0)
+* "Selected peptides" report headers now show the active length window (e.g. "(8 to 13 AAs)") from shortpep\_range across the focused templates (v0.12.0)
+* renamed "Proteins" ID-level headers/labels to "Parent proteins" in 01\_id\_counts/02\_overlaps (display only; data keys + plot axis labels unchanged; counts\_labels display vector added alongside counts\_levels) (v0.12.0)
+* Proportion by length pulled into its own 2nd-level section in 01\_id\_counts with Condition/BioReplicate/Sample tabs (was nested under Total-by-Condition/Sample) (v0.12.0)
+* Overlap intra-Condition: added a percentage variant section in 02\_overlaps; plot\_overlap\_intra\_condition() gained value arg ("count" default / "percent") (v0.12.0)
 

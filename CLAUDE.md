@@ -7,7 +7,20 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.11.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.12.0** — Phases 1–6 of the package conversion are complete.
+v0.12.0 was a focused-report polish pass (no new engines): `01_id_counts` gained an
+**Average +/- sd per BioReplicate** section mirroring the per-Condition one
+(`plot_count_mean_sd()` gained a `group_var` arg, default `"Condition"`); its
+**Proportion by length** content was pulled into its own 2nd-level section with
+Condition / BioReplicate / Sample tabs (previously nested under the Total-by
+sections). `02_overlaps` gained an **Overlap intra-Condition (%)** section
+(`plot_overlap_intra_condition()` gained a `value` arg, `"count"`/`"percent"`).
+Across the focused templates, "Selected peptides" headers now show the active
+length window (e.g. "(8 to 13 AAs)") via `shortpep_range`, and the "Proteins"
+ID-level **headers/labels** were renamed to "Parent proteins" — display only: the
+data keys (`counts_levels`, `n_Proteins` columns, `count_lim$Level`) and plot axis
+labels are unchanged (a separate `counts_labels` display vector backs the renamed
+headers). The InteractivePlots/ggplotly toggle remains on the to-do list.
 v0.11.0 added a **cross-class (MHC1↔MHC2) contamination** dimension to the quality
 score: `frac_cross_class` flags MHC-II ligands co-enriched in an MHC-I pulldown
 (and vice versa) by their length signature — the fraction of peptides in the

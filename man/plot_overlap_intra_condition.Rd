@@ -8,7 +8,8 @@ plot_overlap_intra_condition(
   df,
   id_col,
   title = NULL,
-  shortpep_range = c(8, 13)
+  shortpep_range = c(8, 13),
+  value = c("count", "percent")
 )
 }
 \arguments{
@@ -24,6 +25,10 @@ length-filtered \code{pep_short}).}
 \item{shortpep_range}{Length-2 numeric vector \code{c(min, max)}; retained for API
 compatibility (no longer used to build a subtitle now that all/short are
 plotted separately).}
+
+\item{value}{Y-axis mode: \code{"count"} (default, absolute number of IDs) or
+\code{"percent"} (the share of each Condition's IDs found in 1, 2, … replicates,
+stacked to 100\%).}
 }
 \value{
 A ggplot2 barplot of IDs by number of replicates, per Condition.
@@ -39,5 +44,6 @@ individual plot for each.
 \dontrun{
 plot_overlap_intra_condition(pep_all, "Peptide", title = "All Peptides")
 plot_overlap_intra_condition(pep_short, "Accession")
+plot_overlap_intra_condition(pep_all, "Peptide", value = "percent")
 }
 }

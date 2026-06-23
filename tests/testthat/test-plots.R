@@ -78,13 +78,32 @@ test_that("plot_violin_areacv builds a violin/boxplot of Area %CV by group", {
   suppressWarnings(expect_s3_class(plot_violin_areacv(areacv, Condition), "gg"))
 })
 
+test_that("plot_count_mean_sd builds a mean +/- sd bar chart per Condition and per BioReplicate", {
+  # counts_size-shaped table: one row per Condition x BioReplicate x Length_range
+  counts_size <- data.frame(
+    Condition = factor(rep(c("JY_tissue", "JY_plasma"), each = 4)),
+    BioReplicate = factor(rep(c("1", "2"), times = 4)),
+    Length_range = factor(rep(c("All peptides", "8 to 13 AAs"), each = 2, times = 2),
+                          levels = c("All peptides", "others", "8 to 13 AAs")),
+    n_Peptides = c(10L, 12L, 8L, 9L, 11L, 13L, 7L, 8L)
+  )
+  suppressWarnings(
+    expect_s3_class(plot_count_mean_sd(counts_size, "Peptides", lim_level = 50), "gg"))
+  suppressWarnings(
+    expect_s3_class(
+      plot_count_mean_sd(counts_size, "Peptides", lim_level = 50, group_var = "BioReplicate"),
+      "gg"))
+})
+
 test_that("plot_overlap_intra_condition builds one replicate-overlap bar chart per ID level", {
   pep_all <- make_pep_all()
   expect_s3_class(plot_overlap_intra_condition(pep_all, "Peptide"), "gg")
   expect_s3_class(plot_overlap_intra_condition(pep_all, "Sequence"), "gg")
   expect_s3_class(
-    plot_overlap_intra_condition(pep_all, "Accession", title = "Proteins from all peptides"),
+    plot_overlap_intra_condition(pep_all, "Accession", title = "Parent proteins from all peptides"),
     "gg")
+  # percentage y-axis variant
+  expect_s3_class(plot_overlap_intra_condition(pep_all, "Peptide", value = "percent"), "gg")
 })
 
 test_that("plot_corr builds a correlation heatmap from a correlation matrix", {
