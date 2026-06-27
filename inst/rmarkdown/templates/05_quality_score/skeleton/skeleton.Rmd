@@ -196,8 +196,8 @@ thresholds_used |>
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters + the per-sample score table
-write_input_params(params, folder = FolderResults, prefix = "05_quality_score")
-write.csv_rawr(scores, folder = FolderResults)
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "05_quality_score"), collapse = "_"))
+write.csv_rawr(scores, folder = FolderResults, prefix = result_prefix)
 
 if (params$PlotsSave) {
   ggsave_rawr(p_quality_composite, "p_quality_composite", folder = FolderFigures,

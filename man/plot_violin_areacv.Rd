@@ -4,7 +4,7 @@
 \alias{plot_violin_areacv}
 \title{Violin + boxplot of Area \%CV by group}
 \usage{
-plot_violin_areacv(input, by, label_size = 1.6)
+plot_violin_areacv(input, by, label_size = 3)
 }
 \arguments{
 \item{input}{Output of \code{\link[=summarise_area]{summarise_area()}}.}

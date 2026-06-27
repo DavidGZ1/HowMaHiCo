@@ -78,14 +78,16 @@ library(HowMaHiCo)
 ```r
 # FragPipe (psm.tsv layout)
 get_annot_fragpipe(dir_data = "2_data") |>
-  get_annot_sampleid(file_sample_list = "1_documentation/sample_list.xlsx") |>
   write.csv(row.names = FALSE, file = "1_documentation/sample_annotation.csv")
 
 # DIA-NN (report.tsv layout)
 get_annot_diann(dir_data = "2_data") |>
-  get_annot_sampleid(file_sample_list = "1_documentation/sample_list.xlsx") |>
   write.csv(row.names = FALSE, file = "1_documentation/sample_annotation_diann.csv")
 ```
+
+These scan `2_data` and write one row per data file — no `sample_list.xlsx`
+needed to get started (`Sample_ID` can be filled in next, by hand or optionally
+from a HyStar sample list).
 
 **3. Complete the annotation CSV**
 
@@ -94,8 +96,16 @@ Open the generated CSV and fill in the experimental metadata:
 `Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks` (PEAKS) matches the data
 subfolder names exactly, then save.
 
-*(Optional)* Instead of typing `Sample_ID` by hand, populate it from a
-Bruker HyStar sample list using `get_annot_sampleid()`:
+> **Two things the annotation table controls:**
+> - **Inclusion** — only samples listed in the annotation table are read and
+>   reported. Any sample present in the results folder but missing from the table
+>   is silently excluded, so the table is also how you subset a run.
+> - **Ordering** — Conditions, replicates and samples appear in every plot and
+>   table in the **row order of the annotation CSV**. Order the rows the way you
+>   want them displayed (factor levels are taken from first appearance).
+
+*(Optional)* `Sample_ID` can be populated automatically from a Bruker HyStar
+sample list with `get_annot_sampleid()` instead of typing it by hand:
 
 ```r
 read.csv("1_documentation/sample_annotation.csv") |>
@@ -114,6 +124,22 @@ get_report_template("MyReport", template = "00_mhc_report")
 ```
 
 **5. Render a report**
+
+**Edit these for your run** (the rest can stay at the example defaults):
+
+- `SampleSet` / `Subset` — experiment name and subset label (used in the title,
+  filenames, and output subfolders)
+- `FolderDocumentation` / `FolderData` / `FolderResults` / `FolderFigures` —
+  absolute (or render-time-cwd-relative) paths
+- `AnnotationFile` — the CSV filled in above
+- `Software` — `fragpipe_dda_combined` | `fragpipe_dda_individual` | `diann` |
+  `peaks_xpro` | `custom`
+- `Instrument` — `tims_tof` | `faims_orbi` | `orbi`
+- `MHCclass` — `MHC1` (8–13 AA) or `MHC2` (12–25 AA)
+- `output_file` — the HTML filename to write
+
+See the full parameter reference (incl. `PepAllSource`, `TestMode`,
+`ResultsOverwrite`, `CsvSave`/`PlotsSave`) in `CLAUDE.md`.
 
 ```r
 run_howmahico_report(

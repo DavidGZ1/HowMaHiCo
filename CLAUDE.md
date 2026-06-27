@@ -7,7 +7,20 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.12.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.13.0** — Phases 1–6 of the package conversion are complete.
+v0.13.0 was a plots/exports pass driven by `plans_dgz.md`: `plot_pseudochromatogram()`
+now fills RT bars by peptide count (density gradient) instead of per-Condition
+colour; new `plot_pseudomobilogram()` (count vs `invk0`, configurable `binwidth`,
+default 0.2) was added next to it and wired into `03_lcms_qc` (new
+"Pseudomobilograms" tab in the RT/1k0/mz view config) and `00_mhc_report`;
+`plot_charge_proportions()` bars gained a black outline; the peptide-motif window
+was extended to **7–25 AAs** (`01_id_counts`/`00_mhc_report`, was capped at 24);
+and a **subset prefix** is now applied to every result filename via a shared
+`result_prefix` (`= Subset`, `NULL` when unset) passed to `write.csv_rawr()` /
+`write_input_params()` and the `seq_by_condition.xlsx` write (e.g.
+`dda_all_pep_all.csv`; `input_params` combines subset + report name to avoid
+collisions). The "implement safeguard when some conditions/replicates give 0
+areas" item was moved to standby (no repro).
 v0.12.0 was a focused-report polish pass (no new engines): `01_id_counts` gained an
 **Average +/- sd per BioReplicate** section mirroring the per-Condition one
 (`plot_count_mean_sd()` gained a `group_var` arg, default `"Condition"`); its

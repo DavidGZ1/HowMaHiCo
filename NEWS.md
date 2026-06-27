@@ -1,3 +1,29 @@
+# HowMaHiCo 0.13.0
+
+* **Pseudochromatogram coloured by density.** `plot_pseudochromatogram()` now
+  fills the RT bars by their own peptide count (continuous viridis gradient)
+  instead of a flat per-Condition colour, so dense RT regions stand out within
+  each facet.
+* **New `plot_pseudomobilogram()`** — ion-mobility analogue of the
+  pseudochromatogram: per-Condition peptide count vs `invk0` (1/k0), binned by a
+  configurable `binwidth` (default `0.2`), bars coloured by count. Wired into the
+  `03_lcms_qc` RT/1k0/mz view config (new "Pseudomobilograms" tab) and the
+  `00_mhc_report` distribution section (all / selected peptides).
+* **Charge-proportion bars** now carry a black outline
+  (`plot_charge_proportions()`), matching the other stacked bar charts.
+* **Peptide motifs** extended to the **7–25 AA** window (was capped at 24);
+  section retitled "Peptide motifs (7 to 25 AAs)" in `01_id_counts` and
+  `00_mhc_report`.
+* **Subset prefix on all result files.** The focused reports' shared
+  `setup.Rmd` (and the two `00_*` reports) now derive a `result_prefix`
+  (`= Subset`, or `NULL` when unset) and pass it to every `write.csv_rawr()` /
+  `write_input_params()` call and the `seq_by_condition.xlsx` write, so result
+  filenames carry the subset (e.g. `dda_all_pep_all.csv`). `input_params`
+  combines the subset with the report name to stay collision-free within a shared
+  subset subfolder.
+* `tests/testthat/test-plots.R`: smoke coverage for `plot_pseudochromatogram()`
+  and `plot_pseudomobilogram()` (incl. a custom `binwidth`).
+
 # HowMaHiCo 0.12.0
 
 * `01_id_counts`: new **Average +/- sd per BioReplicate** section mirroring the

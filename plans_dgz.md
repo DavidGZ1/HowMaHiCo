@@ -9,9 +9,12 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 ## To do
 
 
+
 ## In standby
-* For PTM plots, translate unimod code into modification name — deferred (full implementation design saved in memory/project_ptm_translation_plan.md). Scope chosen: translate BOTH UniMod accessions AND delta masses to names. Key gotcha: only DIA-NN stores UniMod codes (UniMod:NN); FragPipe (default/sim) and PEAKS store delta masses. Plan: new R/ptm.R with ptm_reference() + translate_ptm(), wired into plot_ptm_heatmap() as a display-time translate=TRUE arg; correct the wrong PTM note in 01_id_counts skeleton.
-* InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot_heatmap.
+
+* implement safeguard when some conditions or replicates give 0 areas, currently throwing error — moved to standby (no repro available; e.g. CHEB\_001 all dda dataset not in repo). The all-NA Area/CV and all-NA correlation cases are already guarded in the report chunks; the partial (some groups 0/NA) failure needs a repro to target.
+* For PTM plots, translate unimod code into modification name — deferred (full implementation design saved in memory/project\_ptm\_translation\_plan.md). Scope chosen: translate BOTH UniMod accessions AND delta masses to names. Key gotcha: only DIA-NN stores UniMod codes (UniMod:NN); FragPipe (default/sim) and PEAKS store delta masses. Plan: new R/ptm.R with ptm\_reference() + translate\_ptm(), wired into plot\_ptm\_heatmap() as a display-time translate=TRUE arg; correct the wrong PTM note in 01\_id\_counts skeleton.
+* InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04\_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot\_heatmap.
 * homogenize sample annotation tables across software
 * Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
 * add other proporties such as GRAVY
@@ -20,30 +23,29 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * Total by Condition /BioReplicate / Sample in tabs
 * Add an advanced quantification report using statistica testing to compare between conditions. Use Limma for the normalization and statistical testing. Include  heatmap with and without clustering, volcano plots, summaries of number of peptides with significant changes between conditions
 * more explicit errors, e.g.,  when files are not found
-* readme point 3 is redundant, getting sampleid
 * autogenerate Sample by concatenating the others
+* bioreplicate as numbers or text, without condition, gets merged afterwards
 * maybe generate a report in long format
+* include whole folder with dia-quant-output when diann
 
-### to be done by DGZ 
+### to be done by DGZ
+
 * Check and complete glosary
 * check/add functionality for peaks Xpro
-* pseudomobilogram
-* pseudochromatogram color by density
-* Peptides identified per charge, add black lines on bars
-* bigger font
-* plot unclustered motifs from 7 to 25
+
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
 * reorder plots in a way that makes more sense
 * manual checking and re-writing text by me
 * add more detailed instructions to the readme
 * make a runnable R code with instructions based on the readme, use render instead of opening the report
-* check way sample_annotation is named in the reports, should be the same as in the example
+* check way sample\_annotation is named in the reports, should be the same as in the example
 * check which column is used as quant for each software
-
+* get\_report\_template change param order, start with template then file
 
 
 
 ## advanced plans
+
 * include MaHiCoBench dataset for LFQbench-style plots
 * Dataset: use the JY hla1 and hla2 from Annica and Julian
 * Simple summary of HowMaHiCo ala HowDirty
@@ -134,4 +136,11 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * renamed "Proteins" ID-level headers/labels to "Parent proteins" in 01\_id\_counts/02\_overlaps (display only; data keys + plot axis labels unchanged; counts\_labels display vector added alongside counts\_levels) (v0.12.0)
 * Proportion by length pulled into its own 2nd-level section in 01\_id\_counts with Condition/BioReplicate/Sample tabs (was nested under Total-by-Condition/Sample) (v0.12.0)
 * Overlap intra-Condition: added a percentage variant section in 02\_overlaps; plot\_overlap\_intra\_condition() gained value arg ("count" default / "percent") (v0.12.0)
+* improve the readme: made Step 2 a bare annotation skeleton (no sample\_list.xlsx needed; removed the duplicated get\_annot\_sampleid that also lived in Step 3, now the single optional mention); added a note under Step 3 that the annotation table controls inclusion (only listed samples are read/reported) and ordering (factor levels = CSV row order); added an "Edit these for your run" callout listing the must-change params before the Step 5 render example
+* pseudochromatogram color by density: plot\_pseudochromatogram() now fills RT bars by peptide Count (continuous viridis gradient) instead of per-Condition colour, keeping the facet-per-Condition layout (v0.13.0)
+* pseudomobilogram: new plot\_pseudomobilogram() (count vs invk0/1k0, configurable binwidth, default 0.2, bars coloured by count, faceted by Condition); wired into 03\_lcms\_qc view config (new "Pseudomobilograms" tab) and 00\_mhc\_report distribution section (all/selected) (v0.13.0)
+* Peptides identified per charge, add black lines on bars: plot\_charge\_proportions() geom\_bar gained color = "black" (v0.13.0)
+* plot unclustered motifs from 7 to 25: motif length window extended to 7–25 AAs (was capped at 24); section retitled "Peptide motifs (7 to 25 AAs)" in 01\_id\_counts and 00\_mhc\_report (v0.13.0)
+* add subset suffix to all the results: shared setup.Rmd (and the two 00\_* reports) derive result\_prefix (= Subset, NULL when unset), passed to every write.csv\_rawr()/write\_input\_params() and prepended to seq\_by\_condition.xlsx, so result filenames carry the subset (e.g. dda\_all\_pep\_all.csv); input\_params combines subset + report name to stay collision-free (v0.13.0)
+* bigger font
 

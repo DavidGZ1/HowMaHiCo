@@ -633,7 +633,7 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #' plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all, "Sample"),
 #'                            x_var = "Sample")
 #' }
-plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 1.6,
+plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 3,
                                         palette = NULL, x_var = "Condition"){
   p <- input |>
     dplyr::filter(Length_range != "All peptides",
@@ -680,7 +680,7 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
 #' \dontrun{
 #' plot_charge_proportions(get_proportion_charge(counts_charge_condition), Condition)
 #' }
-plot_charge_proportions <- function(input, variable, label_size = 1.6){
+plot_charge_proportions <- function(input, variable, label_size = 3){
   input |>
     dplyr::filter(Charge_group != "Total",
                   Level == "Peptides") |>
@@ -690,7 +690,7 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
                                                    Charge_group == "+ 2" ~ CumProportion * 0.9,
                                                    TRUE ~ CumProportion * 0.9)) |>
     ggplot2::ggplot(ggplot2::aes(x = {{ variable }}, y = Proportion, fill = Charge_group, group = Charge_group)) +
-    ggplot2::geom_bar(stat = "identity", alpha = 0.5) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.5, color = "black") +
     ggplot2::geom_text(ggplot2::aes(label = Percentage, y = Proportion),
                        size = label_size, position = ggplot2::position_stack(vjust = 0.8)) +
     ggplot2::scale_y_continuous(breaks = seq(0, 2, 0.25), labels = c("0", "", "50", "", "100", "", "150", "", "200")) + # removed since for fragpipe total may be 100%, due to multiple charges assigned
@@ -721,7 +721,7 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
 #' \dontrun{
 #' plot_violin_areacv(summarise_area(pep_all, Condition), Condition)
 #' }
-plot_violin_areacv <- function(input, by, label_size = 1.6){
+plot_violin_areacv <- function(input, by, label_size = 3){
   ## get ylim
   cv_ylim <- ceiling(max(input$Area_CV, na.rm = TRUE) * 12) / 10
   ## plot
@@ -743,6 +743,9 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
 
 #' Peptide ID pseudochromatogram: count vs RT, faceted by Condition
 #'
+#' Bars are coloured by their own peptide count (a density gradient), so dense
+#' RT regions stand out within each Condition facet.
+#'
 #' @param input A `pep_all`-shaped data frame with `RT`, `Peptide`, `Condition`.
 #' @param title Plot title string.
 #' @param ncol Number of facet columns.
@@ -760,15 +763,49 @@ plot_pseudochromatogram <- function(input, title, ncol = 3) {
     dplyr::mutate(RT = round(RT, 0)) |>
     dplyr::group_by(Condition, RT) |>
     dplyr::summarise(Count = dplyr::n_distinct(Peptide), .groups = "drop") |>
-    ggplot2::ggplot(ggplot2::aes(x = RT, y = Count, fill = Condition)) +
-    ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge2()) +
+    ggplot2::ggplot(ggplot2::aes(x = RT, y = Count, fill = Count)) +
+    ggplot2::geom_bar(stat = "identity") +
     ggplot2::ylab("Peptides") +
     ggplot2::xlab("RT (min)") +
     ggplot2::ggtitle(title) +
     theme_howmahico() +
     ggplot2::facet_wrap(~Condition, ncol = ncol) +
-    ggplot2::scale_fill_viridis_d() +
-    ggplot2::theme(legend.position = "none")
+    ggplot2::scale_fill_viridis_c(name = "Peptides")
+}
+
+#' Peptide ID pseudomobilogram: count vs 1/k0, faceted by Condition
+#'
+#' Ion-mobility analogue of [plot_pseudochromatogram()]: bins peptides by their
+#' `invk0` (1/k0) value and plots the per-bin peptide count, coloured by count
+#' (a density gradient), faceted by Condition.
+#'
+#' @param input A `pep_all`-shaped data frame with `invk0`, `Peptide`,
+#'   `Condition`.
+#' @param title Plot title string.
+#' @param ncol Number of facet columns.
+#' @param binwidth 1/k0 bin width. Default `0.2`.
+#'
+#' @return A ggplot2 bar chart.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_pseudomobilogram(pep_all, "All peptides identified", ncol = 3)
+#' }
+plot_pseudomobilogram <- function(input, title, ncol = 3, binwidth = 0.2) {
+  input |>
+    dplyr::mutate(invk0_bin = floor(invk0 / binwidth) * binwidth) |>
+    dplyr::group_by(Condition, invk0_bin) |>
+    dplyr::summarise(Count = dplyr::n_distinct(Peptide), .groups = "drop") |>
+    ggplot2::ggplot(ggplot2::aes(x = invk0_bin, y = Count, fill = Count)) +
+    ggplot2::geom_col(width = binwidth) +
+    ggplot2::ylab("Peptides") +
+    ggplot2::xlab("1/k0") +
+    ggplot2::ggtitle(title) +
+    theme_howmahico() +
+    ggplot2::facet_wrap(~Condition, ncol = ncol) +
+    ggplot2::scale_fill_viridis_c(name = "Peptides")
 }
 
 #' 2D binned heatmap for any two continuous peptide properties

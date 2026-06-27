@@ -325,13 +325,13 @@ pep_overlap |>  kable() |> kable_paper("hover", full_width = F) |>
 
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
-write_input_params(params, folder = FolderResults, prefix = "02_overlaps")
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "02_overlaps"), collapse = "_"))
 
 if (params$CsvSave) {
-  write.csv_rawr(upset_table_pep, folder = FolderResults)
-  write.csv_rawr(upset_table_prot, folder = FolderResults)
-  write.csv_rawr(upset_table_unique, folder = FolderResults)
-  write.csv_rawr(pep_overlap, folder = FolderResults)
+  write.csv_rawr(upset_table_pep, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(upset_table_prot, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(upset_table_unique, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_overlap, folder = FolderResults, prefix = result_prefix)
 }
 
 if (params$PlotsSave) {

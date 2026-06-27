@@ -477,14 +477,14 @@ pep_all_unique_mz |>
 ```
 
 
-# Peptide motifs {.tabset}
+# Peptide motifs (7 to 25 AAs) {.tabset}
 
 Sequence logos are shown below, separated by sequence length, without any clustering or deconvolution. [Wagih, Omar. ggseqlogo: a versatile R package for drawing sequence logos. Bioinformatics (2017). https://doi.org/10.1093/bioinformatics/btx469]
 
 
 ```{r plot-seqlogo, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 # seq_lengths_short <- sort(unique(pep_short$Length))
-seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) <= 24]) # this helps skiping lengths with 0 peptides to avoid errors
+seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) >= 7 & unique(pep_all$Length) <= 25]) # restrict to the 7-25 AA window; intersecting with lengths present skips empty ones to avoid errors
 
 motifs_pepshort <- lapply(seq_lengths_short, function(x){
   # print(x)
@@ -543,22 +543,22 @@ hm_ptm_prop_short
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters + the main long table and summaries
-write_input_params(params, folder = FolderResults, prefix = "01_id_counts")
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "01_id_counts"), collapse = "_"))
 
 seq_by_condition <- list_sequences(by = "Condition", input = pep_all)
-write.xlsx(seq_by_condition, file.path(FolderResults, "seq_by_condition.xlsx"), overwrite = params$ResultsOverwrite)
+write.xlsx(seq_by_condition, file.path(FolderResults, paste0(subset, "seq_by_condition.xlsx")), overwrite = params$ResultsOverwrite)
 
 counts_pep_all_condition <- pep_all |> count_ids_by(Condition)
-write.csv_rawr(counts_pep_all_condition, folder = FolderResults)
-write.csv_rawr(pep_all, folder = FolderResults)
+write.csv_rawr(counts_pep_all_condition, folder = FolderResults, prefix = result_prefix)
+write.csv_rawr(pep_all, folder = FolderResults, prefix = result_prefix)
 
 if (params$CsvSave) {
-  write.csv_rawr(counts_all, folder = FolderResults)
-  write.csv_rawr(counts_all_mean, folder = FolderResults)
-  write.csv_rawr(counts_all_total, folder = FolderResults)
-  write.csv_rawr(counts_size, folder = FolderResults)
-  write.csv_rawr(counts_size_mean, folder = FolderResults)
-  write.csv_rawr(counts_size_total, folder = FolderResults)
+  write.csv_rawr(counts_all, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_all_mean, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_all_total, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_size, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_size_mean, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_size_total, folder = FolderResults, prefix = result_prefix)
 }
 
 if (params$PlotsSave) {

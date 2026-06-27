@@ -106,6 +106,17 @@ test_that("plot_overlap_intra_condition builds one replicate-overlap bar chart p
   expect_s3_class(plot_overlap_intra_condition(pep_all, "Peptide", value = "percent"), "gg")
 })
 
+test_that("plot_pseudochromatogram and plot_pseudomobilogram build count-vs-RT/1k0 bar charts", {
+  pep_all <- make_pep_all()
+  suppressWarnings(
+    expect_s3_class(plot_pseudochromatogram(pep_all, "All peptides"), "gg"))
+  suppressWarnings(
+    expect_s3_class(plot_pseudomobilogram(pep_all, "All peptides"), "gg"))
+  # custom bin width is honoured without erroring
+  suppressWarnings(
+    expect_s3_class(plot_pseudomobilogram(pep_all, "All peptides", binwidth = 0.1), "gg"))
+})
+
 test_that("plot_corr builds a correlation heatmap from a correlation matrix", {
   pep_all <- make_pep_all()
   mat <- get_mat_log2area(pep_all, PeptideID, Sample)
