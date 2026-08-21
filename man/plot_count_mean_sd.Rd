@@ -4,7 +4,7 @@
 \alias{plot_count_mean_sd}
 \title{Mean ± SD barplot of ID counts per Condition, faceted by length range}
 \usage{
-plot_count_mean_sd(df, level, lim_level)
+plot_count_mean_sd(df, level, lim_level, group_var = "Condition")
 }
 \arguments{
 \item{df}{A counts data frame shaped like \code{counts_size} (one row per
@@ -15,6 +15,12 @@ BioReplicate × Condition × Length_range, with \code{n_Peptides},
 
 \item{lim_level}{Upper y-axis limit (e.g. looked up from a \code{count_lim}
 table by \code{Level}/\code{"Limit_mean"}).}
+
+\item{group_var}{Name of the column mapped to the x-axis (and fill), across
+which the mean ± SD is computed. Default \code{"Condition"} (mean across the
+replicate samples per Condition); pass \code{"BioReplicate"} for a per-
+BioReplicate variant (mean across the TechReplicate samples per
+BioReplicate).}
 }
 \value{
 A \code{ggpubr} barplot with mean ± SD error bars and viridis fill.
@@ -28,5 +34,6 @@ barplot showing mean ± SD across BioReplicates per Condition.
 \examples{
 \dontrun{
 plot_count_mean_sd(counts_size, "Peptides", lim_level = 30000)
+plot_count_mean_sd(counts_size, "Peptides", 30000, group_var = "BioReplicate")
 }
 }

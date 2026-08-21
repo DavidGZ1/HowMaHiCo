@@ -69,6 +69,9 @@ lcms_views <- list(
   chromato = list(
     tab = "n_Peptides Vs RT (Pseudochromatograms)",
     fun = function(df, title) plot_pseudochromatogram(df, paste0("Peptide ID chromatogram: ", title), ncol = phis_ncol)),
+  mobilo = list(
+    tab = "n_Peptides Vs 1/k0 (Pseudomobilograms)",
+    fun = function(df, title) plot_pseudomobilogram(df, paste0("Peptide ID mobilogram: ", title), ncol = phis_ncol)),
   invk0_mz = list(
     tab = "1/k0 VS m/z",
     fun = function(df, title) plot_2d_distribution(df, "m_z", "invk0", c(10, 0.025), title, x_lab = "m/z", y_lab = "1/k0", ncol = phis_ncol)),
@@ -144,7 +147,7 @@ bp_masserror_ppm
 
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
-write_input_params(params, folder = FolderResults, prefix = "03_lcms_qc")
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "03_lcms_qc"), collapse = "_"))
 
 if (params$PlotsSave) {
   for (nm in names(lcms_dist_plots)) {

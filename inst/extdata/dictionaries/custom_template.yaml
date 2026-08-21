@@ -1,0 +1,50 @@
+# HowMaHiCo custom-parser dictionary template
+# ---------------------------------------------
+# Describes how to map a tabular search-engine export onto the unified `pep_all`
+# schema, so HowMaHiCo can ingest a tool it has no built-in loader for. Fill this
+# in, then:
+#   build_pep_all("custom", folder_data = "2_data", annotation = annot,
+#                 dictionary = "this_file.yaml", file_rda = "2_data/pep_all.rda")
+#
+# Scope: this maps columns and derives the shared pep_all columns. It does NOT
+# do per-tool transforms (unit conversions, regex extraction, accession
+# splitting) -- pre-clean those in your export before parsing.
+
+software: custom            # free-text label (informational only)
+found_by: "MyTool"          # written into every row's Found_By column
+
+mode: individual_files      # individual_files (join on Sample_fp) OR
+                            # combined_file (join on Sample_fp + Source_file;
+                            # then map Source_file under columns: below)
+
+read:
+  file: results.tsv         # filename to read inside each sample subfolder
+  delim: "\t"               # "\t" = tab-separated, "," = comma-separated
+
+# columns: map  <pep_all target> : <raw column name in your export>
+# Required targets: Sequence, Peptide, Area, and Length
+#   (Length may be omitted if derive.length_from_sequence: true below).
+# Everything else is optional -- omit a line if your export lacks that column;
+# reports degrade gracefully on missing columns.
+columns:
+  Accession:    Protein                  # full protein identifier
+  ProteinFirst: Protein_ID               # leading protein accession
+  GeneFirst:    Gene
+  Sequence:     Peptide                  # unmodified sequence (drives Nter/Cter/Length)
+  Peptide:      Modified_Peptide         # modified sequence (use Peptide if no mods)
+  Length:       Peptide_Length
+  Score:        Score
+  Area:         Intensity
+  Charge:       Charge
+  RT:           Retention
+  m_z:          mz
+  Mass:         Mass
+  ppm:          ppm
+  PTM:          Modifications
+  invk0:        Ion_Mobility
+  # Source_file: SpectrumFile            # required only in combined_file mode
+
+derive:
+  length_from_sequence: false            # true => Length <- nchar(Sequence)
+  format_charge: true                    # true => Charge <- paste0("+ ", Charge)
+  peptide_id: [ProteinFirst, m_z, Charge]  # columns pasted into PeptideID

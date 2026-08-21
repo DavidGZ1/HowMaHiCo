@@ -11,13 +11,15 @@ build_pep_all(
   shortpep_range = c(8, 13),
   instrument = "tims_tof",
   test_mode = FALSE,
-  file_rda = NULL
+  file_rda = NULL,
+  dictionary = NULL
 )
 }
 \arguments{
 \item{software}{One of \code{"fragpipe_dda_combined"}, \code{"fragpipe_dda_individual"},
-\code{"diann"}, or \code{"peaks_xpro"} — selects the loader branch (and, for FragPipe,
-the combined-vs-individual annotation mode).}
+\code{"diann"}, \code{"peaks_xpro"}, or \code{"custom"} — selects the loader branch (and,
+for FragPipe, the combined-vs-individual annotation mode). \code{"custom"} routes
+through the dictionary-driven parser (see \code{dictionary}).}
 
 \item{folder_data}{Path to the folder holding the per-sample search output
 (the report's \code{FolderData}).}
@@ -37,6 +39,12 @@ per file (fast iteration). Ignored by the PEAKS loader.}
 
 \item{file_rda}{Optional path. When non-\code{NULL}, \code{pep_all} is \code{save()}d there
 (as the object name \code{pep_all}) so report templates can \code{load()} it.}
+
+\item{dictionary}{Required when \code{software = "custom"}: either a path to a YAML
+parser dictionary or an already-loaded dictionary list (see
+\code{\link[=read_dictionary]{read_dictionary()}} / \code{\link[=get_dictionary_template]{get_dictionary_template()}}). Its \verb{read:} block sets
+the per-sample filename and delimiter, and its \verb{mode:} the annotation join.
+Ignored for the built-in loaders.}
 }
 \value{
 The \code{pep_all} data frame, invisibly.

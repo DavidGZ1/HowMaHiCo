@@ -184,7 +184,7 @@ if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition â€
 if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate â€” Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
 ```
 
-## Selected peptides  {.tabset}
+## Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")` {.tabset}
 
 ### Condition
 
@@ -200,17 +200,17 @@ if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioRepli
 
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
-write_input_params(params, folder = FolderResults, prefix = "04_quant")
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "04_quant"), collapse = "_"))
 
 if (params$CsvSave) {
-  write.csv_rawr(pep_all_log2area_tr, folder = FolderResults)
-  write.csv_rawr(pep_all_log2area_br, folder = FolderResults)
-  write.csv_rawr(prot_all_log2area_tr, folder = FolderResults)
-  write.csv_rawr(prot_all_log2area_br, folder = FolderResults)
-  write.csv_rawr(pep_short_log2area_tr, folder = FolderResults)
-  write.csv_rawr(pep_short_log2area_br, folder = FolderResults)
-  write.csv_rawr(prot_short_log2area_tr, folder = FolderResults)
-  write.csv_rawr(prot_short_log2area_br, folder = FolderResults)
+  write.csv_rawr(pep_all_log2area_tr, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_all_log2area_br, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(prot_all_log2area_tr, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(prot_all_log2area_br, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_short_log2area_tr, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_short_log2area_br, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(prot_short_log2area_tr, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(prot_short_log2area_br, folder = FolderResults, prefix = result_prefix)
 }
 
 if (params$PlotsSave) {

@@ -633,7 +633,7 @@ plot_heatmap <- function(mat, annotation, level, group, n_clust = 5, width = 24,
 #' plot_prop_length_condition(count_ids_condition_bylengthrange(pep_all, "Sample"),
 #'                            x_var = "Sample")
 #' }
-plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 1.6,
+plot_prop_length_condition <- function(input, level2plot = "Peptides", label_size = 3,
                                         palette = NULL, x_var = "Condition"){
   p <- input |>
     dplyr::filter(Length_range != "All peptides",
@@ -680,7 +680,7 @@ plot_prop_length_condition <- function(input, level2plot = "Peptides", label_siz
 #' \dontrun{
 #' plot_charge_proportions(get_proportion_charge(counts_charge_condition), Condition)
 #' }
-plot_charge_proportions <- function(input, variable, label_size = 1.6){
+plot_charge_proportions <- function(input, variable, label_size = 3){
   input |>
     dplyr::filter(Charge_group != "Total",
                   Level == "Peptides") |>
@@ -690,7 +690,7 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
                                                    Charge_group == "+ 2" ~ CumProportion * 0.9,
                                                    TRUE ~ CumProportion * 0.9)) |>
     ggplot2::ggplot(ggplot2::aes(x = {{ variable }}, y = Proportion, fill = Charge_group, group = Charge_group)) +
-    ggplot2::geom_bar(stat = "identity", alpha = 0.5) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.5, color = "black") +
     ggplot2::geom_text(ggplot2::aes(label = Percentage, y = Proportion),
                        size = label_size, position = ggplot2::position_stack(vjust = 0.8)) +
     ggplot2::scale_y_continuous(breaks = seq(0, 2, 0.25), labels = c("0", "", "50", "", "100", "", "150", "", "200")) + # removed since for fragpipe total may be 100%, due to multiple charges assigned
@@ -721,7 +721,7 @@ plot_charge_proportions <- function(input, variable, label_size = 1.6){
 #' \dontrun{
 #' plot_violin_areacv(summarise_area(pep_all, Condition), Condition)
 #' }
-plot_violin_areacv <- function(input, by, label_size = 1.6){
+plot_violin_areacv <- function(input, by, label_size = 3){
   ## get ylim
   cv_ylim <- ceiling(max(input$Area_CV, na.rm = TRUE) * 12) / 10
   ## plot
@@ -743,6 +743,9 @@ plot_violin_areacv <- function(input, by, label_size = 1.6){
 
 #' Peptide ID pseudochromatogram: count vs RT, faceted by Condition
 #'
+#' Bars are coloured by their own peptide count (a density gradient), so dense
+#' RT regions stand out within each Condition facet.
+#'
 #' @param input A `pep_all`-shaped data frame with `RT`, `Peptide`, `Condition`.
 #' @param title Plot title string.
 #' @param ncol Number of facet columns.
@@ -760,15 +763,49 @@ plot_pseudochromatogram <- function(input, title, ncol = 3) {
     dplyr::mutate(RT = round(RT, 0)) |>
     dplyr::group_by(Condition, RT) |>
     dplyr::summarise(Count = dplyr::n_distinct(Peptide), .groups = "drop") |>
-    ggplot2::ggplot(ggplot2::aes(x = RT, y = Count, fill = Condition)) +
-    ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge2()) +
+    ggplot2::ggplot(ggplot2::aes(x = RT, y = Count, fill = Count)) +
+    ggplot2::geom_bar(stat = "identity") +
     ggplot2::ylab("Peptides") +
     ggplot2::xlab("RT (min)") +
     ggplot2::ggtitle(title) +
     theme_howmahico() +
     ggplot2::facet_wrap(~Condition, ncol = ncol) +
-    ggplot2::scale_fill_viridis_d() +
-    ggplot2::theme(legend.position = "none")
+    ggplot2::scale_fill_viridis_c(name = "Peptides")
+}
+
+#' Peptide ID pseudomobilogram: count vs 1/k0, faceted by Condition
+#'
+#' Ion-mobility analogue of [plot_pseudochromatogram()]: bins peptides by their
+#' `invk0` (1/k0) value and plots the per-bin peptide count, coloured by count
+#' (a density gradient), faceted by Condition.
+#'
+#' @param input A `pep_all`-shaped data frame with `invk0`, `Peptide`,
+#'   `Condition`.
+#' @param title Plot title string.
+#' @param ncol Number of facet columns.
+#' @param binwidth 1/k0 bin width. Default `0.2`.
+#'
+#' @return A ggplot2 bar chart.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_pseudomobilogram(pep_all, "All peptides identified", ncol = 3)
+#' }
+plot_pseudomobilogram <- function(input, title, ncol = 3, binwidth = 0.2) {
+  input |>
+    dplyr::mutate(invk0_bin = floor(invk0 / binwidth) * binwidth) |>
+    dplyr::group_by(Condition, invk0_bin) |>
+    dplyr::summarise(Count = dplyr::n_distinct(Peptide), .groups = "drop") |>
+    ggplot2::ggplot(ggplot2::aes(x = invk0_bin, y = Count, fill = Count)) +
+    ggplot2::geom_col(width = binwidth) +
+    ggplot2::ylab("Peptides") +
+    ggplot2::xlab("1/k0") +
+    ggplot2::ggtitle(title) +
+    theme_howmahico() +
+    ggplot2::facet_wrap(~Condition, ncol = ncol) +
+    ggplot2::scale_fill_viridis_c(name = "Peptides")
 }
 
 #' 2D binned heatmap for any two continuous peptide properties
@@ -858,6 +895,11 @@ plot_corr <- function(mat){
 #' @param level One of `"Peptides"`, `"Sequences"`, `"Proteins"`.
 #' @param lim_level Upper y-axis limit (e.g. looked up from a `count_lim`
 #'   table by `Level`/`"Limit_mean"`).
+#' @param group_var Name of the column mapped to the x-axis (and fill), across
+#'   which the mean ± SD is computed. Default `"Condition"` (mean across the
+#'   replicate samples per Condition); pass `"BioReplicate"` for a per-
+#'   BioReplicate variant (mean across the TechReplicate samples per
+#'   BioReplicate).
 #'
 #' @return A `ggpubr` barplot with mean ± SD error bars and viridis fill.
 #'
@@ -866,13 +908,14 @@ plot_corr <- function(mat){
 #' @examples
 #' \dontrun{
 #' plot_count_mean_sd(counts_size, "Peptides", lim_level = 30000)
+#' plot_count_mean_sd(counts_size, "Peptides", 30000, group_var = "BioReplicate")
 #' }
-plot_count_mean_sd <- function(df, level, lim_level) {
+plot_count_mean_sd <- function(df, level, lim_level, group_var = "Condition") {
   nlevel <- paste0("n_", level)
   df |>
     dplyr::filter(Length_range != "others") |>
     droplevels() |>
-    ggpubr::ggbarplot(x = "Condition", y = nlevel, fill = "Condition",
+    ggpubr::ggbarplot(x = group_var, y = nlevel, fill = group_var,
                       facet.by = "Length_range", add = "mean_sd", scales = "free_x",
                       label = TRUE, alpha = 0.5,
                       lab.vjust = -2, lab.nb.digits = 0, lab.size = 2.5, nrow = 2) +
@@ -882,9 +925,9 @@ plot_count_mean_sd <- function(df, level, lim_level) {
                                 # labels = scales::label_number(suffix = " k", scale = 1e-3)
                                 n.breaks = 5) +
     ggplot2::ylab(paste0("Nb ", level)) +
-    ggplot2::xlab("Condition") +
+    ggplot2::xlab(group_var) +
     ggpubr::rotate_x_text(70) +
-    ggplot2::labs(fill = "Condition") +
+    ggplot2::labs(fill = group_var) +
     ggplot2::scale_fill_viridis_d(end = 1) +
     ggplot2::theme(legend.position = "none") +
     ggplot2::ggtitle(paste0("Unique ", level, " (mean +/- sd)"))
@@ -907,6 +950,9 @@ plot_count_mean_sd <- function(df, level, lim_level) {
 #' @param shortpep_range Length-2 numeric vector `c(min, max)`; retained for API
 #'   compatibility (no longer used to build a subtitle now that all/short are
 #'   plotted separately).
+#' @param value Y-axis mode: `"count"` (default, absolute number of IDs) or
+#'   `"percent"` (the share of each Condition's IDs found in 1, 2, … replicates,
+#'   stacked to 100%).
 #'
 #' @return A ggplot2 barplot of IDs by number of replicates, per Condition.
 #'
@@ -916,9 +962,12 @@ plot_count_mean_sd <- function(df, level, lim_level) {
 #' \dontrun{
 #' plot_overlap_intra_condition(pep_all, "Peptide", title = "All Peptides")
 #' plot_overlap_intra_condition(pep_short, "Accession")
+#' plot_overlap_intra_condition(pep_all, "Peptide", value = "percent")
 #' }
 plot_overlap_intra_condition <- function(df, id_col, title = NULL,
-                                         shortpep_range = c(8, 13)) {
+                                         shortpep_range = c(8, 13),
+                                         value = c("count", "percent")) {
+  value <- match.arg(value)
   n_col  <- dplyr::case_when(id_col == "Peptide"   ~ "n_Peptides",
                               id_col == "Sequence"  ~ "n_Sequences",
                               id_col == "Accession" ~ "n_Accessions")
@@ -941,27 +990,45 @@ plot_overlap_intra_condition <- function(df, id_col, title = NULL,
     dplyr::arrange(Condition, dplyr::desc(n_Samples)) |>
     dplyr::group_by(Condition) |>
     dplyr::mutate(
-      tot_val = sum(.data[[n_col]]),
-      perc    = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
-      cum     = cumsum(.data[[n_col]])) |>
+      tot_val  = sum(.data[[n_col]]),
+      perc     = paste0(round(100 * .data[[n_col]] / sum(.data[[n_col]]), 1), "%"),
+      perc_num = 100 * .data[[n_col]] / sum(.data[[n_col]]),
+      cum      = cumsum(.data[[n_col]]),
+      cum_perc = cumsum(perc_num)) |>
     dplyr::rename_with(.fn = ~tot_col, .cols = "tot_val")
 
-  ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
-  df_ov |>
-    ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
-                      label = FALSE, lab.pos = "in",
-                      lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
-    ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
-                       size = 2.5, nudge_y = -nudge) +
-    ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
-                       size = 2.5, nudge_y = nudge) +
-    theme_howmahico() +
-    ggplot2::ylab(ylabel) +
-    ggplot2::xlab("Condition") +
-    ggpubr::rotate_x_text(70) +
-    ggplot2::scale_y_continuous(limits = c(0, ylim_ov), n.breaks = 5) +
-    ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
-    ggplot2::ggtitle(title)
+  if (value == "percent") {
+    df_ov |>
+      ggpubr::ggbarplot(x = "Condition", y = "perc_num", fill = "n_Samples",
+                        label = FALSE, lab.pos = "in",
+                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[["cum_perc"]], label = .data[["perc"]]),
+                         size = 2.5, nudge_y = -3) +
+      theme_howmahico() +
+      ggplot2::ylab(sub("^Nb ", "% ", ylabel)) +
+      ggplot2::xlab("Condition") +
+      ggpubr::rotate_x_text(70) +
+      ggplot2::scale_y_continuous(limits = c(0, 100), n.breaks = 5) +
+      ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
+      ggplot2::ggtitle(title)
+  } else {
+    ylim_ov <- ceiling(max(df_ov[[tot_col]]) * 1.2 / 100) * 100
+    df_ov |>
+      ggpubr::ggbarplot(x = "Condition", y = n_col, fill = "n_Samples",
+                        label = FALSE, lab.pos = "in",
+                        lab.nb.digits = 0, lab.size = 2.5, alpha = 0.5) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[["cum"]], label = .data[["perc"]]),
+                         size = 2.5, nudge_y = -nudge) +
+      ggplot2::geom_text(ggplot2::aes(y = .data[[tot_col]], label = .data[[tot_col]]),
+                         size = 2.5, nudge_y = nudge) +
+      theme_howmahico() +
+      ggplot2::ylab(ylabel) +
+      ggplot2::xlab("Condition") +
+      ggpubr::rotate_x_text(70) +
+      ggplot2::scale_y_continuous(limits = c(0, ylim_ov), n.breaks = 5) +
+      ggplot2::scale_fill_viridis_d(begin = 0.2, end = 0.8, name = "ID in n Replicates") +
+      ggplot2::ggtitle(title)
+  }
 }
 
 #' Violin + overlaid boxplot of Score or mass error per Condition and charge
@@ -1111,4 +1178,152 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
       ggpubr::rotate_x_text(35) +
       ggplot2::ggtitle("PTM profile, proportion of modified peptides vs total")
   }
+}
+
+#' Traffic-light heatmap of per-sample quality sub-scores
+#'
+#' Renders the `score_<metric>` columns of a [score_sample_quality()] table as a
+#' samples × metrics tile heatmap, filled on a red→amber→green 0–100 gradient and
+#' annotated with the rounded sub-score. Metric rows are labelled with their
+#' human-readable names and QC samples are marked with a trailing asterisk.
+#'
+#' @param scores Output of [score_sample_quality()].
+#' @param thresholds Scoring table used to label/order the metric rows (default
+#'   [quality_thresholds_default()]).
+#'
+#' @return A ggplot2 tile heatmap.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_quality_heatmap(score_sample_quality(pep_all, c(8, 13), "MHC1"))
+#' }
+plot_quality_heatmap <- function(scores, thresholds = quality_thresholds_default()) {
+  score_metrics <- thresholds$metric[paste0("score_", thresholds$metric) %in% names(scores)]
+  labels <- stats::setNames(thresholds$label, thresholds$metric)[score_metrics]
+
+  long <- scores |>
+    dplyr::mutate(Sample = ifelse(.data[["is_QC"]],
+                                  paste0(as.character(Sample), " *"),
+                                  as.character(Sample))) |>
+    dplyr::select(Sample, dplyr::all_of(paste0("score_", score_metrics))) |>
+    tidyr::pivot_longer(cols = -Sample, names_to = "metric", values_to = "score",
+                        names_prefix = "score_") |>
+    dplyr::mutate(
+      Sample = factor(Sample, levels = unique(Sample)),
+      Metric = factor(labels[metric], levels = rev(unname(labels))))
+
+  ggplot2::ggplot(long, ggplot2::aes(x = Sample, y = Metric, fill = score)) +
+    ggplot2::geom_tile(color = "white") +
+    ggplot2::geom_text(ggplot2::aes(label = ifelse(is.na(score), "NA", round(score))),
+                       size = 2.5) +
+    ggplot2::scale_fill_gradientn(colours = c("#d7191c", "#fdae61", "#1a9641"),
+                                  limits = c(0, 100), na.value = "grey85",
+                                  name = "Score") +
+    ggplot2::xlab("Sample") + ggplot2::ylab(NULL) +
+    theme_howmahico() +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle("Quality sub-scores (0-100)")
+}
+
+#' Per-sample composite quality-score bar chart
+#'
+#' Plots the `composite_score` of a [score_sample_quality()] table as a bar per
+#' sample, coloured by traffic-light `category` (Pass/Warning/Fail), with dashed
+#' reference lines at the 70 (Pass) and 40 (Warning) cut-offs. QC samples are
+#' marked with a trailing asterisk.
+#'
+#' @param scores Output of [score_sample_quality()].
+#'
+#' @return A ggplot2 bar chart.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_quality_composite(score_sample_quality(pep_all, c(8, 13), "MHC1"))
+#' }
+plot_quality_composite <- function(scores) {
+  cat_colors <- c(Pass = "#1a9641", Warning = "#fdae61", Fail = "#d7191c")
+  df <- scores |>
+    dplyr::mutate(Sample = ifelse(.data[["is_QC"]],
+                                  paste0(as.character(Sample), " *"),
+                                  as.character(Sample))) |>
+    dplyr::arrange(dplyr::desc(.data[["composite_score"]])) |>
+    dplyr::mutate(Sample = factor(Sample, levels = Sample))
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Sample, y = .data[["composite_score"]],
+                                   fill = .data[["category"]])) +
+    ggplot2::geom_col(alpha = 0.85, color = "black", linewidth = 0.2) +
+    ggplot2::geom_text(ggplot2::aes(label = .data[["composite_score"]]),
+                       vjust = -0.4, size = 2.5) +
+    ggplot2::geom_hline(yintercept = 70, linetype = "dashed", alpha = 0.5) +
+    ggplot2::geom_hline(yintercept = 40, linetype = "dotted", alpha = 0.5) +
+    ggplot2::scale_fill_manual(values = cat_colors, drop = FALSE, name = "Category") +
+    ggplot2::scale_y_continuous(limits = c(0, 105), n.breaks = 6) +
+    ggplot2::xlab("Sample") + ggplot2::ylab("Composite score") +
+    theme_howmahico() +
+    ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle("Composite quality score per sample")
+}
+
+#' Per-sample peptide-length histogram highlighting cross-class contamination
+#'
+#' Faceted (by `Sample`) count histogram of distinct-peptide lengths, with each
+#' length bar coloured by region: the current class's expected window, the
+#' **cross-class** region (the other MHC class's length range falling outside the
+#' current window — i.e. MHC-II ligands contaminating an MHC-I pulldown, or vice
+#' versa), and everything else. Visualises the `frac_cross_class` metric of
+#' [score_sample_quality()]. For a custom length window (MHCclass neither `"MHC1"`
+#' nor `"MHC2"`) the cross-class region is undefined and an informative empty plot
+#' is returned.
+#'
+#' @param pep_all A unified `pep_all` data frame with `Sample`, `Peptide`,
+#'   `Length`.
+#' @param shortpep_range Length-2 numeric `c(min, max)` — the current class's
+#'   expected ligand-length window.
+#' @param mhcclass `"MHC1"` or `"MHC2"`.
+#'
+#' @return A ggplot2 faceted histogram.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_cross_class_length(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1")
+#' }
+plot_cross_class_length <- function(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1") {
+  cross_rng <- .cross_class_range(mhcclass, shortpep_range)
+  if (is.null(cross_rng)) {
+    return(
+      ggplot2::ggplot() +
+        ggplot2::annotate("text", x = 0, y = 0,
+                          label = "Cross-class contamination is undefined\nfor a custom length window (MHCclass must be MHC1 or MHC2).") +
+        ggplot2::theme_void()
+    )
+  }
+
+  cur_lab <- paste0("Current (", shortpep_range[1], "-", shortpep_range[2], " AAs)")
+  cross_lab <- paste0("Cross-class (", cross_rng[1], "-", cross_rng[2], " AAs)")
+  region_levels <- c(cur_lab, cross_lab, "Other")
+
+  df <- pep_all |>
+    dplyr::distinct(Sample, Peptide, Length) |>
+    dplyr::mutate(region = factor(dplyr::case_when(
+      Length >= shortpep_range[1] & Length <= shortpep_range[2] ~ cur_lab,
+      Length >= cross_rng[1] & Length <= cross_rng[2] ~ cross_lab,
+      TRUE ~ "Other"), levels = region_levels)) |>
+    dplyr::count(Sample, Length, region)
+
+  region_colors <- stats::setNames(c("#2c7fb8", "#d7191c", "grey75"), region_levels)
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Length, y = n, fill = region)) +
+    ggplot2::geom_col(color = "black", linewidth = 0.1, alpha = 0.85) +
+    ggplot2::facet_wrap(~Sample, scales = "free_y") +
+    ggplot2::scale_fill_manual(values = region_colors, drop = FALSE, name = "Length region") +
+    ggplot2::scale_x_continuous(n.breaks = 8) +
+    ggplot2::xlab("Peptide length (AAs)") + ggplot2::ylab("Unique peptides") +
+    theme_howmahico() +
+    ggplot2::ggtitle("Peptide length distribution and cross-class contamination")
 }

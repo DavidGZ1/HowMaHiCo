@@ -17,7 +17,8 @@ plot_pseudochromatogram(input, title, ncol = 3)
 A ggplot2 bar chart.
 }
 \description{
-Peptide ID pseudochromatogram: count vs RT, faceted by Condition
+Bars are coloured by their own peptide count (a density gradient), so dense
+RT regions stand out within each Condition facet.
 }
 \examples{
 \dontrun{

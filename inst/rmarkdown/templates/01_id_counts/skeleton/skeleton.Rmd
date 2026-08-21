@@ -75,6 +75,9 @@ check_ids_global(pep_all) |>
 ```{r counts-all, echo=FALSE}
 
 counts_levels <- c("Peptides", "Sequences", "Proteins")
+# display labels (counts_levels stays as the data key: count_lim$Level,
+# n_<level> columns, plot_count_mean_sd(level=...))
+counts_labels <- c("Peptides", "Sequences", "Parent proteins")
 
 # Counts all peptides
 ## Sample
@@ -205,7 +208,7 @@ count_lim_short <- data.frame(
 )
 ```
 
-## Average +/- sd {.tabset}
+## Average +/- sd per Condition {.tabset}
 
 ### All peptides {.tabset}
 
@@ -214,20 +217,50 @@ counts_size_all <- counts_size |> dplyr::filter(Length_range == "All peptides") 
 for (i in seq_along(counts_levels)) {
   level <- counts_levels[i]
   lim_level <- count_lim[count_lim$Level == level, "Limit_mean"]
-  cat("#### ", level, "\n")
+  cat("#### ", counts_labels[i], "\n")
   print(plot_count_mean_sd(counts_size_all, level, lim_level))
   cat("\n\n")
 }
 ```
 
-### Selected peptides {.tabset}
+### Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")` {.tabset}
 
 ```{r plot-count-mean-sd-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
 for (i in seq_along(counts_levels)) {
   level <- counts_levels[i]
   lim_level <- count_lim_short[count_lim_short$Level == level, "Limit_mean"]
-  cat("#### ", level, "\n")
+  cat("#### ", counts_labels[i], "\n")
   print(plot_count_mean_sd(counts_size_short, level, lim_level))
+  cat("\n\n")
+}
+```
+
+## Average +/- sd per BioReplicate {.tabset}
+
+Mean ± SD computed across the replicate samples (TechReplicates) within each
+BioReplicate. If BioReplicate labels are shared across Conditions, bars
+aggregate by label across Conditions.
+
+### All peptides {.tabset}
+
+```{r plot-count-mean-sd-bio-all, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(counts_levels)) {
+  level <- counts_levels[i]
+  lim_level <- count_lim[count_lim$Level == level, "Limit_sample"]
+  cat("#### ", counts_labels[i], "\n")
+  print(plot_count_mean_sd(counts_size_all, level, lim_level, group_var = "BioReplicate"))
+  cat("\n\n")
+}
+```
+
+### Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")` {.tabset}
+
+```{r plot-count-mean-sd-bio-short, results='asis', echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+for (i in seq_along(counts_levels)) {
+  level <- counts_levels[i]
+  lim_level <- count_lim_short[count_lim_short$Level == level, "Limit_mean"]
+  cat("#### ", counts_labels[i], "\n")
+  print(plot_count_mean_sd(counts_size_short, level, lim_level, group_var = "BioReplicate"))
   cat("\n\n")
 }
 ```
@@ -252,26 +285,10 @@ names(bp_count_length) <- counts_levels
 for(i in 1:length(counts_levels)){
 
   #print
-  cat("### ",counts_levels[i],"\n")
+  cat("### ", counts_labels[i], "\n")
   print(bp_count_length[[i]])
   cat('\n\n')
 }
-```
-
-### Proportion by length
-
-```{r plot-prop-length-condition, echo=FALSE,  fig.height=2.5, fig.width=8, warning=FALSE}
-count_all_condition_lengthrange  <-
-  pep_all |>
-  count_ids_condition_bylengthrange()
-
-
-bp_prop_length_pep_condition <-
-  count_all_condition_lengthrange   |>
-  plot_prop_length_condition(palette = shortpep_colors)  +
-  rotate_x_text(70)
-
-bp_prop_length_pep_condition
 ```
 
 ## Total by Sample {.tabset}
@@ -292,25 +309,41 @@ bp_count_length_sample <- list(
 )
 names(bp_count_length_sample) <- counts_levels
 for(i in 1:length(counts_levels)){
-  cat("### ", counts_levels[i], "\n")
+  cat("### ", counts_labels[i], "\n")
   print(bp_count_length_sample[[i]])
   cat('\n\n')
 }
 ```
 
-### Proportion by length
+## Proportion by length {.tabset}
+
+Share of peptides per length range, at Condition, BioReplicate and Sample level.
+
+### Condition
+
+```{r plot-prop-length-condition, echo=FALSE, fig.height=2.5, fig.width=8, warning=FALSE}
+pep_all |>
+  count_ids_condition_bylengthrange() |>
+  plot_prop_length_condition(palette = shortpep_colors) +
+  rotate_x_text(70)
+```
+
+### BioReplicate
+
+```{r plot-prop-length-bioreplicate, echo=FALSE, fig.height=2.5, fig.width=8, warning=FALSE}
+pep_all |>
+  count_ids_condition_bylengthrange(group_var = "BioReplicate") |>
+  plot_prop_length_condition(x_var = "BioReplicate", palette = shortpep_colors) +
+  rotate_x_text(70)
+```
+
+### Sample
 
 ```{r plot-prop-length-sample, echo=FALSE, fig.height=2.5, fig.width=8, warning=FALSE}
-count_all_sample_lengthrange <-
-  pep_all |>
-  count_ids_condition_bylengthrange(group_var = "Sample")
-
-bp_prop_length_pep_sample <-
-  count_all_sample_lengthrange |>
+pep_all |>
+  count_ids_condition_bylengthrange(group_var = "Sample") |>
   plot_prop_length_condition(x_var = "Sample", palette = shortpep_colors) +
   rotate_x_text(70)
-
-bp_prop_length_pep_sample
 ```
 
 
@@ -367,7 +400,7 @@ rm(tmp_prop_total)
 bp_prop_all_condition_charge
 ```
 
-### Selected peptides
+### Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")`
 
 ```{r plot-charge-proportion-short, echo=FALSE, fig.height=3.5, fig.width=8}
 bp_prop_short_condition_charge
@@ -444,14 +477,14 @@ pep_all_unique_mz |>
 ```
 
 
-# Peptide motifs {.tabset}
+# Peptide motifs (7 to 25 AAs) {.tabset}
 
 Sequence logos are shown below, separated by sequence length, without any clustering or deconvolution. [Wagih, Omar. ggseqlogo: a versatile R package for drawing sequence logos. Bioinformatics (2017). https://doi.org/10.1093/bioinformatics/btx469]
 
 
 ```{r plot-seqlogo, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 # seq_lengths_short <- sort(unique(pep_short$Length))
-seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) <= 24]) # this helps skiping lengths with 0 peptides to avoid errors
+seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) >= 7 & unique(pep_all$Length) <= 25]) # restrict to the 7-25 AA window; intersecting with lengths present skips empty ones to avoid errors
 
 motifs_pepshort <- lapply(seq_lengths_short, function(x){
   # print(x)
@@ -510,22 +543,22 @@ hm_ptm_prop_short
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters + the main long table and summaries
-write_input_params(params, folder = FolderResults, prefix = "01_id_counts")
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "01_id_counts"), collapse = "_"))
 
 seq_by_condition <- list_sequences(by = "Condition", input = pep_all)
-write.xlsx(seq_by_condition, file.path(FolderResults, "seq_by_condition.xlsx"), overwrite = params$ResultsOverwrite)
+write.xlsx(seq_by_condition, file.path(FolderResults, paste0(subset, "seq_by_condition.xlsx")), overwrite = params$ResultsOverwrite)
 
 counts_pep_all_condition <- pep_all |> count_ids_by(Condition)
-write.csv_rawr(counts_pep_all_condition, folder = FolderResults)
-write.csv_rawr(pep_all, folder = FolderResults)
+write.csv_rawr(counts_pep_all_condition, folder = FolderResults, prefix = result_prefix)
+write.csv_rawr(pep_all, folder = FolderResults, prefix = result_prefix)
 
 if (params$CsvSave) {
-  write.csv_rawr(counts_all, folder = FolderResults)
-  write.csv_rawr(counts_all_mean, folder = FolderResults)
-  write.csv_rawr(counts_all_total, folder = FolderResults)
-  write.csv_rawr(counts_size, folder = FolderResults)
-  write.csv_rawr(counts_size_mean, folder = FolderResults)
-  write.csv_rawr(counts_size_total, folder = FolderResults)
+  write.csv_rawr(counts_all, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_all_mean, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_all_total, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_size, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_size_mean, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_size_total, folder = FolderResults, prefix = result_prefix)
 }
 
 if (params$PlotsSave) {

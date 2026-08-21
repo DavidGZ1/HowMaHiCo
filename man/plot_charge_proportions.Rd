@@ -4,7 +4,7 @@
 \alias{plot_charge_proportions}
 \title{Stacked bar chart of charge-state proportions by group}
 \usage{
-plot_charge_proportions(input, variable, label_size = 1.6)
+plot_charge_proportions(input, variable, label_size = 3)
 }
 \arguments{
 \item{input}{Output of \code{\link[=get_proportion_charge]{get_proportion_charge()}}.}

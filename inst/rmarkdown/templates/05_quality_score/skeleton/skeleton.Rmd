@@ -1,0 +1,237 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  PepAllSource: "cached" # how to obtain pep_all: "cached" (<Subset>_pep_all.rda), "rda" (PepAllFile), or "build" (parse raw via build_pep_all)
+  PepAllFile: "" # explicit .rda path; used only when PepAllSource = "rda"
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  QCColumn: "QC" # annotation column flagging experiment QC controls (TRUE/"QC"); empty disables QC tagging
+  ThresholdMode: "default" # "default" (literature thresholds) or "qc_relative" (calibrate from QC samples)
+  TestMode: FALSE
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('05_quality_score | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **sample-quality** report for immunopeptidomics experiments, provided by
+the Immunopeptidomics Platform (IPP). It condenses several interpretable signals
+into one per-sample **quality score** — how strongly each sample resembles a real
+HLA immunopeptidome — inspired by the HowDirty contamination score but inverted
+(goodness rather than badness).
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+```{r quality-score-data, echo=FALSE, message=FALSE, warning=TRUE}
+# Derive the QC-control sample set from the annotation QC column (optional).
+qc_samples <- character(0)
+if (nzchar(params$QCColumn)) {
+  annot_qc <- tryCatch(
+    read_annot(file.path(params$FolderDocumentation, params$AnnotationFile)),
+    error = function(e) NULL)
+  if (!is.null(annot_qc) && params$QCColumn %in% names(annot_qc)) {
+    flag <- annot_qc[[params$QCColumn]]
+    is_qc <- as.character(flag) %in% c("TRUE", "T", "1", "QC", "qc", "yes", "Yes")
+    qc_samples <- unique(as.character(annot_qc$Sample[is_qc]))
+  }
+}
+
+threshold_mode <- if (params$ThresholdMode == "qc_relative" && length(qc_samples) > 0)
+  "qc_relative" else "default"
+if (params$ThresholdMode == "qc_relative" && length(qc_samples) == 0)
+  warning("ThresholdMode = 'qc_relative' but no QC samples were found; using default thresholds.")
+
+scores <- score_sample_quality(pep_all, shortpep_range = shortpep_range,
+                               mhcclass = params$MHCclass,
+                               qc_samples = qc_samples,
+                               threshold_mode = threshold_mode)
+thresholds_used <- if (threshold_mode == "qc_relative")
+  calibrate_thresholds_from_qc(qc_metrics_by_sample(pep_all, shortpep_range, params$MHCclass),
+                               qc_samples) else quality_thresholds_default()
+```
+
+`r if (length(qc_samples) > 0) paste0("**QC control samples:** ", paste(qc_samples, collapse = ", "), " (marked with * in plots).") else "No QC control samples tagged (set an annotation ", "<code>", params$QCColumn, "</code> column to enable QC-relative thresholds)."`
+
+**Threshold mode:** `r threshold_mode`
+
+# Overview
+
+Composite quality score (0-100) and traffic-light category per sample. The
+composite is a weighted mean of the available sub-scores; dimensions that are
+undefined for this dataset (e.g. anchor motifs for MHC-II, mass error for DIA-NN)
+drop out instead of penalising the sample.
+
+```{r overview-table, echo=FALSE}
+overview <- scores |>
+  dplyr::transmute(Sample,
+                   QC = ifelse(is_QC, "QC", ""),
+                   `Composite score` = composite_score,
+                   Category = as.character(category))
+overview |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+# Composite scores
+
+```{r plot-composite, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+p_quality_composite <- plot_quality_composite(scores)
+p_quality_composite
+```
+
+# Per-metric breakdown
+
+Sub-scores (0-100) for every sample and quality dimension. Red = poor, green =
+good; grey = not applicable to this dataset.
+
+```{r plot-heatmap, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+p_quality_heatmap <- plot_quality_heatmap(scores, thresholds_used)
+p_quality_heatmap
+```
+
+## Raw metrics
+
+The underlying raw values behind each sub-score.
+
+```{r raw-metrics-table, echo=FALSE}
+raw_cols <- intersect(thresholds_used$metric, names(scores))
+scores |>
+  dplyr::select(Sample, dplyr::all_of(raw_cols)) |>
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ round(.x, 3))) |>
+  print_annot()
+```
+
+# Cross-class contamination
+
+Peptide-length distribution per sample, highlighting peptides that fall in the
+**other** MHC class's length range (MHC-II ligands contaminating an MHC-I pulldown,
+or vice versa). A prominent red region indicates cross-class co-enrichment. This is
+the `frac_cross_class` sub-score above; it is undefined (and omitted) for custom
+length windows.
+
+```{r plot-cross-class, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE, message=FALSE}
+p_cross_class_length <- plot_cross_class_length(pep_all, shortpep_range, params$MHCclass)
+p_cross_class_length
+```
+
+# Methods
+
+Each dimension, its scoring direction, the thresholds in force, and its weight in
+the composite. In `default` mode the green/amber thresholds are literature-informed
+constants; in `qc_relative` mode green is the QC-sample median and amber is that
+median relaxed by 20%.
+
+```{r methods-table, echo=FALSE}
+thresholds_used |>
+  dplyr::transmute(Metric = label, Direction = direction,
+                   `Green (=100)` = round(green, 3), `Amber (=50)` = round(amber, 3),
+                   Weight = weight) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+- **Length in window / 9-mer fraction** — the hallmark of an HLA immunopeptidome:
+  peptides concentrate in the expected ligand-length window (here
+  `r paste0(shortpep_range[1], "-", shortpep_range[2])` AAs) and, for HLA-I, peak at 9-mers.
+- **Anchor motif clarity** — Shannon information (bits) at the P2 and PΩ anchor
+  positions of 9-mers; sharp anchors indicate genuine allele-restricted ligands.
+  Computed from the data only (no binding predictor or HLA typing).
+- **Tryptic background (long peptides)** — fraction of peptides *outside* the
+  length window ending in K/R. Because some HLA-I alleles legitimately use K/R as a
+  C-terminal anchor, the overall C-terminal K/R fraction is reported only as a
+  low-weight diagnostic; the scored signal isolates tryptic contamination in the
+  long-peptide tail.
+- **Cross-class contamination** — fraction of peptides in the *other* MHC class's
+  length range, outside the current window (MHC-II co-enrichment in an MHC-I run, or
+  vice versa). Low weight (a small tail is biologically normal) and `NA` for custom
+  length windows.
+- **Charge 1+/2+** — short HLA-I ligands ionise predominantly as 1+/2+.
+- **Depth** — unique peptides / in-window peptides / source proteins; scored only
+  in `qc_relative` mode (absolute yield is not comparable without per-input
+  normalisation).
+- **Median |ppm|** — mass accuracy; `NA` (dropped) for DIA-NN, which reports a
+  dummy `ppm = 0`.
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+# Always-written export: render parameters + the per-sample score table
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "05_quality_score"), collapse = "_"))
+write.csv_rawr(scores, folder = FolderResults, prefix = result_prefix)
+
+if (params$PlotsSave) {
+  ggsave_rawr(p_quality_composite, "p_quality_composite", folder = FolderFigures,
+              width = nrow(scores) + 6, height = 10)
+  ggsave_rawr(p_quality_heatmap, "p_quality_heatmap", folder = FolderFigures,
+              width = nrow(scores) + 6, height = 12)
+  ggsave_rawr(p_cross_class_length, "p_cross_class_length", folder = FolderFigures,
+              width = nrow(scores) + 6, height = 12)
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>

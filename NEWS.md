@@ -1,3 +1,121 @@
+# HowMaHiCo 0.13.0
+
+* **Pseudochromatogram coloured by density.** `plot_pseudochromatogram()` now
+  fills the RT bars by their own peptide count (continuous viridis gradient)
+  instead of a flat per-Condition colour, so dense RT regions stand out within
+  each facet.
+* **New `plot_pseudomobilogram()`** — ion-mobility analogue of the
+  pseudochromatogram: per-Condition peptide count vs `invk0` (1/k0), binned by a
+  configurable `binwidth` (default `0.2`), bars coloured by count. Wired into the
+  `03_lcms_qc` RT/1k0/mz view config (new "Pseudomobilograms" tab) and the
+  `00_mhc_report` distribution section (all / selected peptides).
+* **Charge-proportion bars** now carry a black outline
+  (`plot_charge_proportions()`), matching the other stacked bar charts.
+* **Peptide motifs** extended to the **7–25 AA** window (was capped at 24);
+  section retitled "Peptide motifs (7 to 25 AAs)" in `01_id_counts` and
+  `00_mhc_report`.
+* **Subset prefix on all result files.** The focused reports' shared
+  `setup.Rmd` (and the two `00_*` reports) now derive a `result_prefix`
+  (`= Subset`, or `NULL` when unset) and pass it to every `write.csv_rawr()` /
+  `write_input_params()` call and the `seq_by_condition.xlsx` write, so result
+  filenames carry the subset (e.g. `dda_all_pep_all.csv`). `input_params`
+  combines the subset with the report name to stay collision-free within a shared
+  subset subfolder.
+* `tests/testthat/test-plots.R`: smoke coverage for `plot_pseudochromatogram()`
+  and `plot_pseudomobilogram()` (incl. a custom `binwidth`).
+
+# HowMaHiCo 0.12.0
+
+* `01_id_counts`: new **Average +/- sd per BioReplicate** section mirroring the
+  per-Condition one (mean ± SD across the TechReplicate samples within each
+  BioReplicate). `plot_count_mean_sd()` gains a `group_var` argument (default
+  `"Condition"`; pass `"BioReplicate"`) controlling the x-axis/fill.
+* `01_id_counts`: **Proportion by length** is now its own top-level section with
+  Condition / BioReplicate / Sample tabs (was two nested subsections under the
+  Total-by-Condition / Total-by-Sample sections).
+* `02_overlaps`: new **Overlap intra-Condition (%)** section showing the
+  replicate-overlap bars as a per-Condition percentage (stacked to 100%).
+  `plot_overlap_intra_condition()` gains a `value` argument
+  (`"count"` default, or `"percent"`).
+* Report headers reading "Selected peptides" now show the active length window
+  (e.g. "Selected peptides (8 to 13 AAs)"), derived from `shortpep_range`,
+  across the focused templates.
+* Renamed the "Proteins" ID-level **headers/labels** to "Parent proteins" in the
+  focused `01_id_counts` / `02_overlaps` reports (display only; the data keys and
+  plot axis labels are unchanged).
+* `tests/testthat/test-plots.R`: smoke coverage for `plot_count_mean_sd()`
+  (both `group_var` modes) and `plot_overlap_intra_condition(value = "percent")`.
+
+# HowMaHiCo 0.11.0
+
+* Added a **cross-class (MHC1↔MHC2) contamination** dimension to the quality
+  score: `frac_cross_class` flags MHC-II ligands co-enriched in an MHC-I pulldown
+  (and vice versa) via their length signature — the fraction of peptides in the
+  *other* class's canonical window (MHC1 8-13, MHC2 12-25) that falls outside the
+  current window (so the 12-13 AA overlap is handled cleanly). Scored
+  `lower_better` at low weight (a small tail is biologically normal) and `NA`
+  (dropped) for custom length windows. New internal helper `.cross_class_range()`
+  is the single source of truth for the windows.
+* New plot `plot_cross_class_length()`: per-sample faceted length histogram with
+  the cross-class region highlighted, and a matching "Cross-class contamination"
+  section + Methods bullet in the `05_quality_score` report.
+* `tests/testthat/test-quality-score.R`: covers `.cross_class_range()`, the new
+  `quality_thresholds_default()` row, and `frac_cross_class` on an inline fixture.
+
+# HowMaHiCo 0.10.0
+
+* Added a per-sample **immunopeptidomics quality score** (inspired by the
+  author's HowDirty contamination score, but inverted: it scores how strongly a
+  sample resembles a real HLA immunopeptidome rather than its contaminant load).
+  New scoring engine in `R/quality-score.R`, all from the `pep_all` schema with
+  no external data and no new dependency.
+* New exports: `score_sample_quality()` (per-sample composite + traffic-light
+  category), `qc_metrics_by_sample()` (raw signals: length-window fidelity,
+  9-mer dominance, anchor-motif clarity, non-tryptic specificity, charge
+  plausibility, depth, mass accuracy), `anchor_information_content()`,
+  `score_curve()`, `quality_thresholds_default()`,
+  `calibrate_thresholds_from_qc()`, plus plots `plot_quality_heatmap()` and
+  `plot_quality_composite()`.
+* The non-tryptic signal is deliberately low-weight and split: because some
+  HLA-I alleles legitimately use K/R as a C-terminal anchor, the overall
+  C-terminal K/R fraction is a low-weight diagnostic, while the scored metric
+  isolates tryptic background in the out-of-window (long-peptide) tail.
+* Thresholds use built-in literature defaults **or** are calibrated from samples
+  tagged as experiment QC controls via an optional annotation `QC` column
+  (`ThresholdMode = "qc_relative"`) — no external benchmark dataset needed.
+  Undefined dimensions (e.g. MHC-II anchors, DIA-NN dummy `ppm`) drop out of the
+  weighted composite rather than penalising the sample.
+* New focused report template `05_quality_score`
+  (`inst/rmarkdown/templates/05_quality_score/`): traffic-light overview,
+  composite bar chart, per-metric breakdown and a self-documenting Methods
+  section, rendered against the cached `pep_all` like the other focused reports.
+* `tests/testthat/test-quality-score.R`: pure-math boundary checks of
+  `score_curve()` (no synthetic peptide data required).
+
+# HowMaHiCo 0.9.0
+
+* Added a dictionary-driven **unified parser** so a tabular search-engine export
+  from a tool HowMaHiCo has no built-in loader for can be ingested by editing a
+  YAML dictionary — no R coding, no new loader. New `build_pep_all()` branch
+  `software = "custom"` (with a `dictionary` argument) routes through
+  `read_custom_batch()` → `parse_unified()` → `annotate_unified()`. The
+  dictionary maps raw → `pep_all` columns, sets the `Found_By` constant, and
+  derives the shared recipe (`Log2Area`, `Length_range`, `Nter`/`Cter`,
+  `PeptideID`, `Charge` formatting); per-tool transforms (unit conversions,
+  regex extraction, accession splitting) are pre-clean responsibilities, not
+  expressed in the dictionary.
+* New exports: `read_dictionary()`, `parse_unified()`, `read_custom_batch()`,
+  `annotate_unified()`, and `get_dictionary_template()` (copies a fill-in
+  template to the working dir, sibling of `get_report_template()`).
+* Shipped reference dictionaries in `inst/extdata/dictionaries/`
+  (`custom_template.yaml` + `fragpipe.yaml` / `diann.yaml` / `peaks.yaml`
+  documenting the directly-mappable subset of each built-in loader). The three
+  built-in loaders are unchanged.
+* `tests/testthat/test-parse-unified.R`: asserts `parse_unified()` reproduces the
+  built-in FragPipe loader on the directly-mappable columns of the simulated
+  dataset, plus dictionary validation and the custom `build_pep_all()` path.
+* New dependency: `yaml` (already transitive via `rmarkdown`).
+
 # HowMaHiCo 0.8.0
 
 * The four focused reports (`01_id_counts`, `02_overlaps`, `03_lcms_qc`,

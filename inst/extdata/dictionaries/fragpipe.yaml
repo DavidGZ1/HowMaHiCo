@@ -1,0 +1,37 @@
+# Reference dictionary: FragPipe psm.tsv -> pep_all
+# --------------------------------------------------
+# Documents the directly-mappable subset of the built-in FragPipe loader
+# (R/loaders-fragpipe.R) as a dictionary. The built-in loader is still the
+# canonical path for FragPipe (it additionally converts RT to minutes, computes
+# ppm from observed/calculated m/z, strips the _diatracer suffix, derives
+# OrganismFirst, and applies the Modified_Peptide NA fallback -- none of which a
+# rename-only dictionary expresses). Use this as a starting point for a new tool.
+
+software: fragpipe_dda
+found_by: "FragPipe"
+mode: individual_files
+
+read:
+  file: psm.tsv
+  delim: "\t"
+
+columns:
+  Accession:    Protein
+  ProteinFirst: Protein ID
+  GeneFirst:    Gene
+  Sequence:     Peptide
+  Peptide:      Modified Peptide
+  Length:       Peptide Length
+  Score:        Hyperscore
+  Area:         Intensity
+  Charge:       Charge
+  RT:           Retention
+  m_z:          Calibrated Observed M/Z
+  Mass:         Calibrated Observed Mass
+  PTM:          Assigned Modifications
+  invk0:        Ion Mobility
+
+derive:
+  length_from_sequence: false
+  format_charge: true
+  peptide_id: [Accession, m_z, Charge]

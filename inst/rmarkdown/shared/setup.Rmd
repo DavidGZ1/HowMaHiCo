@@ -59,6 +59,10 @@ if(params$Subset == ""){
   FolderFigures <- file.path(params$FolderFigures, params$Subset)
 }
 
+# subset prefix applied to every result filename (NULL when no Subset is set, so
+# write.csv_rawr() falls back to the bare object name)
+result_prefix <- if (params$Subset == "") NULL else params$Subset
+
 file_rda <- file.path(params$FolderData, paste0(subset, "pep_all.rda"))
 
 # pre-check to avoid overwriting prior outputs (the focused reports read, not

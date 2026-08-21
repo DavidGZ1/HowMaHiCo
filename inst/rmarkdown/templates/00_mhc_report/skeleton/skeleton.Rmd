@@ -112,6 +112,10 @@ if(params$Subset == ""){
   FolderFigures <- file.path(params$FolderFigures, params$Subset)
 }
 
+# subset prefix applied to every result filename (NULL when no Subset is set, so
+# write.csv_rawr() falls back to the bare object name)
+result_prefix <- if (params$Subset == "") NULL else params$Subset
+
 file_rda <- file.path( file.path(params$FolderData,paste0(subset, "pep_all.rda")))
 
 # pre-checks to avoid overwriting files
@@ -729,7 +733,7 @@ hm_overlap_matrix_count <-
         select(-Cond1_temp)) |> 
   ggplot(aes(y = Cond1, x = Cond2, fill = n_Overlap)) +
   geom_tile() +
-  geom_text(aes(label = n_Overlap), size = 2) +
+  geom_text(aes(label = n_Overlap), size = 3) +
   scale_fill_viridis(alpha = 0.9, option = "D", begin =  0.1) +
   theme_rawr() +
   rotate_x_text(35)+
@@ -749,7 +753,7 @@ hm_overlap_matrix_prop <-
         select(-Cond1_temp)) |> 
   ggplot(aes(y = Cond1, x = Cond2, fill = prop_Overlap_Total)) +
   geom_tile() +
-  geom_text(aes(label = prop_Overlap_Total), size = 2) +
+  geom_text(aes(label = prop_Overlap_Total), size = 3) +
   scale_fill_viridis(alpha = 0.9, option = "D", begin =  0.1) +
   theme_rawr() +
   rotate_x_text(35)+
@@ -866,6 +870,14 @@ chromato_pep_all <- plot_pseudochromatogram(pep_all,
 chromato_pep_all
 ```
 
+### n_Peptides Vs 1/k0 (Pseudomobilograms)
+
+```{r plot-mobilo-all, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+mobilo_pep_all <- plot_pseudomobilogram(pep_all,
+  "Peptide ID mobilogram: All peptides identified", ncol = phis_ncol)
+mobilo_pep_all
+```
+
 ### 1/k0 VS m/z
 
 ```{r plot-invk0-mz-all, echo=FALSE, fig.width=8, fig.height=4}
@@ -899,6 +911,15 @@ chromato_pep_short <- plot_pseudochromatogram(pep_short,
   paste0("Peptide ID chromatogram: Selected peptides (",
          shortpep_range[1], " to ", shortpep_range[2], " AAs)"), ncol = phis_ncol)
 chromato_pep_short
+```
+
+### n_Peptides Vs 1/k0 (Pseudomobilograms)
+
+```{r plot-mobilo-short, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+mobilo_pep_short <- plot_pseudomobilogram(pep_short,
+  paste0("Peptide ID mobilogram: Selected peptides (",
+         shortpep_range[1], " to ", shortpep_range[2], " AAs)"), ncol = phis_ncol)
+mobilo_pep_short
 ```
 
 ### 1/k0 VS m/z
@@ -1101,14 +1122,14 @@ bp_masserror_ppm
 
 # Peptide properties
 
-## Peptide motifs (7 to 20 AAs) {.tabset}
+## Peptide motifs (7 to 25 AAs) {.tabset}
 
 Sequence logos are shown below, separated by sequence length, without any clustering or deconvolution. [Wagih, Omar. ggseqlogo: a versatile R package for drawing sequence logos. Bioinformatics (2017). https://doi.org/10.1093/bioinformatics/btx469]
 
 
 ```{r plot-seqlogo, echo=FALSE, fig.height=6, fig.width=8, message=FALSE, warning=FALSE, results='asis'}
 # seq_lengths_short <- sort(unique(pep_short$Length))
-seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) <= 24]) # this helps skiping lengths with 0 peptides to avoid errors
+seq_lengths_short <- sort(unique(pep_all$Length)[unique(pep_all$Length) >= 7 & unique(pep_all$Length) <= 25]) # restrict to the 7-25 AA window; intersecting with lengths present skips empty ones to avoid errors
 
 motifs_pepshort <- lapply(seq_lengths_short, function(x){
   # print(x)
@@ -1149,7 +1170,7 @@ hm_ptm_prop_cond
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters, independent of CsvSave/PlotsSave
-write_input_params(params, folder = FolderResults)
+write_input_params(params, folder = FolderResults, prefix = result_prefix)
 
 # Lists of sequences independently of overlap
 seq_by_condition <- list_sequences(by = "Condition", input = pep_all)
@@ -1162,7 +1183,7 @@ seq_overlap_condition <-
   group_by(Sequence) |> 
   summarise(Condition = paste0(Condition, collapse = "; "))
 
-write.xlsx(seq_by_condition, file.path(FolderResults, "seq_by_condition.xlsx"), overwrite = params$ResultsOverwrite)
+write.xlsx(seq_by_condition, file.path(FolderResults, paste0(subset, "seq_by_condition.xlsx")), overwrite = params$ResultsOverwrite)
 
 
 # get a wide-format table with IDs per condition
@@ -1178,31 +1199,31 @@ counts_pep_all_condition <-
 
 
 
-write.csv_rawr(counts_pep_all_condition, folder = FolderResults)
-# write.csv_rawr(counts_pep_filtered_condition, folder = FolderResults)
+write.csv_rawr(counts_pep_all_condition, folder = FolderResults, prefix = result_prefix)
+# write.csv_rawr(counts_pep_filtered_condition, folder = FolderResults, prefix = result_prefix)
 
-write.csv_rawr(pep_all, folder = FolderResults)
+write.csv_rawr(pep_all, folder = FolderResults, prefix = result_prefix)
 
 if(params$CsvSave == TRUE){
-  # write.csv_rawr(pep_short, folder = FolderResults)
-  write.csv_rawr(pep_all_log2area_tr, folder = FolderResults)
-  write.csv_rawr(pep_all_log2area_br, folder = FolderResults)
-  write.csv_rawr(prot_all_log2area_tr, folder = FolderResults)
-  write.csv_rawr(prot_all_log2area_br, folder = FolderResults)
-  write.csv_rawr(pep_short_log2area_tr, folder = FolderResults) 
-  write.csv_rawr(pep_short_log2area_br, folder = FolderResults) 
-  write.csv_rawr(prot_short_log2area_tr, folder = FolderResults) 
-  write.csv_rawr(prot_short_log2area_br, folder = FolderResults)
-  write.csv_rawr(counts_all, folder = FolderResults) 
-  write.csv_rawr(counts_all_mean, folder = FolderResults) 
-  write.csv_rawr(counts_all_total, folder = FolderResults) 
-  write.csv_rawr(counts_size, folder = FolderResults) 
-  write.csv_rawr(counts_size_mean, folder = FolderResults)
-  write.csv_rawr(counts_size_total, folder = FolderResults)
-  write.csv_rawr(upset_table_pep, folder = FolderResults)
-  write.csv_rawr(upset_table_prot, folder = FolderResults)
-  write.csv_rawr(upset_table_unique, folder = FolderResults)
-  write.csv_rawr(pep_overlap, folder = FolderResults) 
+  # write.csv_rawr(pep_short, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_all_log2area_tr, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_all_log2area_br, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(prot_all_log2area_tr, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(prot_all_log2area_br, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_short_log2area_tr, folder = FolderResults, prefix = result_prefix) 
+  write.csv_rawr(pep_short_log2area_br, folder = FolderResults, prefix = result_prefix) 
+  write.csv_rawr(prot_short_log2area_tr, folder = FolderResults, prefix = result_prefix) 
+  write.csv_rawr(prot_short_log2area_br, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_all, folder = FolderResults, prefix = result_prefix) 
+  write.csv_rawr(counts_all_mean, folder = FolderResults, prefix = result_prefix) 
+  write.csv_rawr(counts_all_total, folder = FolderResults, prefix = result_prefix) 
+  write.csv_rawr(counts_size, folder = FolderResults, prefix = result_prefix) 
+  write.csv_rawr(counts_size_mean, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(counts_size_total, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(upset_table_pep, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(upset_table_prot, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(upset_table_unique, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pep_overlap, folder = FolderResults, prefix = result_prefix) 
 }
 
 

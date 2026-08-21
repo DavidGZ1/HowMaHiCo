@@ -20,8 +20,9 @@ once by \code{\link[=build_pep_all]{build_pep_all()}} (or by \verb{00_mhc_report
 \code{"00_mhc_upsets"} (per-sample overlap/UpSet), \code{"01_id_counts"} (general
 identification QC: counts, size distributions, motifs, PTM), \code{"02_overlaps"}
 (intra-Condition / cross-Condition / pairwise overlap), \code{"03_lcms_qc"}
-(RT/1k0/mz distributions, Score/ppm QC), and \code{"04_quant"}
-(log2(Area) correlation, Area \%CV).}
+(RT/1k0/mz distributions, Score/ppm QC), \code{"04_quant"}
+(log2(Area) correlation, Area \%CV), and \code{"05_quality_score"} (per-sample
+immunopeptidomics quality score with a traffic-light overview).}
 
 \item{params}{Named list of report parameters, as declared in the
 template's YAML header (\code{SampleSet}, \code{AnnotationFile}, \code{Subset},
