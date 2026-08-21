@@ -8,6 +8,11 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
+* add safeward to get\_annot\_sampleid, warning if nothing was matched
+* fix error comp\_condition <- combn(conditions, 2) when condition =1
+* test mode fragpipe\_dda\_combined, load all and then create minimal dataset instead of only top 10 lines
+* add again safeguard when all area = 0
+
 
 
 ## In standby
@@ -21,7 +26,7 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * add data completeness plots
 * for quantitative report: heatmap with and without clustering, dynamic range, volcano plots
 * Total by Condition /BioReplicate / Sample in tabs
-* Add an advanced quantification report using statistica testing to compare between conditions. Use Limma for the normalization and statistical testing. Include  heatmap with and without clustering, volcano plots, summaries of number of peptides with significant changes between conditions
+* Add an advanced quantification report using statistics testing to compare between conditions. Use Limma for the normalization and statistical testing. Include  heatmap with and without clustering, volcano plots, summaries of number of peptides with significant changes between conditions
 * more explicit errors, e.g.,  when files are not found
 * autogenerate Sample by concatenating the others
 * bioreplicate as numbers or text, without condition, gets merged afterwards
@@ -32,7 +37,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 * Check and complete glosary
 * check/add functionality for peaks Xpro
-
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
 * reorder plots in a way that makes more sense
 * manual checking and re-writing text by me
@@ -141,6 +145,6 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * pseudomobilogram: new plot\_pseudomobilogram() (count vs invk0/1k0, configurable binwidth, default 0.2, bars coloured by count, faceted by Condition); wired into 03\_lcms\_qc view config (new "Pseudomobilograms" tab) and 00\_mhc\_report distribution section (all/selected) (v0.13.0)
 * Peptides identified per charge, add black lines on bars: plot\_charge\_proportions() geom\_bar gained color = "black" (v0.13.0)
 * plot unclustered motifs from 7 to 25: motif length window extended to 7–25 AAs (was capped at 24); section retitled "Peptide motifs (7 to 25 AAs)" in 01\_id\_counts and 00\_mhc\_report (v0.13.0)
-* add subset suffix to all the results: shared setup.Rmd (and the two 00\_* reports) derive result\_prefix (= Subset, NULL when unset), passed to every write.csv\_rawr()/write\_input\_params() and prepended to seq\_by\_condition.xlsx, so result filenames carry the subset (e.g. dda\_all\_pep\_all.csv); input\_params combines subset + report name to stay collision-free (v0.13.0)
+* add subset suffix to all the results: shared setup.Rmd (and the two 00\_\* reports) derive result\_prefix (= Subset, NULL when unset), passed to every write.csv\_rawr()/write\_input\_params() and prepended to seq\_by\_condition.xlsx, so result filenames carry the subset (e.g. dda\_all\_pep\_all.csv); input\_params combines subset + report name to stay collision-free (v0.13.0)
 * bigger font
 
