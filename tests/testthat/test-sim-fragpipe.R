@@ -60,3 +60,53 @@ test_that("a focused report renders end-to-end against the simulated data (PepAl
   # build mode also wrote the pep_all cache it parsed
   expect_true(file.exists(file.path(proj, "sim_fragpipe_dda", "pep_all.rda")))
 })
+
+test_that("06_quant_stats renders end-to-end against the simulated data", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if_not_installed("limma")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("simquant_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  out <- suppressWarnings(suppressMessages(
+    run_howmahico_report(
+      "06_quant_stats",
+      params = list(
+        SampleSet           = "sim",
+        Software            = "fragpipe_dda_individual",
+        Instrument          = "tims_tof",
+        FolderDocumentation = proj,
+        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+        FolderData          = file.path(proj, "sim_fragpipe_dda"),
+        FolderResults       = proj,
+        FolderFigures       = proj,
+        ProjectDir          = proj,
+        PepAllSource        = "build",
+        Subset              = "",
+        MHCclass            = "MHC1",
+        PeptideSet          = "selected",
+        StatMethod          = "limma",
+        NormMethod          = "median",
+        ImputeMethod        = "none",
+        PermutationTest     = TRUE,
+        ResultsOverwrite    = TRUE,
+        PlotsSave           = FALSE,
+        CsvSave             = FALSE
+      ),
+      output_file = "sim_06_quant_stats.html",
+      quiet = TRUE)))
+
+  expect_true(file.exists(out))
+  # the statistical results are part of the always-written export tier
+  expect_true(file.exists(file.path(proj, "quant_stats_results.csv")))
+  expect_true(file.exists(file.path(proj, "quant_stats_summary.csv")))
+
+  summ <- utils::read.csv(file.path(proj, "quant_stats_summary.csv"))
+  expect_equal(nrow(summ), 1L)             # one contrast: TREAT vs CTRL
+  expect_gt(summ$n_tested, 0)
+})

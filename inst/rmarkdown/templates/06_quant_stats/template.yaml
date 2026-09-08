@@ -1,0 +1,13 @@
+name: 06_quant_stats
+description: >
+  Focused advanced-quantification report: multivariate and differential
+  statistical comparison of peptide Area between Conditions. Builds a
+  feature x unit log2(Area) matrix from the cached pep_all, reports data
+  completeness, between-sample normalization and dynamic range, gives an
+  unsupervised overview (PCA, clustered and unclustered heatmaps, PERMANOVA),
+  then tests every condition pair with limma moderated t-statistics (or an
+  ordinary Welch t fallback) plus a Fisher exact presence/absence track for
+  condition-exclusive ligands, with volcano/MA/p-value diagnostics and
+  significance summaries. Renders against a cached `pep_all` table built by
+  build_pep_all() (or by 00_mhc_report).
+create_dir: false

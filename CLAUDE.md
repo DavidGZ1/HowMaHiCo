@@ -7,7 +7,34 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.13.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.14.0** — Phases 1–6 of the package conversion are complete.
+v0.14.0 added the **advanced-quantification report `06_quant_stats`** and its engine
+`R/quant-stats.R` — the first part of HowMaHiCo that *compares* conditions rather
+than describing them. `build_quant_matrix()` collapses `pep_all` into a
+feature × unit log2 matrix (`Area` summed over precursors on the linear scale,
+technical replicates averaged into their `BioReplicate`), then
+`filter_quant()` → `normalize_quant()` → `impute_quant()` →
+`test_differential()` (limma `~ 0 + Condition` with pairwise contrasts and
+`eBayes(trend = TRUE, robust = TRUE)`, or a dependency-free Welch `"ttest"`) →
+`test_detection()` (Fisher exact on detection counts) →
+`combine_quant_results()` / `summarise_significant()`, plus
+`permanova_condition()` (base-R Anderson-2001 pseudo-F permutation test).
+**Missing values run on two tracks**: the quantitative test on observed (or
+imputed) values, and a presence/absence track for condition-exclusive ligands
+whose fold change is undefined — flagged by a *detection-count* rule, not an FDR
+cut-off, because a 3-vs-3 Fisher test cannot go below p = 0.1. **`limma` is a
+`Suggests` dependency**, guarded by the internal `.require_limma()`; the report
+falls back to `StatMethod = "ttest"` / `NormMethod = "median"` automatically when
+it is absent. New plots in `R/plots.R`: `plot_completeness()`,
+`plot_missing_heatmap()`, `plot_intensity_dist()`, `plot_dynamic_range()`,
+`plot_pca()`, `plot_quant_heatmap()` (clustered/unclustered ggplot2 tile map —
+`plot_heatmap()` writes a png and cannot be printed in a tabset),
+`plot_volcano()`, `plot_ma()`, `plot_pvalue_hist()`, `plot_sig_summary()`. The
+report carries its own "Methods & justification" section. Also fixed:
+`run_howmahico_report("05_quality_score")` was unreachable (documented but absent
+from the `match.arg` choices) — `05` and `06` are now registered and
+`test-report-templates.R` guards that every shipped template directory is
+offered.
 v0.13.0 was a plots/exports pass driven by `plans_dgz.md`: `plot_pseudochromatogram()`
 now fills RT bars by peptide count (density gradient) instead of per-Condition
 colour; new `plot_pseudomobilogram()` (count vs `invk0`, configurable `binwidth`,
@@ -153,7 +180,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (~40) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
@@ -226,6 +253,17 @@ note above.
   (consumed by the `05_quality_score` report;
   `plot_quality_heatmap()`/`plot_quality_composite()`/`plot_cross_class_length()`
   live in `R/plots.R`)
+- **`R/quant-stats.R`** — the advanced-quantification engine behind
+  `06_quant_stats`: `build_quant_matrix()`, `filter_quant()`,
+  `normalize_quant()`, `impute_quant()`, `test_differential()`,
+  `test_detection()`, `combine_quant_results()`, `summarise_significant()`,
+  `permanova_condition()` plus the internal `.require_limma()` /
+  `.pairwise_contrasts()`. `limma` is a `Suggests` dependency; the
+  `method = "ttest"` / `NormMethod = "median"` path needs no Bioconductor
+  package. Its plots (`plot_completeness()`, `plot_missing_heatmap()`,
+  `plot_intensity_dist()`, `plot_dynamic_range()`, `plot_pca()`,
+  `plot_quant_heatmap()`, `plot_volcano()`, `plot_ma()`, `plot_pvalue_hist()`,
+  `plot_sig_summary()`) live in `R/plots.R`
 - **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
   export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
   `deltaProtR`, now native)
@@ -238,11 +276,13 @@ note above.
   charge) → peptide motifs (seqlogo by length) → PTM profile → export block
 - **`inst/rmarkdown/templates/00_mhc_upsets/skeleton/skeleton.Rmd`** — secondary
   report focused on overlap/UpSet plots (loads from cached `.rda`, same params)
-- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant,05_quality_score}/`** —
+- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant,05_quality_score,06_quant_stats}/`** —
   the focused reports (`01`–`04` each a slice of `00_mhc_report`;
   `05_quality_score` is the per-sample quality-score report from
-  `R/quality-score.R`), sharing `inst/rmarkdown/shared/setup.Rmd` and loading the
-  `pep_all` cache from `build_pep_all()` (`R/build-pep-all.R`)
+  `R/quality-score.R`; `06_quant_stats` is the advanced-quantification /
+  differential-abundance report from `R/quant-stats.R`), sharing
+  `inst/rmarkdown/shared/setup.Rmd` and loading the `pep_all` cache from
+  `build_pep_all()` (`R/build-pep-all.R`)
 
 ## Annotation file schema (`1_documentation/sample_annotation_*.csv`)
 
@@ -332,7 +372,8 @@ didn't need (they hardcoded `1_documentation/`):
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
-| `PepAllSource` | **Focused reports only** (the five `01`–`05` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PepAllSource` | **Focused reports only** (the six `01`–`06` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PeptideSet` / `QuantFeature` / `QuantUnit` / `MinReplicates` / `NormMethod` / `ImputeMethod` / `StatMethod` / `BlockVar` / `FdrCutoff` / `Log2FcCutoff` / `MinDetectExclusive` / `TopNHeatmap` / `PermutationTest` | **`06_quant_stats` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the matrix rows (`Peptide` default \| `Sequence` \| `PeptideID` \| `ProteinFirst`) and columns (`BioReplicate` default \| `Sample` \| `Condition`), the filtering cut-off (default 2 units in ≥1 Condition), normalization (`median` default \| `quantile` \| `cyclicloess` \| `scale` \| `none`), imputation (`none` default \| `minprob` \| `mindet`), test (`limma` default \| `ttest`), an optional `limma::duplicateCorrelation` blocking column, the significance cut-offs, the detection-count rule for condition-exclusive features, the heatmap feature count, and whether to run the PERMANOVA permutation test. |
 | `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |

@@ -8,12 +8,7 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
-* add safeward to get\_annot\_sampleid, warning if nothing was matched
-* fix error comp\_condition <- combn(conditions, 2) when condition =1
-* test mode fragpipe\_dda\_combined, load all and then create minimal dataset instead of only top 10 lines
-* add again safeguard when all area = 0
-
-
+* 
 
 ## In standby
 
@@ -23,15 +18,18 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * homogenize sample annotation tables across software
 * Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
 * add other proporties such as GRAVY
-* add data completeness plots
-* for quantitative report: heatmap with and without clustering, dynamic range, volcano plots
 * Total by Condition /BioReplicate / Sample in tabs
-* Add an advanced quantification report using statistics testing to compare between conditions. Use Limma for the normalization and statistical testing. Include  heatmap with and without clustering, volcano plots, summaries of number of peptides with significant changes between conditions
 * more explicit errors, e.g.,  when files are not found
 * autogenerate Sample by concatenating the others
 * bioreplicate as numbers or text, without condition, gets merged afterwards
 * maybe generate a report in long format
 * include whole folder with dia-quant-output when diann
+* add safeward to get\_annot\_sampleid, warning if nothing was matched
+* fix error comp\_condition <- combn(conditions, 2) when condition =1
+* test mode fragpipe\_dda\_combined, load all and then create minimal dataset instead of only top 10 lines
+* add again safeguard when all area = 0
+* Implement another feature for the MHC restrictions because for mouse we should have a 7-11mer one instead of 8-13mer (mouse or human, override length when specified)
+* 
 
 ### to be done by DGZ
 
@@ -61,6 +59,8 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * Ismahico= binding prediction
 * HowConta = summary of common contaminants
 * Another idea: hla allotyping from hla peptides in the ip data
+* include code for nc.
+* add tag for nc. exclusive, shared with up, up exclusive
 
 
 
@@ -147,4 +147,8 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * plot unclustered motifs from 7 to 25: motif length window extended to 7–25 AAs (was capped at 24); section retitled "Peptide motifs (7 to 25 AAs)" in 01\_id\_counts and 00\_mhc\_report (v0.13.0)
 * add subset suffix to all the results: shared setup.Rmd (and the two 00\_\* reports) derive result\_prefix (= Subset, NULL when unset), passed to every write.csv\_rawr()/write\_input\_params() and prepended to seq\_by\_condition.xlsx, so result filenames carry the subset (e.g. dda\_all\_pep\_all.csv); input\_params combines subset + report name to stay collision-free (v0.13.0)
 * bigger font
+* advanced statistics / quantification report: new `06_quant_stats` template + `R/quant-stats.R` engine (build\_quant\_matrix, filter\_quant, normalize\_quant, impute\_quant, test\_differential, test\_detection, combine\_quant\_results, summarise\_significant, permanova\_condition) comparing peptide Area between Conditions with limma moderated t (Welch t fallback; limma in Suggests) + Fisher presence/absence track for condition-exclusive ligands; includes data completeness plots, normalization diagnostics, dynamic range, PCA, heatmaps with and without clustering, volcano/MA/p-value plots and significance summaries, plus an in-report "Methods & justification" section (v0.14.0)
+* data completeness plots: plot\_completeness() (per unit / per feature) + plot\_missing\_heatmap() presence-absence map, in 06\_quant\_stats (v0.14.0)
+* quantitative report heatmap with and without clustering, dynamic range, volcano plots: plot\_quant\_heatmap(cluster = TRUE/FALSE), plot\_dynamic\_range(), plot\_volcano()/plot\_ma(), all in 06\_quant\_stats (v0.14.0)
+* fixed run\_howmahico\_report("05\_quality\_score") being unreachable (template documented but missing from the match.arg choices); 05 and 06 registered + regression guard test that every shipped template dir is offered (v0.14.0)
 

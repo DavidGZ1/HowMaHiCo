@@ -15,6 +15,7 @@
 ^renv\.lock$
 ^HowMaHiCo\.bat$
 ^0_code$
+^example$
 ^1_documentation$
 ^2_data$
 ^3_results$

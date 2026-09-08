@@ -39,7 +39,7 @@ conditions and replicates.
 | Folder | Contents |
 |---|---|
 | `R/` | Package source — the ~40 functions (loaders, annotation, counting, plotting, export) plus the `run_howmahico_report()`/`derive_filtered_annotation()` entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
 | `man/` | Generated roxygen2 documentation (`.Rd`) |
 | `1_documentation/` | Sample annotation CSVs (one per analysis subset) |
@@ -184,10 +184,12 @@ build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
               annotation = annot, shortpep_range = c(8, 13),
               file_rda = "2_data/dda_all_pep_all.rda")
 
-for (tmpl in c("01_id_counts",  # ID counts, size distributions, motifs, PTM
-               "02_overlaps",   # replicate / condition / pairwise overlap
-               "03_lcms_qc",    # RT/1k0/mz, Score/ppm (advanced)
-               "04_quant")) {   # log2(Area) correlation, Area %CV
+for (tmpl in c("01_id_counts",     # ID counts, size distributions, motifs, PTM
+               "02_overlaps",      # replicate / condition / pairwise overlap
+               "03_lcms_qc",       # RT/1k0/mz, Score/ppm (advanced)
+               "04_quant",         # log2(Area) correlation, Area %CV
+               "05_quality_score", # per-sample immunopeptidomics quality score
+               "06_quant_stats")) {# differential abundance between Conditions
   run_howmahico_report(tmpl,
                        params = list(SampleSet = "project_id", Subset = "dda_all",
                                      FolderData = "2_data", FolderResults = "3_results",
@@ -206,6 +208,15 @@ from results, pass `PepAllSource = "build"` (plus `Software`, `AnnotationFile`,
 
 `00_mhc_report` (all-in-one) and `00_mhc_upsets` are unchanged and still parse
 the raw files themselves.
+
+`06_quant_stats` compares peptide `Area` between Conditions (normalization, data
+completeness, PCA and clustered/unclustered heatmaps, then per-pair differential
+abundance with volcano plots and a presence/absence track for condition-exclusive
+ligands). It uses [limma](https://bioconductor.org/packages/limma), an optional
+Bioconductor dependency — install it with `BiocManager::install("limma")`, or
+render with `StatMethod = "ttest"` (and `NormMethod = "median"`) for a
+Bioconductor-free run; the report falls back to that automatically when limma is
+missing. Its methods and their justification are documented in the report itself.
 
 Reports are written to `output_file` (HTML), and result tables/figures are written
 under `<FolderResults>/<subset>/` and `<FolderFigures>/<subset>/`.

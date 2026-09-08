@@ -6,7 +6,7 @@
 \usage{
 run_howmahico_report(
   template = c("00_mhc_report", "00_mhc_upsets", "01_id_counts", "02_overlaps",
-    "03_lcms_qc", "04_quant"),
+    "03_lcms_qc", "04_quant", "05_quality_score", "06_quant_stats"),
   params,
   output_file,
   ...
@@ -21,8 +21,10 @@ once by \code{\link[=build_pep_all]{build_pep_all()}} (or by \verb{00_mhc_report
 identification QC: counts, size distributions, motifs, PTM), \code{"02_overlaps"}
 (intra-Condition / cross-Condition / pairwise overlap), \code{"03_lcms_qc"}
 (RT/1k0/mz distributions, Score/ppm QC), \code{"04_quant"}
-(log2(Area) correlation, Area \%CV), and \code{"05_quality_score"} (per-sample
-immunopeptidomics quality score with a traffic-light overview).}
+(log2(Area) correlation, Area \%CV), \code{"05_quality_score"} (per-sample
+immunopeptidomics quality score with a traffic-light overview) and
+\code{"06_quant_stats"} (advanced quantification: normalization, PCA/clustering
+and limma differential abundance between Conditions).}
 
 \item{params}{Named list of report parameters, as declared in the
 template's YAML header (\code{SampleSet}, \code{AnnotationFile}, \code{Subset},

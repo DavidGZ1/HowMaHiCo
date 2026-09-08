@@ -62,5 +62,12 @@ utils::globalVariables(c(
   "n", "n_Peptides", "n_Proteins", "n_Samples", "n_Sequences",
   "path_full", "ppm",
   "metric", "region", "res_file", "score", "var",
-  ":=", "Result.Path", "Sample.Comment", "in_range", "ind", "values"
+  ":=", "Result.Path", "Sample.Comment", "in_range", "ind", "values",
+  # quant-stats engine and its plots (R/quant-stats.R, plot_* in R/plots.R)
+  "AveExpr", "Contrast", "Detected", "Exclusive_in", "Feature", "Feature_",
+  "Loading", "P.Value", "P.Value_det", "PCx", "PCy", "Rank", "Status", "Unit",
+  "Unit_", "Value", "Variance", "adj.P.Val", "adj.P.Val_det", "logFC",
+  "n_det_ref", "n_det_test", "n_tot_ref", "n_tot_test", "n_units", "PC", "x", "y",
+  # pre-existing NSE names that R CMD check still listed as undefined
+  "invk0", "invk0_bin", "perc_num"
 ))

@@ -7,7 +7,7 @@ reference:
 - title: Render reports
   desc: >
     Entry points that build the cached pep_all table and render the parameterized
-    QC report templates (00_mhc_report all-in-one, or the focused 01-04 reports)
+    QC report templates (00_mhc_report all-in-one, or the focused 01-06 reports)
   contents:
   - build_pep_all
   - run_howmahico_report
@@ -87,6 +87,32 @@ reference:
   - ggseqlogo_bylength
   - theme_rawr
   - theme_howmahico
+
+- title: Advanced quantification & statistics
+  desc: >
+    Build the quantitative matrix and compare peptide Area between Conditions
+    (filtering, normalization, imputation, limma moderated t / Welch t, Fisher
+    presence-absence, PERMANOVA) plus the plots of the 06_quant_stats report
+  contents:
+  - build_quant_matrix
+  - filter_quant
+  - normalize_quant
+  - impute_quant
+  - test_differential
+  - test_detection
+  - combine_quant_results
+  - summarise_significant
+  - permanova_condition
+  - plot_completeness
+  - plot_missing_heatmap
+  - plot_intensity_dist
+  - plot_dynamic_range
+  - plot_pca
+  - plot_quant_heatmap
+  - plot_volcano
+  - plot_ma
+  - plot_pvalue_hist
+  - plot_sig_summary
 
 - title: Export & I/O helpers
   desc: Write report outputs (plots, csvs, render parameters) to disk

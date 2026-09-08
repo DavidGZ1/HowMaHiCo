@@ -1,3 +1,46 @@
+# HowMaHiCo 0.14.0
+
+* **New advanced-quantification report `06_quant_stats`** and its engine
+  `R/quant-stats.R`: multivariate and differential statistical comparison of
+  peptide `Area` between Conditions, rendered against the cached `pep_all` like
+  the other focused reports. Sections: quantitative matrix and filtering summary,
+  data completeness (per unit / per feature / presence-absence map),
+  normalization diagnostics, dynamic range, optional imputation diagnostics,
+  unsupervised overview (PCA scores/scree/loadings, clustered **and**
+  unclustered heatmaps, PERMANOVA-style permutation test), per-contrast
+  differential abundance (volcano, MA, p-value histogram, top-feature table),
+  a presence/absence section for condition-exclusive ligands, a significance
+  summary, and a "Methods & justification" section documenting every choice.
+* **New exported engine functions**: `build_quant_matrix()` (long `pep_all` ->
+  feature x unit log2 matrix; `Area` summed over precursors on the linear scale,
+  technical replicates averaged), `filter_quant()`, `normalize_quant()`,
+  `impute_quant()`, `test_differential()`, `test_detection()`,
+  `combine_quant_results()`, `summarise_significant()`, `permanova_condition()`.
+* **New plots**: `plot_completeness()`, `plot_missing_heatmap()`,
+  `plot_intensity_dist()`, `plot_dynamic_range()`, `plot_pca()`,
+  `plot_quant_heatmap()` (clustered/unclustered, ggplot2 — printable inside a
+  tabset, unlike the png-writing `plot_heatmap()`), `plot_volcano()`,
+  `plot_ma()`, `plot_pvalue_hist()`, `plot_sig_summary()`.
+* **Two complementary missing-value tracks.** limma moderated t-statistics
+  (`eBayes(trend = TRUE, robust = TRUE)`) on the observed values, optionally after
+  left-censored imputation (`minprob` / `mindet`), *plus* a Fisher exact test on
+  detection counts for condition-exclusive features, whose fold change is
+  undefined. Exclusivity is flagged by a detection-count rule rather than an FDR
+  cut-off, because a 3-vs-3 Fisher test cannot go below p = 0.1.
+* **`limma` is a `Suggests` dependency**, not an `Imports`: it is guarded at
+  runtime (with a `BiocManager::install("limma")` message) and
+  `StatMethod = "ttest"` / `NormMethod = "median"` give a fully
+  Bioconductor-free path, which the report falls back to automatically.
+* **Fixed: `run_howmahico_report("05_quality_score")` was unreachable** — the
+  template was documented but missing from the function's `template` choices, so
+  `match.arg()` rejected it. Both `05_quality_score` and `06_quant_stats` are now
+  registered, and `tests/testthat/test-report-templates.R` guards that every
+  shipped template directory appears in the choices.
+* `tests/testthat/test-quant-stats.R` covers the engine (aggregation, filtering,
+  normalization, imputation, limma/t-test agreement, detection test, PERMANOVA,
+  the limma guard); `test-sim-fragpipe.R` renders `06_quant_stats` end-to-end
+  against the simulated FragPipe dataset.
+
 # HowMaHiCo 0.13.0
 
 * **Pseudochromatogram coloured by density.** `plot_pseudochromatogram()` now
