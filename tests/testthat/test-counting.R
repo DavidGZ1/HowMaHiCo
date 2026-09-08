@@ -95,3 +95,23 @@ test_that("check_ids_global classifies decoy/contaminant/assigned rows and adds 
   expect_equal(total_row$prop_Peptides, 1)
   expect_equal(total_row$n_Peptides, dplyr::n_distinct(pep_all$Peptide))
 })
+
+test_that("get_mat_log2area survives a dataset where every Area is zero", {
+  # compute_log2area() maps Area == 0 to NA, so every ID becomes a "phantom" and
+  # the pivot has no columns left; this used to abort the report's data chunk
+  # with "Elements `JY_1`... don't exist" before any plot-level guard could fire.
+  pep_all <- make_pep_all()
+  pep_all$Area <- 0
+  pep_all$Log2Area <- NA_real_
+
+  expect_warning(mat <- get_mat_log2area(pep_all, PeptideID, Sample), "no non-missing Log2Area")
+  expect_true(is.matrix(mat))
+  expect_equal(nrow(mat), 0L)
+  expect_equal(colnames(mat), levels(pep_all$Sample))
+  expect_true(is.numeric(mat))
+
+  # the normal path is untouched
+  mat_ok <- get_mat_log2area(make_pep_all(), PeptideID, Sample)
+  expect_gt(nrow(mat_ok), 0)
+  expect_equal(colnames(mat_ok), levels(make_pep_all()$Sample))
+})

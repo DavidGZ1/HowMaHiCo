@@ -26,7 +26,8 @@
 #' @param file Filename to read inside each sample subfolder (e.g. `"psm.tsv"`).
 #' @param delim Field delimiter passed to [readr::read_delim()] (`"\t"` for tsv,
 #'   `","` for csv).
-#' @param testmode Logical; if `TRUE`, reads only the first ~100 rows per file.
+#' @param testmode Logical; if `TRUE`, keeps only the first ~100 rows per run
+#'   (auto-detected `Run`/`Spectrum` column, else per file).
 #'
 #' @return The merged raw data frame across every file found, with `Sample_fp`
 #'   identifying the source subfolder of each row.
@@ -41,9 +42,11 @@
 read_custom_batch <- function(folder = NULL, annotation = NULL, files = NULL,
                               file = "results.tsv", delim = "\t", testmode = FALSE) {
   read_one <- function(path, samplename) {
-    n_max <- if (testmode) 100L else Inf
-    readr::read_delim(path, delim = delim, show_col_types = FALSE,
-                      progress = FALSE, n_max = n_max) |>
+    input <- readr::read_delim(path, delim = delim, show_col_types = FALSE,
+                               progress = FALSE)
+    # keep every run, not just the head of the file (see subsample_testmode())
+    if (testmode) input <- subsample_testmode(input, n = 100L)
+    input |>
       dplyr::mutate(Sample_fp = samplename) |>
       dplyr::relocate(Sample_fp)
   }

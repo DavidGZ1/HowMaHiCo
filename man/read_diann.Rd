@@ -11,7 +11,8 @@ read_diann(folder, samplename, testmode = FALSE)
 
 \item{samplename}{Sample identifier to record in the new \code{Sample_fp} column.}
 
-\item{testmode}{Logical; if \code{TRUE}, reads only the first ~100 rows.}
+\item{testmode}{Logical; if \code{TRUE}, keeps only the first ~100 rows per run
+(the \code{Run} column), so every run of a combined report survives.}
 }
 \value{
 The tsv contents as a data frame, with \code{Sample_fp} added and

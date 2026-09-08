@@ -27,7 +27,8 @@ When provided without \code{files}, only its \code{Sample_fp} entries are read.}
 \item{delim}{Field delimiter passed to \code{\link[readr:read_delim]{readr::read_delim()}} (\code{"\\t"} for tsv,
 \code{","} for csv).}
 
-\item{testmode}{Logical; if \code{TRUE}, reads only the first ~100 rows per file.}
+\item{testmode}{Logical; if \code{TRUE}, keeps only the first ~100 rows per run
+(auto-detected \code{Run}/\code{Spectrum} column, else per file).}
 }
 \value{
 The merged raw data frame across every file found, with \code{Sample_fp}

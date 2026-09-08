@@ -23,7 +23,7 @@ params:
   ProjectDir: ~
   Instrument: "tims_tof"
   Software: "fragpipe_dda_combined"
-  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  MHCclass: "MHC1" # MHC1 (human, 8-13 AAs), MHC1_mouse (murine H-2, 7-11 AAs) or MHC2 (12-25 AAs); overrides ShortPeptideLengthMin/Max
   ShortPeptideLengthMin: 8
   ShortPeptideLengthMax: 13
   PeptideSet: "selected" # "selected" (pep_short, the MHC length window) or "all" (pep_all)
@@ -39,7 +39,7 @@ params:
   MinDetectExclusive: 2 # units in which an "exclusive" feature must be detected
   TopNHeatmap: 500
   PermutationTest: TRUE # global PERMANOVA-style test of condition separation
-  TestMode: FALSE
+  TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
   CsvSave: FALSE

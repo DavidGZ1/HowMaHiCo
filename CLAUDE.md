@@ -7,7 +7,34 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.14.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.15.0** — Phases 1–6 of the package conversion are complete.
+v0.15.0 was a robustness + schema pass driven by `plans_dgz.md`.
+**Mouse MHC-I**: `MHCclass` accepts **`"MHC1_mouse"`** (7–11 AAs) next to `MHC1`
+(8–13) and `MHC2` (12–25); the windows/palettes now come from
+`mhc_length_window()` / `mhc_class_palette()` in the new **`R/report-helpers.R`**
+instead of three copy-pasted lists in the skeletons plus a fourth inside
+`.cross_class_range()`. The quality score follows: for mouse, `frac_9mer` counts
+**8- and 9-mers** (H-2Kb favours 8-mers, H-2Db 9-mers) with the label
+"8/9-mer fraction" and higher cut-offs (`quality_thresholds_default()` gained an
+`mhcclass` arg), and the anchor motif is scored on whichever of the two lengths
+dominates — metric *keys* unchanged.
+**Three abort/silent-failure fixes**: (a) a single-Condition subset no longer
+kills every report — `combn(conditions, 2)` is replaced by the exported
+`condition_pairs()` (empty list for one Condition, `self = TRUE` for the overlap
+matrix diagonal); (b) an all-zero-`Area` dataset no longer aborts —
+`get_mat_log2area()` returns a `0 x n` matrix with a warning and the correlation
+chunks test for it *before* `cor()` (which errors with `'x' is empty`); (c)
+`get_annot_sampleid()` warns when nothing/only some of the annotation matched the
+HyStar sample list and gained `keep_all = TRUE` (left join).
+**`TestMode` rebuilt**: files are read in full and reduced to ~100 rows **per
+run** (`subsample_testmode()` in `R/utils-loaders.R`) instead of the first 100
+lines of the file — for a combined FragPipe `psm.tsv` the old behaviour kept only
+the first run and broke the annotation join.
+**One annotation format for every engine**: `read_annot()` accepts a canonical
+**`Sample_folder`** column and derives `Sample_fp` (verbatim) and `Sample_peaks`
+(PEAKS-normalized) from it, so the loaders are untouched and legacy CSVs still
+load; `get_annot_fragpipe()`/`get_annot_diann()` emit `Sample_folder`, and PEAKS
+gained **`get_annot_peaks()`**.
 v0.14.0 added the **advanced-quantification report `06_quant_stats`** and its engine
 `R/quant-stats.R` — the first part of HowMaHiCo that *compares* conditions rather
 than describing them. `build_quant_matrix()` collapses `pep_all` into a
@@ -264,6 +291,12 @@ note above.
   `plot_intensity_dist()`, `plot_dynamic_range()`, `plot_pca()`,
   `plot_quant_heatmap()`, `plot_volcano()`, `plot_ma()`, `plot_pvalue_hist()`,
   `plot_sig_summary()`) live in `R/plots.R`
+- **`R/report-helpers.R`** — the settings the templates derive from their params:
+  `mhc_length_window()` (MHC1 8–13 / MHC1_mouse 7–11 / MHC2 12–25, else the
+  `ShortPeptideLength*` params), `mhc_class_palette()`, `mhc_classes()` and
+  `condition_pairs()` (all pairwise Condition comparisons; empty list for a single
+  Condition, `self = TRUE` adds the diagonal). Single source of truth — the
+  skeletons and `R/quality-score.R`/`R/quant-stats.R` all call these
 - **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
   export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
   `deltaProtR`, now native)
@@ -288,8 +321,14 @@ note above.
 
 Required columns (checked by `read_annot`):
 - `Condition`, `BioReplicate`, `TechReplicate`, `Sample` — always required
-- `Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks` (PEAKS) — at least one required;
-  matches the data subfolder name (e.g. `fragpipe_dda_combined/JY`)
+- `Sample_folder` — the data subfolder name (e.g. `fragpipe_dda_combined/JY`),
+  **the same column whatever the search engine**. The engine-specific legacy names
+  `Sample_fp` (FragPipe/DIA-NN) and `Sample_peaks` (PEAKS) are still accepted; at
+  least one of the three is required. `read_annot()` derives the missing ones:
+  `Sample_fp` is a verbatim copy of `Sample_folder`, `Sample_peaks` a copy with
+  PEAKS' hyphen/space normalization — so the loaders, which key on
+  `Sample_fp`/`Sample_peaks`, are unchanged. A user-supplied alias is never
+  overwritten
 - `Source_file` — required when `mode = "combined_file"` (FragPipe combined PSM, DIA-NN);
   matches the spectrum/run name within that subfolder
 - `Sample_ID` — free-text human-readable identifier
@@ -297,6 +336,9 @@ Required columns (checked by `read_annot`):
   consumed by the `05_quality_score` report to mark QC samples and, with
   `ThresholdMode = "qc_relative"`, to calibrate the score thresholds. `read_annot`
   passes it through untouched (no schema change needed)
+
+`get_annot_fragpipe()` / `get_annot_diann()` / `get_annot_peaks()` generate the
+skeleton table (with `Sample_folder`) for their respective exports.
 
 Matching key for joining annotation ↔ data: `Sample_fp` alone for
 `fragpipe_dda_individual`; `Sample_fp` + `Source_file` for `combined_file` mode and
@@ -377,10 +419,10 @@ didn't need (they hardcoded `1_documentation/`):
 | `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |
-| `MHCclass` | `"MHC1"` (8–13 AA, default) or `"MHC2"` (12–25 AA) — sets `shortpep_range`; overrides `ShortPeptideLengthMin/Max` |
+| `MHCclass` | `"MHC1"` (human, 8–13 AA, default), `"MHC1_mouse"` (murine H-2, 7–11 AA) or `"MHC2"` (12–25 AA) — sets `shortpep_range` and the palette via `mhc_length_window()`/`mhc_class_palette()`; overrides `ShortPeptideLengthMin/Max` |
 | `ShortPeptideLengthMin/Max` | Custom `pep_short` window; used only when `MHCclass` is not a recognised value |
 | `ResultsOverwrite` | FALSE makes `check_output_exists`/`check_file_exists` abort if outputs already exist |
-| `TestMode` | TRUE = load only first ~100 lines per file (fast iteration; can break correlation plots) |
+| `TestMode` | TRUE = keep only the first ~100 rows **per run** (fast iteration on a representative subset — every run/Condition/replicate survives, unlike a head-of-file truncation of a combined export; can still break correlation plots) |
 | `CsvSave` / `PlotsSave` | TRUE = also export intermediary csvs / png plots |
 
 `run_howmahico_report()` always writes `input_params.csv` (package version + render

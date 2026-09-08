@@ -12,19 +12,25 @@ read_fragpipe(folder, samplename, testmode = FALSE)
 \item{samplename}{Sample identifier to record in the new \code{Sample_fp} column
 (derived from the file's parent folder name by the batch reader).}
 
-\item{testmode}{Logical; if \code{TRUE}, reads only the first ~100 rows for fast
-iteration (can break downstream correlation plots on tiny subsets).}
+\item{testmode}{Logical; if \code{TRUE}, keeps only the first ~100 rows per run for
+fast iteration (can break downstream correlation plots on tiny subsets).}
 }
 \value{
 The tsv contents as a data frame, with \code{Sample_fp} added and
 relocated to the first column.
 }
 \description{
-Reads a single search-engine tsv with \code{\link[readr:read_delim]{readr::read_tsv()}} (optionally
-truncated to the first ~100 rows for fast iteration via \code{testmode}), and
-tags every row with \code{samplename}. Shared internally by both the FragPipe and
-DIA-NN batch readers — the two formats only diverge once the per-sample
-frames are parsed into \code{pep_all} shape.
+Reads a single search-engine tsv with \code{\link[readr:read_delim]{readr::read_tsv()}} and tags every row
+with \code{samplename}. Shared internally by both the FragPipe and DIA-NN batch
+readers — the two formats only diverge once the per-sample frames are parsed
+into \code{pep_all} shape.
+}
+\details{
+With \code{testmode = TRUE} the file is read in full and then reduced to the first
+~100 rows \strong{per run}, so that a combined export (one \code{psm.tsv} holding every
+run) still yields every sample of the experiment. Test mode therefore no
+longer saves file-reading time on combined exports; it produces a small,
+representative dataset for fast rendering.
 }
 \examples{
 \dontrun{

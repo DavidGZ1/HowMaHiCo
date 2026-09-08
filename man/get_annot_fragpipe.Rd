@@ -11,7 +11,7 @@ get_annot_fragpipe(dir_data)
 subfolders (each with a \code{psm.tsv}).}
 }
 \value{
-A data frame with columns \code{Source_file}, \code{Sample_fp},
+A data frame with columns \code{Source_file}, \code{Sample_folder},
 \code{Condition}, \code{BioReplicate}, \code{TechReplicate}, \code{Sample}, \code{Sample_ID},
 sorted by \code{Source_file}.
 }

@@ -4,7 +4,12 @@
 \alias{quality_thresholds_default}
 \title{Default quality-score thresholds and weights}
 \usage{
-quality_thresholds_default()
+quality_thresholds_default(mhcclass = "MHC1")
+}
+\arguments{
+\item{mhcclass}{MHC class the thresholds are for. \code{"MHC1_mouse"} relabels the
+\code{frac_9mer} row to "8/9-mer fraction" and raises its green/amber cut-offs,
+because that metric counts two canonical lengths for murine H-2.}
 }
 \value{
 A data frame with columns \code{metric}, \code{label}, \code{direction}
@@ -21,4 +26,5 @@ metrics) are scored only in QC-relative mode (see
 }
 \examples{
 quality_thresholds_default()
+quality_thresholds_default("MHC1_mouse")
 }

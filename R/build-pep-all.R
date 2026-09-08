@@ -22,8 +22,11 @@
 #'   step to set `Length_range`.
 #' @param instrument Instrument string (`"tims_tof"`, `"faims_orbi"`, `"orbi"`);
 #'   only affects the PEAKS loader's ion-mobility handling.
-#' @param test_mode If `TRUE`, the batch readers load only the first ~100 lines
-#'   per file (fast iteration). Ignored by the PEAKS loader.
+#' @param test_mode If `TRUE`, the batch readers reduce each file to its first
+#'   ~100 rows **per run** (fast iteration on a small but representative subset:
+#'   every run, Condition and replicate of the experiment is still present, which
+#'   a plain head-of-file truncation would not give for a combined export).
+#'   Ignored by the PEAKS loader.
 #' @param file_rda Optional path. When non-`NULL`, `pep_all` is `save()`d there
 #'   (as the object name `pep_all`) so report templates can `load()` it.
 #' @param dictionary Required when `software = "custom"`: either a path to a YAML

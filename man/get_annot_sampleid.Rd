@@ -4,23 +4,34 @@
 \alias{get_annot_sampleid}
 \title{Enrich an annotation table with Sample_ID from a Bruker HyStar sample list}
 \usage{
-get_annot_sampleid(annotation, file_sample_list)
+get_annot_sampleid(annotation, file_sample_list, keep_all = FALSE)
 }
 \arguments{
 \item{annotation}{Annotation data frame (e.g. from \code{\link[=get_annot_fragpipe]{get_annot_fragpipe()}}
 or \code{\link[=read_annot]{read_annot()}}).}
 
 \item{file_sample_list}{Path to the Bruker HyStar sample list \code{.xlsx} file.}
+
+\item{keep_all}{Keep every annotation row (left join, unmatched \code{Sample_ID}
+left \code{NA}) instead of dropping the unmatched ones. Default \code{FALSE}, the
+historical inner-join behaviour.}
 }
 \value{
 \code{annotation} with the \code{Sample_ID} column filled from
 \code{Sample.Comment} in the sample list. Rows without a match are dropped
-(inner join).
+(inner join) unless \code{keep_all = TRUE}.
 }
 \description{
 Reads a Bruker HyStar sample list (xlsx), extracts \code{Result.Path} and
-\code{Sample.Comment}, derives the run name from the path, and inner-joins to
-the annotation table on \code{Source_file}, replacing any existing \code{Sample_ID}.
+\code{Sample.Comment}, derives the run name from the path, and joins it to the
+annotation table on \code{Source_file}, replacing any existing \code{Sample_ID}.
+}
+\details{
+The join is easy to get silently wrong — the two sides must agree on the run
+naming, and with the default inner join a mismatch simply removes rows. This
+function therefore warns when nothing matched (showing example values from
+both sides) and when only some rows matched (naming the ones dropped);
+\code{keep_all = TRUE} switches to a left join so no annotation row is ever lost.
 }
 \examples{
 \dontrun{

@@ -34,12 +34,9 @@
   as.character(coldata$Condition)[match(colnames(mat), as.character(coldata$Unit))]
 }
 
-# All pairwise condition comparisons as list(c(reference, test)), in factor order.
-.pairwise_contrasts <- function(conditions) {
-  conditions <- if (is.factor(conditions)) levels(droplevels(conditions)) else unique(as.character(conditions))
-  if (length(conditions) < 2) return(list())
-  utils::combn(conditions, 2, simplify = FALSE)
-}
+# All pairwise condition comparisons as list(c(reference, test)), in factor order
+# (condition_pairs() is the shared, single-condition-safe implementation).
+.pairwise_contrasts <- function(conditions) unname(condition_pairs(conditions))
 
 # "B_vs_A" label for a c(A, B) pair: logFC > 0 means higher in B (the test group).
 .contrast_label <- function(pair) paste0(pair[2], "_vs_", pair[1])

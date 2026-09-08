@@ -70,3 +70,40 @@ validate_pep_all <- function(df, software = "unknown") {
   }
   invisible(df)
 }
+
+#' Reduce a raw search-engine table to a minimal, representative test dataset
+#'
+#' `TestMode` used to be implemented as `read_tsv(n_max = 100)`, which is fine
+#' for one-file-per-sample exports but breaks the combined ones: a FragPipe
+#' `fragpipe_dda_combined` `psm.tsv` holds every run, so the first 100 lines come
+#' from the first run or two and every other annotated run silently disappears --
+#' the annotation join then drops most samples and the report falls apart
+#' (single Condition, no replicates, empty correlations).
+#'
+#' This instead keeps the first `n` rows **per run**, so every run/Condition/
+#' replicate of the experiment survives at ~1/1000 of the size. The run column is
+#' auto-detected: `Run` (DIA-NN), else the run part of `Spectrum` (FragPipe,
+#' `run1.123.123.2` -> `run1`); with neither, the first `n` rows overall are kept.
+#'
+#' @param input Raw data frame as read from disk.
+#' @param n Rows to keep per run. Default `100`.
+#'
+#' @return `input`, subset to at most `n` rows per run, in the original row order.
+#'
+#' @noRd
+subsample_testmode <- function(input, n = 100L) {
+  if (nrow(input) == 0) return(input)
+
+  run <- if ("Run" %in% names(input)) {
+    as.character(input[["Run"]])
+  } else if ("Spectrum" %in% names(input)) {
+    sub("[.].*", "", as.character(input[["Spectrum"]]))
+  } else {
+    NULL
+  }
+  if (is.null(run)) return(utils::head(input, n))
+
+  idx <- unlist(lapply(split(seq_len(nrow(input)), run), function(i) utils::head(i, n)),
+                use.names = FALSE)
+  input[sort(idx), , drop = FALSE]
+}

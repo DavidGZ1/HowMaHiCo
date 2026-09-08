@@ -21,7 +21,18 @@ reference:
   - print_annot
   - get_annot_fragpipe
   - get_annot_diann
+  - get_annot_peaks
   - get_annot_sampleid
+
+- title: Report helpers
+  desc: >
+    Shared settings the report templates derive from their params: the MHC
+    length window and palette, and the Condition pairs to compare
+  contents:
+  - mhc_length_window
+  - mhc_class_palette
+  - mhc_classes
+  - condition_pairs
 
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema

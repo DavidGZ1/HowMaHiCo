@@ -277,7 +277,9 @@ list_sequences <- function(input, by){
 #'   averaged (`na.rm = TRUE`).
 #'
 #' @return A numeric matrix with `NA`s preserved, rows named by `row` and
-#'   columns ordered by the factor levels of `col`.
+#'   columns ordered by the factor levels of `col`. When no `row` has a single
+#'   non-missing `Log2Area` (all Areas absent or zero), a `0 x n` matrix with the
+#'   expected column names is returned with a warning.
 #'
 #' @export
 #'
@@ -288,10 +290,23 @@ list_sequences <- function(input, by){
 get_mat_log2area <- function(input, row, col){
   ordered_columns <- input |> dplyr::pull({{ col }}) |> levels() # get order from factor levels
   col_for_row_names <- deparse(substitute(row)) # needs to be declared first
-  input |> # using mean of Log2area
+  kept <- input |> # using mean of Log2area
     dplyr::group_by({{ row }}) |>
     dplyr::filter(!all(is.na(Log2Area))) |> # avoid phantom IDs
-    dplyr::ungroup() |>
+    dplyr::ungroup()
+
+  # Every ID was a phantom (no non-missing Log2Area anywhere) -- e.g. a dataset
+  # where all Areas are 0, which compute_log2area() maps to NA. Return a
+  # well-formed empty matrix with the expected columns so the calling report
+  # section can print a note, instead of failing in select(all_of(...)).
+  if (nrow(kept) == 0) {
+    warning("get_mat_log2area(): no non-missing Log2Area values (Areas absent or all zero); ",
+            "returning an empty matrix.", call. = FALSE)
+    return(matrix(numeric(0), nrow = 0, ncol = length(ordered_columns),
+                  dimnames = list(NULL, ordered_columns)))
+  }
+
+  kept |>
     tidyr::pivot_wider(id_cols = {{ row }}, values_from = Log2Area, names_from = {{ col }}, values_fn = function(x) mean(x, na.rm = TRUE)) |>
     tibble::column_to_rownames(col_for_row_names) |>
     dplyr::select(dplyr::all_of(ordered_columns)) |> # order in function of levels

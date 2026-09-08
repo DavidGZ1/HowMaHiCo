@@ -51,7 +51,7 @@ utils::globalVariables(c(
   "Protein_ID", "Proteotypic",
   "Q.Value", "QC", "Quantity.Quality", "Qvalue",
   "RT", "RT.Start", "RT.Stop", "Retention", "Run",
-  "Sample", "Sample_ID", "Sample_fp", "Sample_peaks", "Sample_type", "Sequence",
+  "Sample", "Sample_ID", "Sample_folder", "Sample_fp", "Sample_peaks", "Sample_type", "Sequence",
   "Source_File", "Source_file", "Spectrum", "Spectrum.Similarity", "Spectrum_File",
   "Stripped.Sequence",
   "TechReplicate", "Total", "Translated.Q.Value", "Translated.Quality", "Type",

@@ -83,6 +83,10 @@ get_annot_fragpipe(dir_data = "2_data") |>
 # DIA-NN (report.tsv layout)
 get_annot_diann(dir_data = "2_data") |>
   write.csv(row.names = FALSE, file = "1_documentation/sample_annotation_diann.csv")
+
+# PEAKS (export folders)
+get_annot_peaks(dir_data = "2_data/peaks_export") |>
+  write.csv(row.names = FALSE, file = "1_documentation/sample_annotation_peaks.csv")
 ```
 
 These scan `2_data` and write one row per data file — no `sample_list.xlsx`
@@ -93,8 +97,10 @@ from a HyStar sample list).
 
 Open the generated CSV and fill in the experimental metadata:
 `Condition`, `BioReplicate`, `TechReplicate`, `Sample_ID`. Verify that
-`Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks` (PEAKS) matches the data
-subfolder names exactly, then save.
+`Sample_folder` matches the data subfolder names exactly, then save. The column
+is the same for every search engine; tables from older runs that use the
+engine-specific `Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks` (PEAKS) still
+load unchanged.
 
 > **Two things the annotation table controls:**
 > - **Inclusion** — only samples listed in the annotation table are read and
@@ -113,9 +119,11 @@ read.csv("1_documentation/sample_annotation.csv") |>
   write.csv(row.names = FALSE, file = "1_documentation/sample_annotation.csv")
 ```
 
-`get_annot_sampleid()` inner-joins on `Source_file`, so only rows present in
-both the annotation table and the sample list are kept — check the row count
-afterwards.
+`get_annot_sampleid()` joins on `Source_file`, so both sides must use the same
+run naming. It warns when nothing matched (showing example values from each
+side) and when only some rows matched (naming the dropped ones); pass
+`keep_all = TRUE` to keep every annotation row instead, with the unmatched
+`Sample_ID` left empty.
 
 **4. (Optional) Get a local copy of the report template to customise**
 
@@ -135,7 +143,7 @@ get_report_template("MyReport", template = "00_mhc_report")
 - `Software` — `fragpipe_dda_combined` | `fragpipe_dda_individual` | `diann` |
   `peaks_xpro` | `custom`
 - `Instrument` — `tims_tof` | `faims_orbi` | `orbi`
-- `MHCclass` — `MHC1` (8–13 AA) or `MHC2` (12–25 AA)
+- `MHCclass` — `MHC1` (human, 8–13 AA), `MHC1_mouse` (murine H-2, 7–11 AA) or `MHC2` (12–25 AA)
 - `output_file` — the HTML filename to write
 
 See the full parameter reference (incl. `PepAllSource`, `TestMode`,
@@ -158,7 +166,7 @@ run_howmahico_report(
     # ProjectDir     = getwd(),   # set if rendering from a subdirectory
     Instrument       = "tims_tof",    # faims_orbi | orbi
     Software         = "fragpipe_dda_combined",
-    MHCclass         = "MHC1",        # MHC1 (8-13 AA) or MHC2 (12-25 AA)
+    MHCclass         = "MHC1",        # MHC1 (8-13 AA) | MHC1_mouse (7-11 AA) | MHC2 (12-25 AA)
     TestMode         = FALSE,
     ResultsOverwrite = TRUE,
     PlotsSave        = FALSE,

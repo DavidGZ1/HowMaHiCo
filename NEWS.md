@@ -1,3 +1,51 @@
+# HowMaHiCo 0.15.0
+
+* **Mouse MHC-I support.** `MHCclass` accepts a new value **`"MHC1_mouse"`**
+  (7-11 AAs, the murine H-2 ligand window) alongside `"MHC1"` (8-13) and
+  `"MHC2"` (12-25). The windows and their palettes now come from two exported
+  helpers, `mhc_length_window()` and `mhc_class_palette()` (`R/report-helpers.R`),
+  instead of three copy-pasted lists in the skeletons and a fourth inside the
+  quality-score engine.
+* **Quality score is mouse-aware**: for `"MHC1_mouse"` the canonical-length
+  metric counts **8- and 9-mers** (H-2Kb favours 8-mers, H-2Db 9-mers) with the
+  label "8/9-mer fraction" and raised green/amber cut-offs
+  (`quality_thresholds_default()` gained an `mhcclass` argument); the anchor
+  motif is scored on whichever of the two lengths the sample has more of; the
+  cross-class window follows the 7-11 window. The metric *keys* are unchanged.
+* **Fixed: a single-Condition subset aborted every report.**
+  `combn(conditions, 2)` errors with `n < m`; the new exported
+  `condition_pairs()` returns an empty list instead (and `self = TRUE` gives the
+  overlap matrix its diagonal), and the skeletons use it. Guarded by an
+  end-to-end single-Condition render test.
+* **Fixed: an all-zero `Area` dataset aborted the render.**
+  `get_mat_log2area()` now returns a well-formed `0 x n` matrix with a warning
+  when every ID is a phantom, and the correlation chunks of `04_quant` /
+  `00_mhc_report` test for that *before* calling `cor()` (which errors with
+  `'x' is empty`) and before computing the colour limits.
+* **`TestMode` now builds a representative minimal dataset.** It used to read
+  only the first ~100 lines of each file, which for a combined FragPipe
+  `psm.tsv` (one file holding every run) kept just the first run and broke the
+  annotation join. Files are now read in full and reduced to ~100 rows **per
+  run**, so every run, Condition and replicate survives. The misleading
+  "only the first 50 lines were loaded" warning is gone.
+* **One annotation format for every search engine.** `read_annot()` accepts a
+  canonical **`Sample_folder`** column and derives the loader-facing aliases from
+  it (`Sample_fp` verbatim, `Sample_peaks` with PEAKS’ hyphen/space
+  normalization). Legacy tables providing `Sample_fp` or `Sample_peaks` load
+  unchanged, and a user-supplied alias is never overwritten.
+  `get_annot_fragpipe()`/`get_annot_diann()` now emit `Sample_folder` instead of
+  `Sample_fp` (**user-visible change to the generated skeleton**), and PEAKS
+  finally has a generator of its own: **`get_annot_peaks()`**.
+* **`get_annot_sampleid()` no longer fails silently**: it warns when nothing
+  matched the sample list (showing example `Source_file` values from both sides)
+  and when only some rows matched (naming the dropped ones), and gained
+  `keep_all = TRUE` to left-join so no annotation row is lost.
+* New tests: `test-report-helpers.R`; all-zero-`Area` coverage in
+  `test-counting.R`; `Sample_folder`/`get_annot_peaks()`/`get_annot_sampleid()`
+  coverage in `test-annotation.R`; mouse metrics in `test-quality-score.R`;
+  per-run test-mode subsampling in `test-loaders-fragpipe.R`; single-Condition
+  and mouse-window end-to-end renders in `test-sim-fragpipe.R`.
+
 # HowMaHiCo 0.14.0
 
 * **New advanced-quantification report `06_quant_stats`** and its engine
