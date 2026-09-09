@@ -1826,3 +1826,269 @@ plot_sig_summary <- function(summary_df) {
     theme_howmahico() + ggpubr::rotate_x_text(70) +
     ggplot2::ggtitle("Significant features per contrast")
 }
+
+# ---- physicochemical-property plots (07_pepchem) ----------------------------
+
+#' Amino-acid composition across groups
+#'
+#' Draws the [aa_composition()] table three ways. `"bar"` and `"heatmap"` show
+#' the residue frequency itself; `"enrichment"` shows log2 of each group's
+#' frequency over the pooled frequency of the whole table, which puts every
+#' residue on a common, centred axis and makes a compositional shift between
+#' Conditions visible without an external proteome background.
+#'
+#' @param comp Output of [aa_composition()] (needs `Frequency`).
+#' @param type `"bar"` (default), `"heatmap"` or `"enrichment"`.
+#' @param title Plot title. `NULL` (default) picks one from `type`.
+#'
+#' @return A ggplot object, or `NULL` when `comp` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_aa_composition(aa_composition(pep_short$Sequence, pep_short$Condition))
+#' }
+plot_aa_composition <- function(comp, type = c("bar", "heatmap", "enrichment"),
+                                title = NULL) {
+  type <- match.arg(type)
+  if (is.null(comp) || nrow(comp) == 0 || !"Frequency" %in% names(comp)) return(NULL)
+  df <- comp[!is.na(comp$Frequency), , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+
+  if (type == "enrichment") {
+    # pooled frequency over every group = the internal reference
+    pooled <- stats::aggregate(Count ~ AA, data = df, FUN = sum)
+    pooled$Reference <- pooled$Count / sum(pooled$Count)
+    df$Reference <- pooled$Reference[match(as.character(df$AA),
+                                           as.character(pooled$AA))]
+    df$Log2Enrichment <- log2(df$Frequency / df$Reference)
+    lim <- max(abs(df$Log2Enrichment), na.rm = TRUE)
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = .data[["AA"]], y = .data[["Group"]],
+                                       fill = .data[["Log2Enrichment"]])) +
+        ggplot2::geom_tile(color = "white", linewidth = 0.2) +
+        ggplot2::scale_fill_gradient2(low = "#2166ac", mid = "grey95",
+                                      high = "#b2182b", midpoint = 0,
+                                      limits = c(-lim, lim),
+                                      name = "log2(freq / pooled)") +
+        ggplot2::xlab("Amino acid") + ggplot2::ylab(NULL) +
+        theme_howmahico() +
+        ggplot2::ggtitle(if (is.null(title))
+          "Amino-acid enrichment vs. the pooled composition" else title))
+  }
+
+  if (type == "heatmap")
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = .data[["AA"]], y = .data[["Group"]],
+                                       fill = .data[["Frequency"]])) +
+        ggplot2::geom_tile(color = "white", linewidth = 0.2) +
+        viridis::scale_fill_viridis(name = "Frequency", end = 0.95) +
+        ggplot2::xlab("Amino acid") + ggplot2::ylab(NULL) +
+        theme_howmahico() +
+        ggplot2::ggtitle(if (is.null(title))
+          "Amino-acid composition" else title))
+
+  ggplot2::ggplot(df, ggplot2::aes(x = .data[["AA"]], y = .data[["Frequency"]],
+                                   fill = .data[["Group"]])) +
+    ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(width = 0.9),
+                      alpha = 0.85, color = "black", linewidth = 0.2) +
+    viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab("Amino acid") + ggplot2::ylab("Frequency") +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title)) "Amino-acid composition" else title)
+}
+
+#' Per-position amino-acid frequency heatmap
+#'
+#' Tile map of the [aa_position_frequency()] table: position on the x axis,
+#' residue on the y axis, one facet per group. This is the numeric complement to
+#' the sequence logos in the `01_id_counts` report — a logo scales letters by
+#' information content and so hides which residue a flat position prefers, while
+#' the heatmap keeps every frequency readable and comparable across Conditions.
+#'
+#' @param freq Output of [aa_position_frequency()].
+#' @param ncol Facet columns. Default `3`.
+#' @param title Plot title. `NULL` (default) builds one from the peptide length
+#'   recorded on `freq`.
+#'
+#' @return A ggplot object, or `NULL` when `freq` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_aa_position_heatmap(aa_position_frequency(pep_short$Sequence,
+#'                                                groups = pep_short$Condition))
+#' }
+plot_aa_position_heatmap <- function(freq, ncol = 3, title = NULL) {
+  if (is.null(freq) || nrow(freq) == 0) return(NULL)
+  len <- attr(freq, "length")
+  if (is.null(title))
+    title <- if (is.null(len)) "Per-position amino-acid frequency"
+             else paste0("Per-position amino-acid frequency (", len, "-mers)")
+
+  p <- ggplot2::ggplot(freq, ggplot2::aes(x = .data[["PositionLabel"]],
+                                          y = .data[["AA"]],
+                                          fill = .data[["Frequency"]])) +
+    ggplot2::geom_tile(color = "white", linewidth = 0.2) +
+    viridis::scale_fill_viridis(name = "Frequency", end = 0.95)
+  if (dplyr::n_distinct(freq$Group) > 1)
+    p <- p + ggplot2::facet_wrap(~ Group, ncol = ncol)
+
+  p +
+    ggplot2::xlab("Position") + ggplot2::ylab("Amino acid") +
+    theme_howmahico() +
+    ggplot2::ggtitle(title)
+}
+
+#' Distribution of one peptide descriptor across Conditions
+#'
+#' Per-peptide distribution of a single descriptor, coloured by Condition. This
+#' is the *repertoire* view: every unique sequence of a Condition contributes one
+#' value, so the spread is between-peptide, not between-replicate — read
+#' [plot_property_sample_summary()] alongside it for the replicate view.
+#'
+#' @param props Output of [pepchem_by_sample()].
+#' @param var Name (string) of the descriptor column to draw.
+#' @param type `"density"` (default) or `"violin"`.
+#' @param title Plot title. `NULL` (default) uses `var`.
+#'
+#' @return A ggplot object, or `NULL` when the column is absent or all missing.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_property_distribution(props, "GRAVY")
+#' }
+plot_property_distribution <- function(props, var, type = c("density", "violin"),
+                                       title = NULL) {
+  type <- match.arg(type)
+  if (is.null(props) || !var %in% names(props) || !"Condition" %in% names(props))
+    return(NULL)
+  df <- props[!is.na(props[[var]]), , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+  if (is.null(title)) title <- var
+
+  p <- if (type == "violin") {
+    ggplot2::ggplot(df, ggplot2::aes(x = .data[["Condition"]], y = .data[[var]],
+                                     fill = .data[["Condition"]])) +
+      ggplot2::geom_violin(alpha = 0.8, color = "black", linewidth = 0.2,
+                           scale = "width") +
+      ggplot2::geom_boxplot(width = 0.12, outlier.shape = NA, alpha = 0.9,
+                            linewidth = 0.2) +
+      viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+      ggplot2::xlab(NULL) + ggplot2::ylab(var) +
+      ggpubr::rotate_x_text(70)
+  } else {
+    ggplot2::ggplot(df, ggplot2::aes(x = .data[[var]],
+                                     color = .data[["Condition"]])) +
+      ggplot2::geom_density(linewidth = 0.6) +
+      viridis::scale_color_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+      ggplot2::xlab(var) + ggplot2::ylab("Density")
+  }
+
+  p + ggplot2::scale_y_continuous(n.breaks = 5) + theme_howmahico() +
+    ggplot2::ggtitle(title)
+}
+
+#' Per-Condition mean +/- sd of a descriptor across samples
+#'
+#' Draws the [aggregate_pepchem()] table for one descriptor: each point is a
+#' sample's median, the bar and error bar are the mean +/- sd **across samples**.
+#' This is the replicate-respecting summary — the error bar answers "how
+#' reproducible is this Condition", which a per-peptide distribution cannot.
+#'
+#' @param summ Output of [aggregate_pepchem()].
+#' @param var Descriptor to draw (a value of the `Property` column).
+#' @param points Optional per-sample table from [summarise_pepchem()], overlaid
+#'   as jittered points. Default `NULL`.
+#' @param title Plot title. `NULL` (default) uses `var`.
+#'
+#' @return A ggplot object, or `NULL` when the descriptor is absent.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_property_sample_summary(aggregate_pepchem(sample_summary), "GRAVY")
+#' }
+plot_property_sample_summary <- function(summ, var, points = NULL, title = NULL) {
+  if (is.null(summ) || nrow(summ) == 0) return(NULL)
+  df <- summ[as.character(summ$Property) == var, , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+  if (is.null(title)) title <- var
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[["Condition"]],
+                                        y = .data[["Mean"]],
+                                        fill = .data[["Condition"]])) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.85, color = "black",
+                      linewidth = 0.2) +
+    ggplot2::geom_errorbar(ggplot2::aes(ymin = .data[["Mean"]] - .data[["SD"]],
+                                        ymax = .data[["Mean"]] + .data[["SD"]]),
+                           width = 0.2, linewidth = 0.3)
+
+  if (!is.null(points) && nrow(points) > 0) {
+    pts <- points[as.character(points$Property) == var, , drop = FALSE]
+    if (nrow(pts) > 0)
+      p <- p + ggplot2::geom_jitter(data = pts,
+                                    ggplot2::aes(x = .data[["Condition"]],
+                                                 y = .data[["Median"]]),
+                                    inherit.aes = FALSE, width = 0.12,
+                                    size = 1.2, alpha = 0.8)
+  }
+
+  p +
+    viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab(NULL) + ggplot2::ylab(paste0(var, " (mean +/- sd of sample medians)")) +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle(title)
+}
+
+#' Effect sizes of the between-condition comparison
+#'
+#' Tile map of [cliffs_delta()] per descriptor (or residue) and contrast, outlined
+#' where the BH-adjusted p-value passes `fdr`. Cliff's delta is scale-free, so
+#' descriptors on different units (GRAVY, pI, molecular weight) share one axis and
+#' can be ranked against each other — which a table of median differences cannot
+#' do.
+#'
+#' @param stats Output of [compare_pepchem()] or [compare_aa_frequency()].
+#' @param fdr Significance cut-off; `NULL` uses the value recorded on `stats`.
+#' @param title Plot title. `NULL` (default) picks a generic one.
+#'
+#' @return A ggplot object, or `NULL` when `stats` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_property_effectsize(compare_pepchem(props))
+#' }
+plot_property_effectsize <- function(stats, fdr = NULL, title = NULL) {
+  if (is.null(stats) || nrow(stats) == 0) return(NULL)
+  key <- if ("Property" %in% names(stats)) "Property" else
+         if ("AA" %in% names(stats)) "AA" else names(stats)[1]
+  if (is.null(fdr)) fdr <- attr(stats, "fdr")
+  if (is.null(fdr)) fdr <- 0.05
+
+  df <- stats[!is.na(stats$CliffsDelta), , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+  df$Flag <- ifelse(!is.na(df$p_adj) & df$p_adj < fdr, "yes", "no")
+
+  ggplot2::ggplot(df, ggplot2::aes(x = .data[["Contrast"]], y = .data[[key]],
+                                   fill = .data[["CliffsDelta"]])) +
+    ggplot2::geom_tile(ggplot2::aes(color = .data[["Flag"]]), linewidth = 0.5) +
+    ggplot2::scale_fill_gradient2(low = "#2166ac", mid = "grey95", high = "#b2182b",
+                                  midpoint = 0, limits = c(-1, 1),
+                                  name = "Cliff's delta") +
+    ggplot2::scale_color_manual(values = c(yes = "black", no = "white"),
+                                drop = FALSE, guide = "none") +
+    ggplot2::xlab(NULL) + ggplot2::ylab(NULL) +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle(if (is.null(title))
+      paste0("Effect size per contrast (outlined: BH p < ", fdr, ")") else title)
+}

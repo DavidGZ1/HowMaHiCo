@@ -1,3 +1,78 @@
+# HowMaHiCo 0.16.0
+
+* **New report `07_pepchem` + engine `R/pepchem.R`: peptide physicochemical
+  properties compared between Conditions.** Where the other reports describe
+  *which* peptides were found, this one describes what they are made of:
+  amino-acid composition (overall, per sample, and as log2 enrichment against
+  the pooled composition of the subset), per-position residue frequency at the
+  dominant peptide length plus an N-/C-terminal profile resolved across all
+  lengths, and per-peptide descriptors — `GRAVY`, `pI`, net `Charge`, `MW`,
+  `Boman`, `HydrophobicMoment`, `InstabilityIndex`, `AliphaticIndex` and the
+  amino-acid class fractions.
+* **The unit of analysis is the sample, not the peptide.** Descriptors are
+  computed once over the unique sequences and attached to each sample that
+  identified them; each sample is summarised first
+  (`pepchem_by_sample()` -> `summarise_pepchem()` -> `aggregate_pepchem()`) and
+  Conditions are then compared across samples. Peptides within a Condition are
+  not independent replicates, so pooling them would return enormous nominal
+  significance for effects carried by one sample.
+* **Two comparison tracks, both labelled.** `compare_pepchem(level = "sample")`
+  is the primary, replicate-respecting test (Kruskal-Wallis + pairwise Wilcoxon,
+  BH-corrected within each contrast, with `MedianDiff` and the new scale-free
+  `cliffs_delta()` as effect sizes) — and is deliberately low-powered: on 3 vs 3
+  samples a two-sided Wilcoxon cannot reach p < 0.1, the same structural limit
+  `06_quant_stats` documents for its Fisher track. `level = "peptide"` pools the
+  repertoire and is reported alongside as explicitly descriptive.
+  `compare_aa_frequency()` applies the same machinery per residue to per-sample
+  frequencies rather than a chi-square on pooled residue counts.
+* New exports: `peptide_properties()`, `pepchem_properties()`,
+  `aa_composition()`, `aa_position_frequency()`, `pepchem_by_sample()`,
+  `summarise_pepchem()`, `aggregate_pepchem()`, `cliffs_delta()`,
+  `compare_pepchem()`, `compare_aa_frequency()`, plus `plot_aa_composition()`,
+  `plot_aa_position_heatmap()`, `plot_property_distribution()`,
+  `plot_property_sample_summary()` and `plot_property_effectsize()` in
+  `R/plots.R`.
+* `aa_position_frequency()` generalises the per-position frequency table that
+  `anchor_information_content()` collapses to Shannon bits, and the two now
+  share the alphabet and the negative-position helper (`-1` = C-terminus)
+  instead of keeping duplicate copies.
+* **New dependency: `Peptides`** (CRAN, GPL-2, Rcpp only) in `Imports` — it is
+  vectorised and is the canonical implementation of GRAVY (mean Kyte-Doolittle),
+  so the scales are not re-derived. `Peptides::aaComp()` is not used (it returns
+  a per-sequence list); the class fractions are derived from the composition
+  matrix. Its per-descriptor "unrecognized amino acid types" warnings are
+  consolidated into one `peptide_properties()` warning naming the count.
+* Peptide **position within the parent protein** — the third part of the
+  original request — is deferred; no loader carries a position column, so it
+  needs a user-supplied search FASTA. The design is recorded under *Deferred
+  designs* in `CLAUDE.md`.
+
+## Fixes found while verifying the new report
+
+* **Fixed: `PlotsSave = TRUE` never saved anything, and `ggprint_rawr()`
+  silently dropped plots.** Both helpers resolved the plot name with a bare
+  `exists(deparse(substitute(input)))`, which searches from the *helper's own*
+  frame outwards through its lexical parents — the HowMaHiCo namespace, then
+  `globalenv()` — and so never reaches a report's knit environment
+  (`rmarkdown::render()` knits in `new.env(parent = globalenv())`). Every lookup
+  from a report therefore failed: `ggsave_rawr()` warned and wrote no png, and
+  `ggprint_rawr()` returned the warning string instead of the plot, which
+  `warning = FALSE` chunks then swallowed. The name is now resolved in the
+  **calling** frame via the shared internal `.plot_was_built()`, and a
+  non-symbol argument (`plots[[nm]]`, the export-loop idiom used by `06` and
+  `07`) is evaluated and judged by value, so a `NULL` plot is skipped rather
+  than saved. On the simulated dataset `07_pepchem` goes from 8 to 14 figures
+  and from 0 to 14 saved pngs; `04_quant`, `05_quality_score` and
+  `06_quant_stats` recover their `PlotsSave` output too.
+* **Fixed: `05_quality_score` could not render at all.** An inline `` `r ...` ``
+  expression ended in a bare comma-separated string list
+  (`else "a ", "<code>", params$QCColumn, "</code> b"`) instead of a `paste0()`
+  call — a syntax error, so the template aborted at the inline-parse stage.
+  The report had never rendered and nothing caught it, because the suite only
+  rendered `01` and `06`; `test-sim-fragpipe.R` now carries a render guard for
+  `05` (which also asserts that `PlotsSave` writes files and that figures reach
+  the HTML).
+
 # HowMaHiCo 0.15.0
 
 * **Mouse MHC-I support.** `MHCclass` accepts a new value **`"MHC1_mouse"`**

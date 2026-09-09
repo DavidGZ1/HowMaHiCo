@@ -13,8 +13,14 @@
 #' `folder`/`width`/`height` as ordinary explicit arguments — callers compute
 #' and pass whatever values their report context needs.
 #'
-#' @param input The plot object to save (NSE: its variable name is used to
-#'   check existence, not its value).
+#' A bare symbol is looked up by name in the **calling** environment; any other
+#' expression (`plots[[nm]]`, a computed plot) is evaluated and judged by its
+#' value, so the idiomatic
+#' `for (nm in names(plots)) ggsave_rawr(plots[[nm]], file = nm, ...)` export
+#' loop works as well.
+#'
+#' @param input The plot object to save. When it is a bare variable name, that
+#'   name is used to check existence rather than the value.
 #' @param file Output file name, without extension; saved as `<file>.png`
 #'   under `folder`.
 #' @param folder Destination directory for the png.
@@ -30,12 +36,13 @@
 #' ggsave_rawr(p_peplength_all, "peplength_all", folder = FolderFigures)
 #' }
 ggsave_rawr <- function(input, file, folder, width = 8, height = 10) {
-  if(exists(deparse(substitute(input)))){
-    ggplot2::ggsave(file.path(folder, paste0(file, ".png")), input, device = "png",
-                    scale = 1, width = width, height = height, units = "cm")
-  }else{
+  if (!.plot_was_built(substitute(input), parent.frame())) {
     warning(paste0(file, ".png was not saved because the plot was not generated"))
+    return(invisible(NULL))
   }
+  ggplot2::ggsave(file.path(folder, paste0(file, ".png")), input, device = "png",
+                  scale = 1, width = width, height = height, units = "cm")
+  invisible(NULL)
 }
 
 #' Write a data frame to csv, named after the variable that was passed in

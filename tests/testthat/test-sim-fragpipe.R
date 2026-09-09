@@ -193,3 +193,153 @@ test_that("the mouse MHC-I window reaches a rendered report", {
   expect_true(any(grepl("7 to 11 AAs", html, fixed = TRUE)))   # the mouse window is in force
   expect_true(any(grepl("MHC1_mouse", html, fixed = TRUE)))    # ... and named in the title
 })
+
+test_that("07_pepchem renders end-to-end against the simulated data", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("simpepchem_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  out <- suppressWarnings(suppressMessages(
+    run_howmahico_report(
+      "07_pepchem",
+      params = list(
+        SampleSet           = "sim",
+        Software            = "fragpipe_dda_individual",
+        Instrument          = "tims_tof",
+        FolderDocumentation = proj,
+        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+        FolderData          = file.path(proj, "sim_fragpipe_dda"),
+        FolderResults       = proj,
+        FolderFigures       = proj,
+        ProjectDir          = proj,
+        PepAllSource        = "build",
+        Subset              = "",
+        MHCclass            = "MHC1",
+        PeptideSet          = "selected",
+        PropertySet         = "extended",
+        MotifLength         = "auto",
+        TerminalPositions   = "1,2,-2,-1",
+        MinPeptidesSample   = 10,
+        ResultsOverwrite    = TRUE,
+        PlotsSave           = FALSE,
+        CsvSave             = FALSE
+      ),
+      output_file = "sim_07_pepchem.html",
+      quiet = TRUE)))
+
+  expect_true(file.exists(out))
+  # both always-written exports of this report
+  expect_true(file.exists(file.path(proj, "pepchem_summary.csv")))
+  expect_true(file.exists(file.path(proj, "pepchem_stats.csv")))
+
+  summ <- utils::read.csv(file.path(proj, "pepchem_summary.csv"))
+  expect_true(all(c("Sample", "Condition", "Property", "Median") %in% names(summ)))
+  expect_true("GRAVY" %in% summ$Property)
+
+  stats <- utils::read.csv(file.path(proj, "pepchem_stats.csv"))
+  expect_equal(unique(stats$Contrast), "TREAT_vs_CTRL")
+  expect_equal(unique(stats$Level), "sample")
+  # the descriptors really were compared across the 3 vs 3 samples
+  expect_equal(unique(c(stats$n1, stats$n2)), 3L)
+})
+
+test_that("07_pepchem renders for a single Condition (no comparison possible)", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("simpepchem1_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  annot <- utils::read.csv(file.path(proj, basename(sim_annot)))
+  utils::write.csv(annot[annot$Condition == "CTRL", ],
+                   file.path(proj, "annot_ctrl.csv"), row.names = FALSE)
+
+  out <- suppressWarnings(suppressMessages(
+    run_howmahico_report(
+      "07_pepchem",
+      params = list(
+        SampleSet           = "sim",
+        Software            = "fragpipe_dda_individual",
+        Instrument          = "tims_tof",
+        FolderDocumentation = proj,
+        AnnotationFile      = "annot_ctrl.csv",
+        FolderData          = file.path(proj, "sim_fragpipe_dda"),
+        FolderResults       = proj,
+        FolderFigures       = proj,
+        ProjectDir          = proj,
+        PepAllSource        = "build",
+        Subset              = "ctrl",
+        MHCclass            = "MHC1",
+        MinPeptidesSample   = 10,
+        ResultsOverwrite    = TRUE,
+        PlotsSave           = FALSE,
+        CsvSave             = FALSE
+      ),
+      output_file = "sim_07_pepchem_ctrl.html",
+      quiet = TRUE)))
+
+  expect_true(file.exists(out))
+  # the descriptive summary is still written; the stats table is not
+  expect_true(file.exists(file.path(proj, "ctrl", "ctrl_pepchem_summary.csv")))
+  expect_false(file.exists(file.path(proj, "ctrl", "ctrl_pepchem_stats.csv")))
+})
+
+# Render guard (v0.16.0): 05_quality_score carried an inline `r ...` expression
+# whose else-branch was a bare comma-separated string list ("a", "b", x, "c")
+# instead of a paste0() call. That is a syntax error, so the template aborted at
+# the inline-parse stage and the report had never rendered -- no test covered it,
+# because the suite only rendered 01 and 06.
+
+test_that("05_quality_score renders end-to-end against the simulated data", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("simquality_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  out <- suppressWarnings(suppressMessages(
+    run_howmahico_report(
+      "05_quality_score",
+      params = list(
+        SampleSet           = "sim",
+        Software            = "fragpipe_dda_individual",
+        Instrument          = "tims_tof",
+        FolderDocumentation = proj,
+        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+        FolderData          = file.path(proj, "sim_fragpipe_dda"),
+        FolderResults       = proj,
+        FolderFigures       = proj,
+        ProjectDir          = proj,
+        PepAllSource        = "build",
+        Subset              = "",
+        MHCclass            = "MHC1",
+        ResultsOverwrite    = TRUE,
+        PlotsSave           = TRUE,
+        CsvSave             = FALSE
+      ),
+      output_file = "sim_05_quality_score.html",
+      quiet = TRUE)))
+
+  expect_true(file.exists(out))
+  # PlotsSave really writes files: ggsave_rawr used to resolve the plot name from
+  # the package namespace outwards, never reaching the knit environment, so every
+  # report saved nothing at all under PlotsSave = TRUE
+  expect_gt(length(list.files(proj, pattern = "[.]png$")), 0)
+  # and the plots reach the HTML (ggprint_rawr had the same scoping bug)
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_gt(length(gregexpr("<img", html)[[1]]), 0)
+})

@@ -68,6 +68,9 @@ utils::globalVariables(c(
   "Loading", "P.Value", "P.Value_det", "PCx", "PCy", "Rank", "Status", "Unit",
   "Unit_", "Value", "Variance", "adj.P.Val", "adj.P.Val_det", "logFC",
   "n_det_ref", "n_det_test", "n_tot_ref", "n_tot_test", "n_units", "PC", "x", "y",
+  # pepchem engine and its plots (R/pepchem.R, plot_* in R/plots.R)
+  "AA", "CliffsDelta", "Flag", "Frequency", "Group", "Log2Enrichment",
+  "Log2Ratio", "Property", "p_adj",
   # pre-existing NSE names that R CMD check still listed as undefined
   "invk0", "invk0_bin", "perc_num"
 ))

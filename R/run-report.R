@@ -23,7 +23,10 @@
 #'   (log2(Area) correlation, Area %CV), `"05_quality_score"` (per-sample
 #'   immunopeptidomics quality score with a traffic-light overview) and
 #'   `"06_quant_stats"` (advanced quantification: normalization, PCA/clustering
-#'   and limma differential abundance between Conditions).
+#'   and limma differential abundance between Conditions) and `"07_pepchem"`
+#'   (peptide physicochemical properties: amino-acid composition, per-position
+#'   residue frequency and descriptors such as GRAVY, compared between
+#'   Conditions).
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`SampleSet`, `AnnotationFile`, `Subset`,
 #'   `FolderData`, `FolderResults`, `FolderFigures`, `Software`, `MHCclass`,
@@ -85,7 +88,8 @@
 run_howmahico_report <- function(template = c("00_mhc_report", "00_mhc_upsets",
                                               "01_id_counts", "02_overlaps",
                                               "03_lcms_qc", "04_quant",
-                                              "05_quality_score", "06_quant_stats"),
+                                              "05_quality_score", "06_quant_stats",
+                                              "07_pepchem"),
                                  params, output_file, ...){
   template <- match.arg(template)
   skeleton <- system.file("rmarkdown", "templates", template, "skeleton", "skeleton.Rmd",

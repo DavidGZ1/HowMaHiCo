@@ -7,7 +7,50 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.15.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.16.0** — Phases 1–6 of the package conversion are complete.
+v0.16.0 added the **peptide-chemistry report `07_pepchem`** and its engine
+`R/pepchem.R` — the first part of HowMaHiCo that describes what the ligands are
+*made of* rather than which they are. `pepchem_by_sample()` reduces `pep_all` to
+its distinct `Sequence` per `Sample` and attaches the descriptors from
+`peptide_properties()` (`GRAVY`, `pI`, `Charge`, `MW`, `Boman`,
+`HydrophobicMoment`, `InstabilityIndex`, `AliphaticIndex` + `frac_*` amino-acid
+class fractions), computed **once over the unique sequences**; `aa_composition()`
+and `aa_position_frequency()` give the position-independent and per-position
+residue tables (the latter generalises `anchor_information_content()`, and the
+two now share `.aa_alphabet()` / `.resolve_positions()`).
+**The unit of analysis is the sample, not the peptide**: `summarise_pepchem()`
+collapses each sample to one value per descriptor, `aggregate_pepchem()` gives
+the per-Condition mean ± sd across samples, and `compare_pepchem(level =
+"sample")` tests across samples (Kruskal-Wallis + pairwise Wilcoxon, BH within a
+contrast, `MedianDiff` + the new scale-free `cliffs_delta()`). That test is
+deliberately low-powered — on 3 vs 3 samples a two-sided Wilcoxon cannot reach
+p < 0.1, the same structural limit `06_quant_stats` documents for its Fisher
+track — so `level = "peptide"` is reported alongside as an explicitly
+pseudo-replicated, descriptive track. `compare_aa_frequency()` applies the same
+machinery per residue to per-sample frequencies (**not** a chi-square on pooled
+residue counts, which would treat every residue as an independent draw). New
+plots in `R/plots.R`: `plot_aa_composition()` (bar / heatmap / log2 enrichment
+vs. the pooled composition), `plot_aa_position_heatmap()`,
+`plot_property_distribution()`, `plot_property_sample_summary()`,
+`plot_property_effectsize()`. **New dependency `Peptides`** (CRAN, GPL-2, Rcpp
+only) in `Imports` — vectorised and the canonical GRAVY implementation, so the
+scales are not re-derived; `Peptides::aaComp()` is *not* used (per-sequence list)
+and its per-descriptor "unrecognized amino acid types" warnings are consolidated
+into one. Peptide **position within the parent protein** was deferred — see
+*Deferred designs* below.
+**Two silent-failure fixes found while verifying it**: (a) `ggsave_rawr()` /
+`ggprint_rawr()` resolved the plot name with a bare `exists()`, which searches
+from the *helper's own* frame outwards (namespace → `globalenv()`) and never
+reaches a report's knit env (`new.env(parent = globalenv())`) — so
+`PlotsSave = TRUE` wrote **no** png in any report and `ggprint_rawr()` returned
+the warning string instead of the plot, swallowed by `warning = FALSE` chunks.
+The name is now resolved in the caller's frame via the shared internal
+`.plot_was_built()` (`R/theme-and-save.R`), and a non-symbol argument
+(`plots[[nm]]`, the export-loop idiom) is judged by value so a `NULL` plot is
+skipped; (b) `05_quality_score` had **never rendered** — an inline `` `r ...` ``
+expression ended in a bare comma-separated string list instead of a `paste0()`
+call, a syntax error caught only at inline-parse time, and no test rendered that
+template. Both are guarded by new tests.
 v0.15.0 was a robustness + schema pass driven by `plans_dgz.md`.
 **Mouse MHC-I**: `MHCclass` accepts **`"MHC1_mouse"`** (7–11 AAs) next to `MHC1`
 (8–13) and `MHC2` (12–25); the windows/palettes now come from
@@ -207,7 +250,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (~40) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
@@ -291,6 +334,19 @@ note above.
   `plot_intensity_dist()`, `plot_dynamic_range()`, `plot_pca()`,
   `plot_quant_heatmap()`, `plot_volcano()`, `plot_ma()`, `plot_pvalue_hist()`,
   `plot_sig_summary()`) live in `R/plots.R`
+- **`R/pepchem.R`** — the peptide-chemistry engine behind `07_pepchem`:
+  `peptide_properties()` (per-**unique**-sequence descriptors via `Peptides`),
+  `pepchem_properties()` (the `core`/`extended` PropertySet lists),
+  `aa_composition()`, `aa_position_frequency()` (per-position residue table;
+  negative positions count from the C-terminus), `pepchem_by_sample()`,
+  `summarise_pepchem()` → `aggregate_pepchem()` (the two-step per-sample →
+  per-Condition aggregation), `cliffs_delta()`, `compare_pepchem()` and
+  `compare_aa_frequency()`, plus the internal `.aa_alphabet()` /
+  `.resolve_positions()` (shared with `anchor_information_content()`),
+  `.aa_classes()`, `.residue_counts()` and the `.compare_groups()` test
+  scaffold. Its plots (`plot_aa_composition()`, `plot_aa_position_heatmap()`,
+  `plot_property_distribution()`, `plot_property_sample_summary()`,
+  `plot_property_effectsize()`) live in `R/plots.R`
 - **`R/report-helpers.R`** — the settings the templates derive from their params:
   `mhc_length_window()` (MHC1 8–13 / MHC1_mouse 7–11 / MHC2 12–25, else the
   `ShortPeptideLength*` params), `mhc_class_palette()`, `mhc_classes()` and
@@ -309,11 +365,12 @@ note above.
   charge) → peptide motifs (seqlogo by length) → PTM profile → export block
 - **`inst/rmarkdown/templates/00_mhc_upsets/skeleton/skeleton.Rmd`** — secondary
   report focused on overlap/UpSet plots (loads from cached `.rda`, same params)
-- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant,05_quality_score,06_quant_stats}/`** —
+- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant,05_quality_score,06_quant_stats,07_pepchem}/`** —
   the focused reports (`01`–`04` each a slice of `00_mhc_report`;
   `05_quality_score` is the per-sample quality-score report from
   `R/quality-score.R`; `06_quant_stats` is the advanced-quantification /
-  differential-abundance report from `R/quant-stats.R`), sharing
+  differential-abundance report from `R/quant-stats.R`; `07_pepchem` is the
+  peptide-physicochemical-properties report from `R/pepchem.R`), sharing
   `inst/rmarkdown/shared/setup.Rmd` and loading the `pep_all` cache from
   `build_pep_all()` (`R/build-pep-all.R`)
 
@@ -414,8 +471,9 @@ didn't need (they hardcoded `1_documentation/`):
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
-| `PepAllSource` | **Focused reports only** (the six `01`–`06` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PepAllSource` | **Focused reports only** (the seven `01`–`07` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
 | `PeptideSet` / `QuantFeature` / `QuantUnit` / `MinReplicates` / `NormMethod` / `ImputeMethod` / `StatMethod` / `BlockVar` / `FdrCutoff` / `Log2FcCutoff` / `MinDetectExclusive` / `TopNHeatmap` / `PermutationTest` | **`06_quant_stats` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the matrix rows (`Peptide` default \| `Sequence` \| `PeptideID` \| `ProteinFirst`) and columns (`BioReplicate` default \| `Sample` \| `Condition`), the filtering cut-off (default 2 units in ≥1 Condition), normalization (`median` default \| `quantile` \| `cyclicloess` \| `scale` \| `none`), imputation (`none` default \| `minprob` \| `mindet`), test (`limma` default \| `ttest`), an optional `limma::duplicateCorrelation` blocking column, the significance cut-offs, the detection-count rule for condition-exclusive features, the heatmap feature count, and whether to run the PERMANOVA permutation test. |
+| `PeptideSet` / `PropertySet` / `MotifLength` / `TerminalPositions` / `ChargePh` / `MinPeptidesSample` / `FdrCutoff` | **`07_pepchem` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the descriptor set (`core` = Length/GRAVY/pI/Charge \| `extended` adds MW, Boman, hydrophobic moment, instability + aliphatic index and the `frac_*` class fractions — see `pepchem_properties()`), the peptide length used for the per-position frequency map (`"auto"` = modal length, or an integer), the comma-separated positions profiled across all lengths (negative counts from the C-terminus), the pH of the net-charge descriptor, the unique-sequence count below which a sample is flagged as noisy, and the BH significance cut-off. |
 | `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |
@@ -485,3 +543,42 @@ natively in `R/loaders-peaks-dirs.R`.
 - For the longer-term packaging conventions (R package structure, Docker, Shiny app,
   CI/release process) this project is expected to follow once matured into a
   distributable tool, see `project-style-guide.md`.
+
+## Deferred designs
+
+Work that was planned in detail, then parked. Kept here (rather than only as a
+one-line `plans_dgz.md` standby entry) so it can be resumed without re-deriving
+the investigation.
+
+### Peptide position within the parent protein (deferred v0.16.0)
+
+The third part of the physicochemical-properties request. Out of scope of
+`07_pepchem` because it is the only part needing user-supplied input beyond
+`pep_all`.
+
+- **No loader carries a position column.** FragPipe's `psm.tsv` `select()`
+  whitelist (`R/loaders-fragpipe.R`) drops `Protein Start`/`Protein End`;
+  DIA-NN's `report.tsv` has none at all (`RT.Start`/`RT.Stop` are *retention
+  time*); PEAKS' start/end live in `protein-peptides.csv`, which the package
+  never reads. The `software = "custom"` dictionary path is the one place a
+  `Start` column would survive today, since `parse_unified()` imposes no
+  whitelist beyond the dictionary.
+- **Approach when resumed:** an optional `FastaFile` report param plus a
+  ~25-line base-R FASTA reader (`read_fasta()` → `Header`, `Accession`,
+  `Sequence`, `ProteinLength`; accession = field 2 of a `sp|P01234|NAME` header,
+  else the first whitespace token) and `map_peptide_positions()`, joining
+  `ProteinFirst` (first entry when `;`-separated) to the FASTA and locating each
+  peptide with `stringr::str_locate(..., fixed(Sequence))` → `Start`, `End`,
+  `RelPosition`, `DistNterm`, `DistCterm`, warning with the unmapped fraction.
+  No new dependency. It would also unlock a true proteome background for the
+  composition section, replacing the pooled-subset reference `07_pepchem`
+  currently uses.
+- **Plot:** `plot_protein_position(pos, type = c("relative", "terminal"))`, in a
+  `results='asis'` section that emits its own heading only when a FASTA is given
+  (the `imputation-section` pattern in `06_quant_stats`).
+- **Test fixture needed:** the shipped sim data has 462 peptides over *synthetic*
+  accessions (`sp|Q8R3TN|NM3_HUMAN` …) with no real protein to locate them in.
+  Generate `inst/extdata/sim_fragpipe_dda_proteins.fasta` — one ~150–250 AA
+  synthetic protein per `Protein ID`, each embedding its peptide(s) at a random
+  offset (~80 KB against the existing 532 KB fixture dir). Leave a few
+  accessions out to exercise the unmapped-fraction warning.

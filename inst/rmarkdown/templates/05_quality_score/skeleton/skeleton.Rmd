@@ -94,7 +94,7 @@ thresholds_used <- if (threshold_mode == "qc_relative")
   quality_thresholds_default(params$MHCclass)
 ```
 
-`r if (length(qc_samples) > 0) paste0("**QC control samples:** ", paste(qc_samples, collapse = ", "), " (marked with * in plots).") else "No QC control samples tagged (set an annotation ", "<code>", params$QCColumn, "</code> column to enable QC-relative thresholds)."`
+`r if (length(qc_samples) > 0) paste0("**QC control samples:** ", paste(qc_samples, collapse = ", "), " (marked with * in plots).") else paste0("No QC control samples tagged (set an annotation <code>", params$QCColumn, "</code> column to enable QC-relative thresholds).")`
 
 **Threshold mode:** `r threshold_mode`
 

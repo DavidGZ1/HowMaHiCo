@@ -10,19 +10,20 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 
 
+
 ## In standby
+* peptide position within the parent protein (the third part of the physicochemical-properties item) — deferred; it is the only part that needs a user-supplied search FASTA, since no loader carries a position column (FragPipe psm.tsv, DIA-NN report.tsv and PEAKS peptide.csv all lack one). Full design recorded in CLAUDE.md under "Deferred designs".
 * implement safeguard when some conditions or replicates give 0 areas, currently throwing error — moved to standby (no repro available; e.g. CHEB\_001 all dda dataset not in repo). The all-NA Area/CV and all-NA correlation cases are already guarded in the report chunks; the partial (some groups 0/NA) failure needs a repro to target.
 * For PTM plots, translate unimod code into modification name — deferred (full implementation design saved in memory/project\_ptm\_translation\_plan.md). Scope chosen: translate BOTH UniMod accessions AND delta masses to names. Key gotcha: only DIA-NN stores UniMod codes (UniMod:NN); FragPipe (default/sim) and PEAKS store delta masses. Plan: new R/ptm.R with ptm\_reference() + translate\_ptm(), wired into plot\_ptm\_heatmap() as a display-time translate=TRUE arg; correct the wrong PTM note in 01\_id\_counts skeleton.
 * InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04\_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot\_heatmap.
 * Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
-* add other proporties such as GRAVY
 * Total by Condition /BioReplicate / Sample in tabs
 * more explicit errors, e.g.,  when files are not found
 * autogenerate Sample by concatenating the others
 * bioreplicate as numbers or text, without condition, gets merged afterwards
 * maybe generate a report in long format
 * include whole folder with dia-quant-output when diann
-
+* check and deal with license discrepancies between howmahico, peptides, limma
 
 * 
 
@@ -152,4 +153,4 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * data completeness plots: plot\_completeness() (per unit / per feature) + plot\_missing\_heatmap() presence-absence map, in 06\_quant\_stats (v0.14.0)
 * quantitative report heatmap with and without clustering, dynamic range, volcano plots: plot\_quant\_heatmap(cluster = TRUE/FALSE), plot\_dynamic\_range(), plot\_volcano()/plot\_ma(), all in 06\_quant\_stats (v0.14.0)
 * fixed run\_howmahico\_report("05\_quality\_score") being unreachable (template documented but missing from the match.arg choices); 05 and 06 registered + regression guard test that every shipped template dir is offered (v0.14.0)
-
+* peptide physicochemical properties report: new `07_pepchem` template + `R/pepchem.R` engine (peptide\_properties, pepchem\_properties, aa\_composition, aa\_position\_frequency, pepchem\_by\_sample, summarise\_pepchem, aggregate\_pepchem, cliffs\_delta, compare\_pepchem, compare\_aa\_frequency) comparing amino-acid composition (overall / per sample / enrichment vs. the pooled composition), per-position residue frequency (dominant length + N-/C-terminal profile across all lengths) and per-peptide descriptors (GRAVY, pI, charge, MW, Boman, hydrophobic moment, instability/aliphatic index, AA class fractions) between Conditions. Descriptors are summarised per SAMPLE and then tested across samples (Kruskal-Wallis + pairwise Wilcoxon, BH, MedianDiff + Cliff's delta), with a pooled peptide-level track reported alongside as explicitly descriptive; new plots plot\_aa\_composition / plot\_aa\_position\_heatmap / plot\_property\_distribution / plot\_property\_sample\_summary / plot\_property\_effectsize; new dependency Peptides (CRAN, Rcpp only) in Imports, justified as the canonical GRAVY implementation. Position-within-the-protein moved to standby (v0.16.0)

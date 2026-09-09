@@ -47,10 +47,11 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
   sequences <- sequences[nchar(sequences) == len]
   if (length(sequences) < min_n) return(NA_real_)
 
-  aa <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
-          "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V")
+  # alphabet + negative-position handling shared with the pepchem engine, so the
+  # two per-position frequency computations cannot drift apart
+  aa <- .aa_alphabet()
   max_bits <- log2(length(aa))
-  resolved <- ifelse(positions < 0, len + positions + 1L, positions)
+  resolved <- .resolve_positions(positions, len)
 
   ic <- vapply(resolved, function(p) {
     if (p < 1 || p > len) return(NA_real_)

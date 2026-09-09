@@ -1,0 +1,489 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  PepAllSource: "cached" # how to obtain pep_all: "cached" (<Subset>_pep_all.rda), "rda" (PepAllFile), or "build" (parse raw via build_pep_all)
+  PepAllFile: "" # explicit .rda path; used only when PepAllSource = "rda"
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (human, 8-13 AAs), MHC1_mouse (murine H-2, 7-11 AAs) or MHC2 (12-25 AAs); overrides ShortPeptideLengthMin/Max
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  PeptideSet: "selected" # "selected" (pep_short, the MHC length window) or "all" (pep_all)
+  PropertySet: "extended" # core (Length, GRAVY, pI, Charge) | extended (+ MW, Boman, hydrophobic moment, instability, aliphatic index, AA class fractions)
+  MotifLength: "auto" # peptide length used for the per-position frequency map: "auto" (modal length) or an integer
+  TerminalPositions: "1,2,3,-3,-2,-1" # positions profiled across all lengths; negative counts from the C-terminus
+  ChargePh: 7.4 # pH at which the net charge descriptor is computed
+  MinPeptidesSample: 50 # a Sample with fewer unique sequences is flagged as unreliable
+  FdrCutoff: 0.05
+  TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('07_pepchem | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **peptide-chemistry** report for immunopeptidomics experiments, provided
+by the Immunopeptidomics Platform (IPP). Where the other reports describe *which*
+peptides were found, this one describes *what they are made of*: amino-acid
+composition, per-position residue preferences, and per-peptide physicochemical
+descriptors (GRAVY, pI, net charge, ...), compared between Conditions. The
+methods and the reasoning behind them are documented in the *Methods &
+justification* section at the end.
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+```{r pepchem-prep, echo=FALSE, message=FALSE, warning=TRUE}
+# ---- inputs -----------------------------------------------------------------
+pepchem_input <- if (params$PeptideSet == "all") pep_all else pep_short
+peptide_set_label <- if (params$PeptideSet == "all") "all peptides" else
+  paste0("selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)")
+
+# Descriptors are sequence-intrinsic: computed once over the unique sequences,
+# then attached to each (Sample, Sequence) pair.
+props <- pepchem_by_sample(pepchem_input, ph = params$ChargePh)
+property_cols <- pepchem_properties(params$PropertySet)
+property_cols <- intersect(property_cols, names(props))
+
+# ---- per-sample summaries and their Condition aggregation -------------------
+pepchem_summary <- summarise_pepchem(props, by = "Sample",
+                                     properties = property_cols)
+pepchem_condition <- aggregate_pepchem(pepchem_summary, stat = "Median")
+
+n_seq_sample <- props |>
+  dplyr::count(Sample, Condition, name = "n_Sequences") |>
+  dplyr::mutate(Flag = ifelse(n_Sequences < params$MinPeptidesSample,
+                              "below MinPeptidesSample", ""))
+low_samples <- as.character(n_seq_sample$Sample[nzchar(n_seq_sample$Flag)])
+if (length(low_samples) > 0)
+  warning(length(low_samples), " sample(s) carry fewer than ",
+          params$MinPeptidesSample, " unique sequences and their summaries are ",
+          "noisy: ", paste(low_samples, collapse = ", "))
+
+# ---- composition ------------------------------------------------------------
+aa_by_condition <- aa_composition(props$Sequence, groups = props$Condition)
+aa_by_sample    <- aa_composition(props$Sequence, groups = props$Sample)
+
+# ---- per-position frequency -------------------------------------------------
+motif_length <- if (identical(tolower(as.character(params$MotifLength)), "auto"))
+  NULL else suppressWarnings(as.integer(params$MotifLength))
+if (!is.null(motif_length) && is.na(motif_length)) {
+  warning("MotifLength = '", params$MotifLength,
+          "' is not \"auto\" nor an integer; falling back to the modal length.")
+  motif_length <- NULL
+}
+aa_positions <- aa_position_frequency(props$Sequence, length = motif_length,
+                                      groups = props$Condition)
+motif_length_used <- attr(aa_positions, "length")
+
+terminal_positions <- suppressWarnings(
+  as.integer(trimws(strsplit(as.character(params$TerminalPositions), ",")[[1]])))
+terminal_positions <- terminal_positions[!is.na(terminal_positions)]
+aa_terminal <- if (length(terminal_positions) == 0) aa_positions[0, ] else
+  aa_position_frequency(props$Sequence, length = NULL,
+                        positions = terminal_positions, groups = props$Condition)
+
+# ---- statistics -------------------------------------------------------------
+can_compare <- n_conditions >= 2
+pepchem_stats <- pepchem_stats_peptide <- aa_stats <- NULL
+if (can_compare) {
+  pepchem_stats <- compare_pepchem(props, level = "sample",
+                                   properties = property_cols,
+                                   fdr = params$FdrCutoff)
+  pepchem_stats_peptide <- compare_pepchem(props, level = "peptide",
+                                           properties = property_cols,
+                                           fdr = params$FdrCutoff)
+  aa_stats <- compare_aa_frequency(props, fdr = params$FdrCutoff)
+} else {
+  warning("Only one Condition in this subset - no between-condition comparison ",
+          "is possible; the descriptive sections are still rendered.")
+}
+```
+
+**Peptide set:** `r peptide_set_label` &nbsp;|&nbsp; **descriptors:**
+`r params$PropertySet` &nbsp;|&nbsp; **unique sequences:**
+`r format(dplyr::n_distinct(props$Sequence), big.mark = ",")` &nbsp;|&nbsp;
+**charge pH:** `r params$ChargePh` &nbsp;|&nbsp; **FDR:** `r params$FdrCutoff`
+
+# Peptide set overview
+
+Every descriptor below is computed on the **unique sequences of each sample**: a
+peptide identified in five replicates contributes one value to each of those
+five samples, not five values to its Condition. A sample with very few sequences
+gives a noisy median, so the ones below `MinPeptidesSample`
+(`r params$MinPeptidesSample`) are flagged here and should be read with care in
+the per-sample sections.
+
+```{r overview-table, echo=FALSE}
+n_seq_sample |>
+  kable(caption = "Unique sequences per sample") |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+# Amino acid composition {.tabset}
+
+Position-independent residue frequency. Non-standard residues (`X`, `B`, `Z`,
+`U`) are dropped, so the 20 standard residues sum to 1 within each group.
+
+## By Condition
+
+```{r plot-aa-composition-condition, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_aa_composition_condition <- plot_aa_composition(aa_by_condition, type = "bar")
+if (is.null(p_aa_composition_condition))
+  cat("_No usable sequence in this subset._") else
+  ggprint_rawr(p_aa_composition_condition)
+```
+
+## By Sample
+
+```{r plot-aa-composition-sample, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
+p_aa_composition_sample <- plot_aa_composition(aa_by_sample, type = "heatmap")
+if (is.null(p_aa_composition_sample))
+  cat("_No usable sequence in this subset._") else
+  ggprint_rawr(p_aa_composition_sample)
+```
+
+## Enrichment
+
+Log2 of each Condition's residue frequency over the **pooled** frequency of this
+subset. The pooled composition is an internal reference, not a proteome
+background: it answers "which residues distinguish this Condition from the rest
+of this experiment", not "which residues are enriched relative to the source
+proteome".
+
+```{r plot-aa-composition-enrichment, echo=FALSE, fig.width=8, fig.height=4, warning=FALSE}
+p_aa_composition_enrichment <- plot_aa_composition(aa_by_condition,
+                                                   type = "enrichment")
+if (is.null(p_aa_composition_enrichment))
+  cat("_No usable sequence in this subset._") else
+  ggprint_rawr(p_aa_composition_enrichment)
+```
+
+## Statistics
+
+Per-residue comparison of the **per-sample** frequencies (see *Methods*).
+
+```{r aa-stats-table, echo=FALSE}
+if (is.null(aa_stats) || nrow(aa_stats) == 0) {
+  cat("_Fewer than two Conditions in this subset - no comparison possible._")
+} else {
+  aa_stats |>
+    dplyr::select(AA, Contrast, Median1, Median2, Log2Ratio, CliffsDelta,
+                  p_value, p_adj, Significant) |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.numeric),
+                                function(x) signif(x, 3))) |>
+    DT::datatable(rownames = FALSE, filter = "top",
+                  options = list(pageLength = 10, scrollX = TRUE))
+}
+```
+
+# Positional amino acid frequency {.tabset}
+
+Residue frequency at each aligned position. This is the numeric complement to
+the sequence logos in the `01_id_counts` report: a logo scales its letters by
+information content, so a position with a mild but consistent preference almost
+disappears, while the heatmap keeps every frequency readable and directly
+comparable between Conditions.
+
+## Dominant length
+
+```{r plot-aa-position, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
+p_aa_position <- plot_aa_position_heatmap(aa_positions, ncol = phis_ncol)
+if (is.null(p_aa_position))
+  cat("_Not enough equal-length peptides for a positional profile._") else
+  ggprint_rawr(p_aa_position)
+```
+
+`r if (!is.null(motif_length_used)) paste0("Computed on the ", motif_length_used, "-mers of this subset.") else ""`
+
+## Terminal positions (all lengths)
+
+Positions `r params$TerminalPositions` resolved against each peptide's own
+length (negative values count from the C-terminus), so peptides of every length
+contribute. This is where an HLA-I anchor shift shows up even when the length
+distribution itself is unchanged.
+
+```{r plot-aa-terminal, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
+p_aa_terminal <- plot_aa_position_heatmap(
+  aa_terminal, ncol = phis_ncol,
+  title = "Terminal-position amino-acid frequency (all lengths)")
+if (is.null(p_aa_terminal))
+  cat("_No usable position in this subset._") else
+  ggprint_rawr(p_aa_terminal)
+```
+
+# Physicochemical descriptors {.tabset}
+
+One tab per descriptor. Each shows the **per-peptide** distribution (every unique
+sequence of a Condition contributes one value, so the spread is between-peptide)
+next to the **per-sample** summary (mean +/- sd across samples of the per-sample
+median, so the error bar is replicate reproducibility). The two answer different
+questions and are meant to be read together.
+
+```{r plot-properties, results='asis', echo=FALSE, fig.width=8, fig.height=4, warning=FALSE, message=FALSE}
+property_plots <- list()
+for (prop in property_cols) {
+  cat("\n## ", prop, " {.tabset}\n\n")
+  p_dist <- plot_property_distribution(props, prop, type = "density")
+  p_summ <- plot_property_sample_summary(pepchem_condition, prop,
+                                         points = pepchem_summary)
+  if (is.null(p_dist) && is.null(p_summ)) {
+    cat("_No usable value for this descriptor._\n\n")
+    next
+  }
+  cat("\n### Distribution (per peptide)\n\n")
+  if (is.null(p_dist)) cat("_Not available._\n\n") else print(p_dist)
+  cat("\n### Mean +/- sd (per sample)\n\n")
+  if (is.null(p_summ)) cat("_Not available._\n\n") else print(p_summ)
+  property_plots[[prop]] <- list(distribution = p_dist, summary = p_summ)
+}
+```
+
+# Between-condition comparison
+
+```{r plot-effectsize, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
+p_effectsize <- plot_property_effectsize(pepchem_stats, fdr = params$FdrCutoff)
+if (is.null(p_effectsize))
+  cat("_Fewer than two Conditions in this subset - no comparison possible._") else
+  ggprint_rawr(p_effectsize)
+```
+
+## Sample level (primary)
+
+Each sample contributes one value per descriptor (its median over that sample's
+unique sequences), and Conditions are compared across samples. Samples are the
+real replicates, so this is the honest test — and it is deliberately
+low-powered: with three replicates per Condition a two-sided Wilcoxon rank-sum
+test **cannot** return a p-value below 0.1, whatever the effect. Read
+`CliffsDelta` and `MedianDiff` first, and treat the p-values as a ranking aid.
+
+```{r pepchem-stats-table, echo=FALSE}
+if (is.null(pepchem_stats) || nrow(pepchem_stats) == 0) {
+  cat("_Fewer than two Conditions in this subset - no comparison possible._")
+} else {
+  pepchem_stats |>
+    dplyr::select(Property, Contrast, n1, n2, Median1, Median2, MedianDiff,
+                  CliffsDelta, p_value, p_adj, Significant) |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.numeric),
+                                function(x) signif(x, 3))) |>
+    DT::datatable(rownames = FALSE, filter = "top",
+                  options = list(pageLength = 10, scrollX = TRUE))
+}
+```
+
+## Peptide level (descriptive)
+
+The same descriptors pooled over the unique sequences of each Condition. Peptides
+from one sample are not independent observations, so these p-values are
+anti-conservative by construction and are **not** inference: this track is here
+because its effect sizes describe how far the two repertoires actually sit apart,
+which the low-powered sample-level test cannot resolve.
+
+```{r pepchem-stats-peptide-table, echo=FALSE}
+if (is.null(pepchem_stats_peptide) || nrow(pepchem_stats_peptide) == 0) {
+  cat("_Fewer than two Conditions in this subset - no comparison possible._")
+} else {
+  pepchem_stats_peptide |>
+    dplyr::select(Property, Contrast, n1, n2, Median1, Median2, MedianDiff,
+                  CliffsDelta, p_value, p_adj, Significant) |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.numeric),
+                                function(x) signif(x, 3))) |>
+    DT::datatable(rownames = FALSE, filter = "top",
+                  options = list(pageLength = 10, scrollX = TRUE))
+}
+```
+
+## Overall test per descriptor
+
+Kruskal-Wallis across **all** Conditions at the sample level, before the pairwise
+breakdown above.
+
+```{r pepchem-kruskal-table, echo=FALSE}
+kw <- if (is.null(pepchem_stats)) NULL else attr(pepchem_stats, "kruskal")
+if (is.null(kw) || nrow(kw) == 0) {
+  cat("_Fewer than two Conditions in this subset - no comparison possible._")
+} else {
+  kw |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.numeric),
+                                function(x) signif(x, 3))) |>
+    kable(caption = "Kruskal-Wallis test per descriptor (sample level)") |>
+    kable_paper("hover", full_width = FALSE)
+}
+```
+
+# Methods & justification
+
+**What is computed.** Every descriptor is a property of the peptide *sequence*,
+so it is computed once per unique sequence and then attached to each sample that
+identified it. `GRAVY` is the grand average of hydropathy, the mean
+Kyte-Doolittle value over the residues (Kyte & Doolittle 1982) and the standard
+hydrophobicity summary for a peptide. `pI`, net `Charge` (at pH
+`r params$ChargePh`), `MW`, the `Boman` potential-interaction index, the
+`HydrophobicMoment`, the `InstabilityIndex` and the `AliphaticIndex` come from
+the corresponding functions of the `Peptides` package. The `frac_*` descriptors
+are the fraction of residues in each amino-acid class.
+
+**Why the unit of analysis is the sample.** Peptides identified within one
+Condition are not independent observations: they come from the same few
+pulldowns, share alleles and source proteins, and their number depends on run
+depth. Pooling them and testing across peptides gives enormous nominal
+significance for effects that may be carried by a single sample. The primary
+comparison therefore summarises each **sample** first (median descriptor over its
+unique sequences; residue frequency within that sample) and tests across samples,
+where the replication is real.
+
+**Why both tracks are shown.** The honest test is also weak. A two-sided Wilcoxon
+rank-sum test on 3 vs 3 samples has a minimum attainable p-value of 0.1, so a
+perfectly separated descriptor cannot reach a 0.05 FDR — the same structural
+limit the `06_quant_stats` report documents for its Fisher presence/absence
+track. The peptide-level track is reported alongside, explicitly labelled
+descriptive, so the *size* of a difference stays visible when its p-value cannot
+clear the cut-off.
+
+**Tests and effect sizes.** Kruskal-Wallis across all Conditions, then a pairwise
+Wilcoxon rank-sum test per Condition pair, Benjamini-Hochberg corrected within
+each contrast (the family is "all descriptors, or all 20 residues, tested for
+this pair"). Non-parametric tests are used because several descriptors are
+bounded or strongly skewed (`Charge`, the `frac_*` fractions) and no
+distributional assumption is safe across them. Two effect sizes accompany every
+test: `MedianDiff`, on the descriptor's own scale, and `CliffsDelta`, which is
+scale-free and therefore comparable between descriptors measured in different
+units.
+
+**Amino-acid frequencies** are tested the same way, on per-sample frequencies. A
+chi-square test on pooled residue counts was deliberately not used: it would
+treat every residue of every peptide as an independent draw and return
+vanishingly small p-values for differences well inside the between-sample
+spread.
+
+**Limitations.** The composition enrichment tab compares each Condition against
+the pooled composition of this subset, not against the source proteome — a
+proteome background needs the search FASTA, which this report does not read.
+Peptide position within the parent protein is likewise out of scope. Descriptors
+are computed on the unmodified `Sequence`, so post-translational modifications do
+not shift the reported mass, charge or hydrophobicity; see the PTM profile in
+`01_id_counts` for those.
+
+Kyte J & Doolittle RF (1982) *J Mol Biol* 157:105. Osorio D, Rondon-Villarreal P
+& Torres R (2015) *R Journal* 7:4 (the `Peptides` package). Boman HG (2003)
+*J Intern Med* 254:197. Cliff N (1993) *Psychol Bull* 114:494. Benjamini Y &
+Hochberg Y (1995) *J R Stat Soc B* 57:289.
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+# Always-written exports: render parameters + the per-sample summary and stats
+write_input_params(params, folder = FolderResults,
+                   prefix = paste(c(result_prefix, "07_pepchem"), collapse = "_"))
+write.csv_rawr(pepchem_summary, folder = FolderResults, prefix = result_prefix)
+if (!is.null(pepchem_stats))
+  write.csv_rawr(pepchem_stats, folder = FolderResults, prefix = result_prefix)
+
+if (params$CsvSave) {
+  aa_composition_condition <- aa_by_condition
+  aa_composition_sample    <- aa_by_sample
+  aa_position_table        <- aa_positions
+  aa_terminal_table        <- aa_terminal
+  pepchem_condition_summary <- pepchem_condition
+  write.csv_rawr(aa_composition_condition, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(aa_composition_sample, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(aa_position_table, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(aa_terminal_table, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(pepchem_condition_summary, folder = FolderResults, prefix = result_prefix)
+  if (!is.null(pepchem_stats_peptide)) {
+    pepchem_stats_peptide_level <- pepchem_stats_peptide
+    write.csv_rawr(pepchem_stats_peptide_level, folder = FolderResults, prefix = result_prefix)
+  }
+  if (!is.null(aa_stats)) {
+    aa_frequency_stats <- aa_stats
+    write.csv_rawr(aa_frequency_stats, folder = FolderResults, prefix = result_prefix)
+  }
+}
+
+if (params$PlotsSave) {
+  static_plots <- list(p_aa_composition_condition = p_aa_composition_condition,
+                       p_aa_composition_sample = p_aa_composition_sample,
+                       p_aa_composition_enrichment = p_aa_composition_enrichment,
+                       p_aa_position = p_aa_position,
+                       p_aa_terminal = p_aa_terminal,
+                       p_effectsize = p_effectsize)
+  for (nm in names(static_plots)) {
+    if (!is.null(static_plots[[nm]]))
+      ggsave_rawr(static_plots[[nm]], file = nm, folder = FolderFigures,
+                  width = 20, height = 14)
+  }
+  for (prop in names(property_plots)) {
+    if (!is.null(property_plots[[prop]]$distribution))
+      ggsave_rawr(property_plots[[prop]]$distribution,
+                  file = paste0("p_dist_", prop), folder = FolderFigures,
+                  width = 18, height = 12)
+    if (!is.null(property_plots[[prop]]$summary))
+      ggsave_rawr(property_plots[[prop]]$summary,
+                  file = paste0("p_sample_", prop), folder = FolderFigures,
+                  width = 18, height = 12)
+  }
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>

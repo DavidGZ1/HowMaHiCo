@@ -125,6 +125,29 @@ reference:
   - plot_pvalue_hist
   - plot_sig_summary
 
+- title: Physicochemical properties
+  desc: >
+    Peptide-chemistry engine behind the 07_pepchem report: amino-acid
+    composition, per-position residue frequency and per-peptide descriptors
+    (GRAVY, pI, charge, ...), summarised per sample and compared between
+    Conditions.
+  contents:
+  - peptide_properties
+  - pepchem_properties
+  - aa_composition
+  - aa_position_frequency
+  - pepchem_by_sample
+  - summarise_pepchem
+  - aggregate_pepchem
+  - cliffs_delta
+  - compare_pepchem
+  - compare_aa_frequency
+  - plot_aa_composition
+  - plot_aa_position_heatmap
+  - plot_property_distribution
+  - plot_property_sample_summary
+  - plot_property_effectsize
+
 - title: Export & I/O helpers
   desc: Write report outputs (plots, csvs, render parameters) to disk
   contents:

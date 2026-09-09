@@ -7,8 +7,8 @@
 ggsave_rawr(input, file, folder, width = 8, height = 10)
 }
 \arguments{
-\item{input}{The plot object to save (NSE: its variable name is used to
-check existence, not its value).}
+\item{input}{The plot object to save. When it is a bare variable name, that
+name is used to check existence rather than the value.}
 
 \item{file}{Output file name, without extension; saved as \verb{<file>.png}
 under \code{folder}.}
@@ -35,6 +35,12 @@ Reconciles two near-duplicate report-inline variants (one hardcoding
 chunk-local \code{FolderFigures}) into a single canonical version that takes
 \code{folder}/\code{width}/\code{height} as ordinary explicit arguments — callers compute
 and pass whatever values their report context needs.
+
+A bare symbol is looked up by name in the \strong{calling} environment; any other
+expression (\code{plots[[nm]]}, a computed plot) is evaluated and judged by its
+value, so the idiomatic
+\code{for (nm in names(plots)) ggsave_rawr(plots[[nm]], file = nm, ...)} export
+loop works as well.
 }
 \examples{
 \dontrun{
