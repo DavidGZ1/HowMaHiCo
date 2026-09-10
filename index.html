@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,6 +32,12 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/howmahico.html">Getting started with HowMaHiCo</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -50,7 +56,16 @@
 <div class="page-header"><h1 id="howmahico">HowMaHiCo<a class="anchor" aria-label="anchor" href="#howmahico"></a>
 </h1></div>
 <p>A parameterized RMarkdown reporting workflow for <strong>LC-immunopeptidomics</strong> (MHC/HLA peptide) data analysis. It ingests LC-MS search-engine output from multiple tools (FragPipe, DIA-NN, PEAKS), normalizes it into a single unified long-format table (<code>pep_all</code>), and renders self-contained, interactive HTML QC reports plus csv/xlsx result exports.</p>
-<p><strong>Distributed as an R package</strong> (mid-conversion, on the <code>dev</code> branch — see <code>project-style-guide.md</code> for the target R-package + Docker + Shiny distribution pattern). <code><a href="https://github.com/DavidGZ1/HowMaHiCo" class="external-link">library(HowMaHiCo)</a></code> gives you the full function library and the report templates; this repo also serves as a worked example of the analysis pattern — useful as a reference for setting up similar immunopeptidomics QC pipelines.</p>
+<p><strong>Distributed as an R package.</strong> <code><a href="https://github.com/DavidGZ1/HowMaHiCo" class="external-link">library(HowMaHiCo)</a></code> gives you the full function library and all nine report templates. See <code>project-style-guide.md</code> for the longer-term R-package + Docker + Shiny distribution pattern.</p>
+<div class="section level2">
+<h2 id="quickstart">Quickstart<a class="anchor" aria-label="anchor" href="#quickstart"></a>
+</h2>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"DavidGZ1/HowMaHiCo"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">HowMaHiCo</span><span class="fu">::</span><span class="fu"><a href="reference/get_pipeline_script.html">get_pipeline_script</a></span><span class="op">(</span><span class="st">"howmahico_pipeline.R"</span><span class="op">)</span></span></code></pre></div>
+<p>Open that script and source it. It starts in demo mode, so it runs the whole pipeline against a small simulated dataset shipped with the package — no data of your own required. Then set <code>RUN_DEMO &lt;- FALSE</code>, edit the <code>CONFIG</code> block at the top, and re-run. <code><a href="articles/howmahico.html">vignette("howmahico")</a></code> narrates the same walkthrough.</p>
+</div>
 <div class="section level2">
 <h2 id="what-it-does">What it does<a class="anchor" aria-label="anchor" href="#what-it-does"></a>
 </h2>
@@ -84,12 +99,22 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <tbody>
 <tr>
 <td><code>R/</code></td>
-<td>Package source — the ~40 functions (loaders, annotation, counting, plotting, export) plus the <code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>/<code><a href="reference/derive_filtered_annotation.html">derive_filtered_annotation()</a></code> entry points</td>
+<td>Package source — 100+ exported functions (loaders, annotation, counting, statistics, plotting, export) plus the <code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>/<code><a href="reference/derive_filtered_annotation.html">derive_filtered_annotation()</a></code> entry points</td>
 </tr>
 <tr>
 <td><code>inst/rmarkdown/templates/</code></td>
-<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the focused <code>01_id_counts</code>/<code>02_overlaps</code>/<code>03_lcms_qc</code>/<code>04_quant</code>/<code>05_quality_score</code>/<code>06_quant_stats</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
+<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the focused <code>01_id_counts</code>/<code>02_overlaps</code>/<code>03_lcms_qc</code>/<code>04_quant</code>/<code>05_quality_score</code>/<code>06_quant_stats</code>/<code>07_pepchem</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
 </td>
+</tr>
+<tr>
+<td><code>inst/scripts/</code></td>
+<td>The guided pipeline script handed out by <code><a href="reference/get_pipeline_script.html">get_pipeline_script()</a></code>
+</td>
+</tr>
+<tr>
+<td><code>vignettes/</code></td>
+<td>
+<code><a href="articles/howmahico.html">vignette("howmahico")</a></code> — the narrated walkthrough</td>
 </tr>
 <tr>
 <td><code>tests/testthat/</code></td>
@@ -100,51 +125,38 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <td>Generated roxygen2 documentation (<code>.Rd</code>)</td>
 </tr>
 <tr>
-<td><code>1_documentation/</code></td>
-<td>Sample annotation CSVs (one per analysis subset)</td>
-</tr>
-<tr>
-<td><code>2_data/</code></td>
-<td>Raw search-engine output + cached <code>pep_all</code> (not tracked — see <code>.gitignore</code>)</td>
-</tr>
-<tr>
-<td><code>3_results/</code></td>
-<td>Generated csv/xlsx result tables (not tracked)</td>
-</tr>
-<tr>
-<td><code>4_figures/</code></td>
-<td>Optional generated PNG plot exports (not tracked)</td>
-</tr>
-<tr>
 <td><code>example/</code></td>
 <td>Legacy pre-package reference copies — gitignored, for reference only</td>
 </tr>
 </tbody>
 </table>
-<blockquote>
-<p><code>2_data/</code>, <code>3_results/</code>, <code>4_figures/</code>, and the rendered <code>*.html</code> reports are regenerated by running the pipeline and are excluded from version control — see <code>.gitignore</code>.</p>
-</blockquote>
+<p>The numbered folders <code>1_documentation/</code>, <code>2_data/</code>, <code>3_results/</code>, <code>4_figures/</code> are the <strong>convention for your own analysis project</strong>, not part of this repository — they are what the <code>Folder*</code> parameters point at by default. Create them wherever you keep the data; the package does not care where they live, and any absolute path works.</p>
 </div>
 <div class="section level2">
 <h2 id="requirements">Requirements<a class="anchor" aria-label="anchor" href="#requirements"></a>
 </h2>
 <ul>
-<li>R (&gt;= 4.1.0) with <a href="https://posit.co/download/rstudio-desktop/" class="external-link">RStudio</a> (project file: <code>HowMaHiCo.Rproj</code>)</li>
-<li>Install the package (e.g. <code>devtools::install_github("DavidGZ1/HowMaHiCo")</code> or <code>devtools::load_all()</code> from a clone) — all dependencies are declared in <code>DESCRIPTION</code> (<code>Imports</code>/<code>Suggests</code>) and resolved automatically; no manual library list or companion-package install required</li>
+<li>
+<strong>R &gt;= 4.1.0</strong> (the package uses the native <code>|&gt;</code> pipe)</li>
+<li>
+<strong>pandoc</strong>, to render the HTML reports. Bundled with <a href="https://posit.co/download/rstudio-desktop/" class="external-link">RStudio</a>; install it separately if you work outside RStudio. RStudio itself is optional (the repo does ship an <code>HowMaHiCo.Rproj</code> if you use it)</li>
+<li>All dependencies are declared in <code>DESCRIPTION</code> and resolved automatically — no manual library list, no companion-package install</li>
+<li>
+<strong>Optional:</strong> <a href="https://bioconductor.org/packages/limma" class="external-link">limma</a> for the advanced-quantification report (<code>BiocManager::install("limma")</code>). Without it that report falls back to a Welch t-test automatically</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="how-to-run">How to run<a class="anchor" aria-label="anchor" href="#how-to-run"></a>
 </h2>
 <p><strong>1. Install the package</strong></p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># from a local clone:</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">load_all</span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co"># or from GitHub:</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"DavidGZ1/HowMaHiCo"</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavidGZ1/HowMaHiCo" class="external-link">HowMaHiCo</a></span><span class="op">)</span></span></code></pre></div>
 <p><strong>2. Auto-generate an annotation CSV skeleton</strong></p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># FragPipe (psm.tsv layout)</span></span>
 <span><span class="fu"><a href="reference/get_annot_fragpipe.html">get_annot_fragpipe</a></span><span class="op">(</span>dir_data <span class="op">=</span> <span class="st">"2_data"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span>row.names <span class="op">=</span> <span class="cn">FALSE</span>, file <span class="op">=</span> <span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span></span>
@@ -163,13 +175,13 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <p><strong>Two things the annotation table controls:</strong> - <strong>Inclusion</strong> — only samples listed in the annotation table are read and reported. Any sample present in the results folder but missing from the table is silently excluded, so the table is also how you subset a run. - <strong>Ordering</strong> — Conditions, replicates and samples appear in every plot and table in the <strong>row order of the annotation CSV</strong>. Order the rows the way you want them displayed (factor levels are taken from first appearance).</p>
 </blockquote>
 <p><em>(Optional)</em> <code>Sample_ID</code> can be populated automatically from a Bruker HyStar sample list with <code><a href="reference/get_annot_sampleid.html">get_annot_sampleid()</a></code> instead of typing it by hand:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/get_annot_sampleid.html">get_annot_sampleid</a></span><span class="op">(</span>file_sample_list <span class="op">=</span> <span class="st">"1_documentation/sample_list.xlsx"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">write.csv</a></span><span class="op">(</span>row.names <span class="op">=</span> <span class="cn">FALSE</span>, file <span class="op">=</span> <span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/get_annot_sampleid.html">get_annot_sampleid()</a></code> joins on <code>Source_file</code>, so both sides must use the same run naming. It warns when nothing matched (showing example values from each side) and when only some rows matched (naming the dropped ones); pass <code>keep_all = TRUE</code> to keep every annotation row instead, with the unmatched <code>Sample_ID</code> left empty.</p>
 <p><strong>4. (Optional) Get a local copy of the report template to customise</strong></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/get_report_template.html">get_report_template</a></span><span class="op">(</span><span class="st">"MyReport"</span>, template <span class="op">=</span> <span class="st">"00_mhc_report"</span><span class="op">)</span></span></code></pre></div>
 <p><strong>5. Render a report</strong></p>
 <p><strong>Edit these for your run</strong> (the rest can stay at the example defaults):</p>
@@ -189,16 +201,18 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <li>
 <code>MHCclass</code> — <code>MHC1</code> (human, 8–13 AA), <code>MHC1_mouse</code> (murine H-2, 7–11 AA) or <code>MHC2</code> (12–25 AA)</li>
 <li>
+<code>Provider</code> — your lab or platform, printed in the report header; leave empty for a generic attribution</li>
+<li>
 <code>output_file</code> — the HTML filename to write</li>
 </ul>
-<p>See the full parameter reference (incl. <code>PepAllSource</code>, <code>TestMode</code>, <code>ResultsOverwrite</code>, <code>CsvSave</code>/<code>PlotsSave</code>) in <code>CLAUDE.md</code>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>The full parameter reference is in the <a href="#parameters">Parameters</a> section below.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span></span>
 <span>  template <span class="op">=</span> <span class="st">"00_mhc_report"</span>,          <span class="co"># or "00_mhc_upsets"</span></span>
 <span>  params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    Title            <span class="op">=</span> <span class="st">"MHC1 immunopeptidomics — DDA all"</span>,</span>
 <span>    SampleSet        <span class="op">=</span> <span class="st">"project_id"</span>,</span>
-<span>    DataAnalysisNames <span class="op">=</span> <span class="st">"DGZ"</span>,</span>
+<span>    Provider         <span class="op">=</span> <span class="st">"My Lab"</span>,      <span class="co"># "" prints a generic attribution</span></span>
+<span>    DataAnalysisNames <span class="op">=</span> <span class="st">"analyst"</span>,</span>
 <span>    WetLabNames      <span class="op">=</span> <span class="st">"operator"</span>,</span>
 <span>    FolderDocumentation <span class="op">=</span> <span class="st">"1_documentation"</span>,</span>
 <span>    AnnotationFile   <span class="op">=</span> <span class="st">"sample_annotation.csv"</span>,</span>
@@ -219,7 +233,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code>FolderDocumentation</code>/<code>FolderData</code>/<code>FolderResults</code>/<code>FolderFigures</code> are absolute (or render-time-working-directory-relative) paths — the template ships inside an installed package and can be rendered from anywhere. One call renders one report; loop with <code><a href="reference/derive_filtered_annotation.html">derive_filtered_annotation()</a></code> for multi-subset batch runs (see the <code>\dontrun{}</code> example on <code>run_howmahico_report</code>).</p>
 <p><strong>Focused reports (instead of the all-in-one <code>00_mhc_report</code>)</strong> — build the <code>pep_all</code> cache once with <code><a href="reference/build_pep_all.html">build_pep_all()</a></code>, then render any subset of the smaller, purpose-focused templates against it (no re-parsing per report):</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">annot</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/read_annot.html">read_annot</a></span><span class="op">(</span><span class="st">"1_documentation/sample_annotation.csv"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/build_pep_all.html">build_pep_all</a></span><span class="op">(</span>software <span class="op">=</span> <span class="st">"fragpipe_dda_combined"</span>, folder_data <span class="op">=</span> <span class="st">"2_data"</span>,</span>
 <span>              annotation <span class="op">=</span> <span class="va">annot</span>, shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span>,</span>
@@ -230,7 +244,8 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span>               <span class="st">"03_lcms_qc"</span>,       <span class="co"># RT/1k0/mz, Score/ppm (advanced)</span></span>
 <span>               <span class="st">"04_quant"</span>,         <span class="co"># log2(Area) correlation, Area %CV</span></span>
 <span>               <span class="st">"05_quality_score"</span>, <span class="co"># per-sample immunopeptidomics quality score</span></span>
-<span>               <span class="st">"06_quant_stats"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span><span class="co"># differential abundance between Conditions</span></span>
+<span>               <span class="st">"06_quant_stats"</span>,   <span class="co"># differential abundance between Conditions</span></span>
+<span>               <span class="st">"07_pepchem"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>    <span class="co"># amino-acid composition, motifs, GRAVY &amp; co.</span></span>
 <span>  <span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="va">tmpl</span>,</span>
 <span>                       params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SampleSet <span class="op">=</span> <span class="st">"project_id"</span>, Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span>
 <span>                                     FolderData <span class="op">=</span> <span class="st">"2_data"</span>, FolderResults <span class="op">=</span> <span class="st">"3_results"</span>,</span>
@@ -244,9 +259,453 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <p>Reports are written to <code>output_file</code> (HTML), and result tables/figures are written under <code>&lt;FolderResults&gt;/&lt;subset&gt;/</code> and <code>&lt;FolderFigures&gt;/&lt;subset&gt;/</code>.</p>
 </div>
 <div class="section level2">
+<h2 id="the-reports">The reports<a class="anchor" aria-label="anchor" href="#the-reports"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Template</th>
+<th>What it gives you</th>
+<th>Needs</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>00_mhc_report</code></td>
+<td>All-in-one QC report: ID counts, overlaps, size/charge distributions, RT–ion-mobility–<em>m/z</em> distributions, Area correlation and %CV, Score/ppm QC, motifs, PTM profile</td>
+<td>raw files (parses them itself)</td>
+</tr>
+<tr>
+<td><code>00_mhc_upsets</code></td>
+<td>Overlap / UpSet plots only</td>
+<td>
+<code>pep_all</code> cache</td>
+</tr>
+<tr>
+<td><code>01_id_counts</code></td>
+<td>Identification counts (mean ± sd per Condition / BioReplicate / Sample), length and charge distributions, sequence motifs, PTM profile</td>
+<td>cache</td>
+</tr>
+<tr>
+<td><code>02_overlaps</code></td>
+<td>Intra-Condition replicate overlap (counts and %), cross-Condition UpSet, pairwise overlap matrices</td>
+<td>cache</td>
+</tr>
+<tr>
+<td><code>03_lcms_qc</code></td>
+<td>RT / ion-mobility / <em>m/z</em> distributions, pseudochromatograms and pseudomobilograms, Score and mass-error QC</td>
+<td>cache</td>
+</tr>
+<tr>
+<td><code>04_quant</code></td>
+<td>log2(Area) Pearson correlation between samples, Area %CV violins</td>
+<td>cache</td>
+</tr>
+<tr>
+<td><code>05_quality_score</code></td>
+<td>Per-sample immunopeptidomics quality score (0–100) with a traffic-light overview and per-metric breakdown</td>
+<td>cache</td>
+</tr>
+<tr>
+<td><code>06_quant_stats</code></td>
+<td>Differential abundance between Conditions: normalization, completeness, PCA, heatmaps, volcano/MA, plus a presence/absence track for condition-exclusive ligands</td>
+<td>cache; limma optional</td>
+</tr>
+<tr>
+<td><code>07_pepchem</code></td>
+<td>Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions</td>
+<td>cache</td>
+</tr>
+</tbody>
+</table>
+<p>The seven focused reports each render one slice of the analysis and are independent — render only the ones you need. <code>00_mhc_report</code> covers most of <code>01</code>–<code>04</code> in a single document.</p>
+</div>
+<div class="section level2">
+<h2 id="parameters">Parameters<a class="anchor" aria-label="anchor" href="#parameters"></a>
+</h2>
+<p>Every template accepts the common set; each report adds its own. All parameters are written to <code>&lt;report&gt;_input_params.csv</code> on every run, so a report always records how it was produced.</p>
+<div class="section level3">
+<h3 id="common-to-every-report">Common to every report<a class="anchor" aria-label="anchor" href="#common-to-every-report"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Param</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>SampleSet</code></td>
+<td>Experiment name, used in the auto-generated report title</td>
+</tr>
+<tr>
+<td><code>Provider</code></td>
+<td>Organisation/person that produced the report, printed in the header. Empty (default) prints a generic attribution</td>
+</tr>
+<tr>
+<td><code>Subset</code></td>
+<td>Subset label — becomes a filename prefix and a subfolder under <code>FolderResults</code>/<code>FolderFigures</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>DataAnalysisNames</code> / <code>WetLabNames</code>
+</td>
+<td>Free-text credits shown in the header</td>
+</tr>
+<tr>
+<td><code>FolderDocumentation</code></td>
+<td>Folder containing <code>AnnotationFile</code>
+</td>
+</tr>
+<tr>
+<td><code>AnnotationFile</code></td>
+<td>Annotation CSV name within <code>FolderDocumentation</code>
+</td>
+</tr>
+<tr>
+<td><code>FolderData</code></td>
+<td>Raw search output, and where the <code>pep_all</code> cache is read/written</td>
+</tr>
+<tr>
+<td>
+<code>FolderResults</code> / <code>FolderFigures</code>
+</td>
+<td>csv+xlsx output / png output</td>
+</tr>
+<tr>
+<td><code>ProjectDir</code></td>
+<td>Project root; relative folder paths resolve from here. Set it when rendering from a subdirectory</td>
+</tr>
+<tr>
+<td><code>Software</code></td>
+<td>
+<code>fragpipe_dda_combined</code> | <code>fragpipe_dda_individual</code> | <code>diann</code> | <code>peaks_xpro</code> | <code>custom</code> — selects the loader</td>
+</tr>
+<tr>
+<td><code>Instrument</code></td>
+<td>
+<code>tims_tof</code> | <code>faims_orbi</code> | <code>orbi</code> — only affects PEAKS ion-mobility parsing</td>
+</tr>
+<tr>
+<td><code>MHCclass</code></td>
+<td>
+<code>MHC1</code> (human, 8–13 AA) | <code>MHC1_mouse</code> (murine H-2, 7–11 AA) | <code>MHC2</code> (12–25 AA). Overrides <code>ShortPeptideLength*</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>ShortPeptideLengthMin</code> / <code>Max</code>
+</td>
+<td>Custom length window, used only when <code>MHCclass</code> is not one of the three above</td>
+</tr>
+<tr>
+<td><code>TestMode</code></td>
+<td>
+<code>TRUE</code> keeps ~100 rows <strong>per run</strong> — a fast dry run that preserves every run/Condition/replicate</td>
+</tr>
+<tr>
+<td><code>ResultsOverwrite</code></td>
+<td>
+<code>FALSE</code> aborts rather than overwriting results from an earlier run</td>
+</tr>
+<tr>
+<td>
+<code>CsvSave</code> / <code>PlotsSave</code>
+</td>
+<td>Also write the intermediate csv tables / every figure as png</td>
+</tr>
+</tbody>
+</table>
+<p>Folder paths are absolute, or relative to the working directory you render from — the templates live inside the installed package and can be rendered from anywhere.</p>
+</div>
+<div class="section level3">
+<h3 id="focused-reports-only">Focused reports only<a class="anchor" aria-label="anchor" href="#focused-reports-only"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Param</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>PepAllSource</code></td>
+<td>How to obtain <code>pep_all</code>: <code>"cached"</code> (default — load <code>&lt;Subset&gt;_pep_all.rda</code>), <code>"rda"</code> (load <code>PepAllFile</code>), or <code>"build"</code> (parse the raw output itself, skipping <code><a href="reference/build_pep_all.html">build_pep_all()</a></code>)</td>
+</tr>
+<tr>
+<td><code>PepAllFile</code></td>
+<td>Explicit <code>.rda</code> path, used only with <code>PepAllSource = "rda"</code>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="id_05_quality_score">
+<code>05_quality_score</code><a class="anchor" aria-label="anchor" href="#id_05_quality_score"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Param</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>QCColumn</code></td>
+<td>Annotation column flagging QC control samples (default <code>"QC"</code>; empty disables)</td>
+</tr>
+<tr>
+<td><code>ThresholdMode</code></td>
+<td>
+<code>"default"</code> (literature thresholds) or <code>"qc_relative"</code> (calibrate from the QC samples)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="id_06_quant_stats">
+<code>06_quant_stats</code><a class="anchor" aria-label="anchor" href="#id_06_quant_stats"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Param</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>PeptideSet</code></td>
+<td>
+<code>"selected"</code> (the MHC length window) or <code>"all"</code>
+</td>
+</tr>
+<tr>
+<td>
+<code>QuantFeature</code> / <code>QuantUnit</code>
+</td>
+<td>Matrix rows (<code>Peptide</code> | <code>Sequence</code> | <code>PeptideID</code> | <code>ProteinFirst</code>) and columns (<code>BioReplicate</code> | <code>Sample</code> | <code>Condition</code>)</td>
+</tr>
+<tr>
+<td><code>MinReplicates</code></td>
+<td>A feature is tested when quantified in ≥ this many units of ≥ 1 Condition</td>
+</tr>
+<tr>
+<td><code>NormMethod</code></td>
+<td>
+<code>median</code> | <code>quantile</code> | <code>cyclicloess</code> | <code>scale</code> | <code>none</code>
+</td>
+</tr>
+<tr>
+<td><code>ImputeMethod</code></td>
+<td>
+<code>none</code> | <code>minprob</code> | <code>mindet</code>
+</td>
+</tr>
+<tr>
+<td><code>StatMethod</code></td>
+<td>
+<code>limma</code> (moderated t) or <code>ttest</code> (Welch — no Bioconductor dependency)</td>
+</tr>
+<tr>
+<td><code>BlockVar</code></td>
+<td>Optional column for <code><a href="https://rdrr.io/pkg/limma/man/dupcor.html" class="external-link">limma::duplicateCorrelation</a></code>
+</td>
+</tr>
+<tr>
+<td>
+<code>FdrCutoff</code> / <code>Log2FcCutoff</code>
+</td>
+<td>Significance cut-offs</td>
+</tr>
+<tr>
+<td><code>MinDetectExclusive</code></td>
+<td>Detection count required to call a feature condition-exclusive</td>
+</tr>
+<tr>
+<td>
+<code>TopNHeatmap</code> / <code>PermutationTest</code>
+</td>
+<td>Heatmap feature count; whether to run the PERMANOVA test</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="id_07_pepchem">
+<code>07_pepchem</code><a class="anchor" aria-label="anchor" href="#id_07_pepchem"></a>
+</h3>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Param</th>
+<th>Purpose</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>PeptideSet</code></td>
+<td>
+<code>"selected"</code> or <code>"all"</code>
+</td>
+</tr>
+<tr>
+<td><code>PropertySet</code></td>
+<td>
+<code>core</code> (Length, GRAVY, pI, Charge) or <code>extended</code> (+ MW, Boman, hydrophobic moment, instability/aliphatic index, AA class fractions)</td>
+</tr>
+<tr>
+<td><code>MotifLength</code></td>
+<td>Length used for the per-position frequency map: <code>"auto"</code> (modal) or an integer</td>
+</tr>
+<tr>
+<td><code>TerminalPositions</code></td>
+<td>Comma-separated positions profiled across all lengths; negative counts from the C-terminus</td>
+</tr>
+<tr>
+<td><code>ChargePh</code></td>
+<td>pH for the net-charge descriptor</td>
+</tr>
+<tr>
+<td><code>MinPeptidesSample</code></td>
+<td>Samples with fewer unique sequences are flagged as unreliable</td>
+</tr>
+<tr>
+<td><code>FdrCutoff</code></td>
+<td>BH significance cut-off</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section level2">
+<h2 id="output">Output<a class="anchor" aria-label="anchor" href="#output"></a>
+</h2>
+<p>Written on <strong>every</strong> run, to <code>&lt;FolderResults&gt;/&lt;Subset&gt;/</code>:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>File</th>
+<th>Contents</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>&lt;Subset&gt;_pep_all.csv</code></td>
+<td>The unified peptide table</td>
+</tr>
+<tr>
+<td><code>&lt;Subset&gt;_counts_pep_all_condition.csv</code></td>
+<td>Identification counts per Condition</td>
+</tr>
+<tr>
+<td><code>&lt;Subset&gt;_seq_by_condition.xlsx</code></td>
+<td>Peptide sequences per Condition</td>
+</tr>
+<tr>
+<td><code>&lt;Subset&gt;_&lt;report&gt;_input_params.csv</code></td>
+<td>Every parameter used, plus package version and timestamp</td>
+</tr>
+</tbody>
+</table>
+<p>Plus each report’s own result tables (<code>quant_stats_results.csv</code>, <code>pepchem_summary.csv</code>, …). <code>CsvSave = TRUE</code> adds the intermediate tables (per-sample log2Area matrices, count summaries, upset tables); <code>PlotsSave = TRUE</code> writes every figure as png to <code>&lt;FolderFigures&gt;/&lt;Subset&gt;/</code>. The HTML report itself goes to <code>output_file</code>.</p>
+<p><code><a href="reference/build_pep_all.html">build_pep_all()</a></code> also writes the <code>&lt;Subset&gt;_pep_all.rda</code> cache into <code>FolderData</code>, which is what the focused reports read.</p>
+</div>
+<div class="section level2">
+<h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>render params not declared in YAML: X</code></td>
+<td>The template has no parameter <code>X</code>. Check the tables above — report-specific params only exist on their own report</td>
+</tr>
+<tr>
+<td><code>pep_all cache not found at ...</code></td>
+<td>No <code><a href="reference/build_pep_all.html">build_pep_all()</a></code> run yet for this <code>Subset</code>. Either run it, or render with <code>PepAllSource = "build"</code>
+</td>
+</tr>
+<tr>
+<td><code>The following result files were found and they cannot be overwritten</code></td>
+<td>Results from an earlier run are in the way. Move them, or set <code>ResultsOverwrite = TRUE</code>
+</td>
+</tr>
+<tr>
+<td><code>Files listed in the annotation table were not found</code></td>
+<td>
+<code>FolderData</code> or the <code>Sample_folder</code> column does not match the data layout</td>
+</tr>
+<tr>
+<td>A sample is missing from the report</td>
+<td>It is not listed in the annotation table — only listed samples are read</td>
+</tr>
+<tr>
+<td><code>This step needs the 'limma' package</code></td>
+<td>
+<code>BiocManager::install("limma")</code>, or render <code>06_quant_stats</code> with <code>StatMethod = "ttest"</code> and <code>NormMethod = "median"</code>
+</td>
+</tr>
+<tr>
+<td>Only one Condition, and comparison sections are empty</td>
+<td>Expected — pairwise sections need ≥ 2 Conditions and say so rather than failing</td>
+</tr>
+<tr>
+<td>Plots or correlations look wrong after a quick run</td>
+<td>
+<code>TestMode = TRUE</code> keeps ~100 rows per run; correlations need the full data</td>
+</tr>
+<tr>
+<td>
+<code>pandoc</code> errors when rendering</td>
+<td>pandoc is missing or not on <code>PATH</code>. Use RStudio, or install pandoc separately</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
 <h2 id="more-detail">More detail<a class="anchor" aria-label="anchor" href="#more-detail"></a>
 </h2>
-<p>See <code>CLAUDE.md</code> for an in-depth breakdown of the pipeline internals, the <code>pep_all</code> data schema, the full parameter reference, and known conventions/gotchas. <code>project-style-guide.md</code> documents the longer-term R-package/Docker/Shiny distribution pattern this kind of project is expected to graduate into.</p>
+<ul>
+<li>
+<code><a href="articles/howmahico.html">vignette("howmahico")</a></code> — the narrated walkthrough</li>
+<li>
+<code><a href="reference/get_pipeline_script.html">get_pipeline_script()</a></code> — the runnable version of it</li>
+<li>
+<code><a href="reference/run_howmahico_report.html">?run_howmahico_report</a></code>, <code><a href="reference/build_pep_all.html">?build_pep_all</a></code> and the <a href="https://davidgz1.github.io/HowMaHiCo/reference/">function reference</a>
+</li>
+<li>
+<code>CLAUDE.md</code> — pipeline internals, the <code>pep_all</code> schema and known gotchas (maintainer-facing)</li>
+<li>
+<code>project-style-guide.md</code> — the longer-term R-package/Docker/Shiny distribution pattern this project is expected to graduate into</li>
+</ul>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

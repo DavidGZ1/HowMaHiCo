@@ -108,7 +108,8 @@ build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
 focused_params <- list(SampleSet = "MEGF_035", Subset = "dda_all",
                        FolderData = "2_data", FolderResults = "3_results",
                        FolderFigures = "4_figures", Software = "fragpipe_dda_combined")
-for (tmpl in c("01_id_counts", "02_overlaps", "03_lcms_qc", "04_quant")) {
+for (tmpl in c("01_id_counts", "02_overlaps", "03_lcms_qc", "04_quant",
+                "05_quality_score", "06_quant_stats", "07_pepchem")) {
   run_howmahico_report(tmpl, params = focused_params,
                        output_file = paste0(tmpl, "__dda_all.html"))
 }

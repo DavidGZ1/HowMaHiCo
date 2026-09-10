@@ -8,9 +8,36 @@ search-engine output (FragPipe, DIA-NN, PEAKS), normalizes it into one
 unified long-format table (`pep_all`), and renders self-contained
 interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.16.1** — Phases 1–6 of the package conversion are
-complete. v0.16.1 fixed the **pkgdown site build**, which had failed on
-every `master` push since v0.8.0: pkgdown aborts when an exported
+**Current version: 0.17.0** — Phases 1–6 of the package conversion are
+complete. v0.17.0 is a **distributability pass**: the report header
+attribution is no longer hardcoded. Every skeleton branded its output to
+one platform (“provided by the Immunopeptidomics Platform (IPP)”, plus a
+personal `@dkfz.de` address and a `**Code author:** DGZ` line in the two
+`00_*` reports); all nine templates now declare an optional
+**`Provider`** param and render the line through the new exported
+[`provider_line()`](https://davidgz1.github.io/HowMaHiCo/reference/provider_line.md)
+(`R/report-helpers.R`), which falls back to a generic sentence naming no
+organisation when `Provider` is empty. Called namespaced
+(`` `r HowMaHiCo::provider_line(params$Provider)` ``) because in the two
+`00_*` templates the header sits *above* their inline setup chunk, so
+the package is not attached yet. Also new:
+**`inst/scripts/howmahico_pipeline.R`** + the exported
+**[`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md)**
+(a sibling of
+[`get_report_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.md)
+/
+[`get_dictionary_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_dictionary_template.md))
+— a runnable, commented walkthrough that renders via
+[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)
+rather than by opening a template, and that starts in a **demo mode**
+running end-to-end against `inst/extdata/sim_fragpipe_dda` with no user
+data; and the package’s first **vignette** (`vignettes/howmahico.Rmd`,
+`VignetteBuilder: knitr`), which gives the pkgdown site an Articles tab.
+The README was corrected and expanded — its headline example passed a
+`Title` param no template declares, and `rmarkdown` **errors** on
+undeclared params, so the primary documented entry point failed on
+copy-paste. v0.16.1 fixed the **pkgdown site build**, which had failed
+on every `master` push since v0.8.0: pkgdown aborts when an exported
 function is missing from the `_pkgdown.yml` reference index, and
 v0.9.0–v0.13.0 added 15 exports without indexing them.
 `devtools::check()` never reads `_pkgdown.yml` and the pkgdown workflow
@@ -344,11 +371,11 @@ public (no `@keywords internal`), `NEWS.md` added, internal code unified
 on the native `|>` pipe (R floor raised to 4.1.0).
 `project-style-guide.md` documents the target R-package + Docker + Shiny
 distribution pattern. The package layout is authoritative —
-`DESCRIPTION`, `LICENSE`/`LICENSE.md`, `NAMESPACE`, `R/` (~40 functions
-plus the report entry point), `inst/rmarkdown/templates/` (the two Rmd
-report templates), `tests/testthat/` (hand-synthesized fixtures + a full
-testthat-edition-3 suite — loaders, annotation, checks, counting,
-io-export, overlap-counters, plotting smoke tests),
+`DESCRIPTION`, `LICENSE`/`LICENSE.md`, `NAMESPACE`, `R/` (100+ exported
+functions plus the report entry point), `inst/rmarkdown/templates/` (the
+two Rmd report templates), `tests/testthat/` (hand-synthesized
+fixtures + a full testthat-edition-3 suite — loaders, annotation,
+checks, counting, io-export, overlap-counters, plotting smoke tests),
 `.github/workflows/R-CMD-check.yaml` (Win+Ubuntu CI, green), `man/`,
 `_pkgdown.yml`, `.Rbuildignore` —
 [`library(HowMaHiCo)`](https://github.com/DavidGZ1/HowMaHiCo) (or
@@ -374,8 +401,10 @@ anywhere: CI/Docker/installs).
 
 | Folder | Contents |
 |----|----|
-| `R/` | Package source: all exported functions (~40) + internal helpers |
+| `R/` | Package source: all exported functions (100+) + internal helpers |
 | `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/scripts/` | `howmahico_pipeline.R` — the guided, runnable walkthrough handed out by [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md) |
+| `vignettes/` | `howmahico.Rmd` — the narrated walkthrough ([`vignette("howmahico")`](https://davidgz1.github.io/HowMaHiCo/articles/howmahico.md)) |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
@@ -453,6 +482,11 @@ first); see the v0.6.0 framework note above.
   (generic annotation join)
 - **`R/get-dictionary.R`** — `get_dictionary_template` (copies the YAML
   dictionary template to the working dir)
+- **`R/get-pipeline-script.R`** — `get_pipeline_script` (copies
+  `inst/scripts/howmahico_pipeline.R` to the working dir; same
+  [`system.file()`](https://rdrr.io/r/base/system.file.html) →
+  exists-guard → [`file.copy()`](https://rdrr.io/r/base/files.html)
+  shape as `get_dictionary_template`)
 - **`R/quality-score.R`** — the immunopeptidomics quality-score engine:
   [`qc_metrics_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.md),
   [`anchor_information_content()`](https://davidgz1.github.io/HowMaHiCo/reference/anchor_information_content.md),
@@ -682,6 +716,7 @@ hardcoded `1_documentation/`):
 | `PepAllSource` | **Focused reports only** (the seven `01`–`07` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md) and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
 | `PeptideSet` / `QuantFeature` / `QuantUnit` / `MinReplicates` / `NormMethod` / `ImputeMethod` / `StatMethod` / `BlockVar` / `FdrCutoff` / `Log2FcCutoff` / `MinDetectExclusive` / `TopNHeatmap` / `PermutationTest` | **`06_quant_stats` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the matrix rows (`Peptide` default \| `Sequence` \| `PeptideID` \| `ProteinFirst`) and columns (`BioReplicate` default \| `Sample` \| `Condition`), the filtering cut-off (default 2 units in ≥1 Condition), normalization (`median` default \| `quantile` \| `cyclicloess` \| `scale` \| `none`), imputation (`none` default \| `minprob` \| `mindet`), test (`limma` default \| `ttest`), an optional [`limma::duplicateCorrelation`](https://rdrr.io/pkg/limma/man/dupcor.html) blocking column, the significance cut-offs, the detection-count rule for condition-exclusive features, the heatmap feature count, and whether to run the PERMANOVA permutation test. |
 | `PeptideSet` / `PropertySet` / `MotifLength` / `TerminalPositions` / `ChargePh` / `MinPeptidesSample` / `FdrCutoff` | **`07_pepchem` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the descriptor set (`core` = Length/GRAVY/pI/Charge \| `extended` adds MW, Boman, hydrophobic moment, instability + aliphatic index and the `frac_*` class fractions — see [`pepchem_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_properties.md)), the peptide length used for the per-position frequency map (`"auto"` = modal length, or an integer), the comma-separated positions profiled across all lengths (negative counts from the C-terminus), the pH of the net-charge descriptor, the unique-sequence count below which a sample is flagged as noisy, and the BH significance cut-off. |
+| `Provider` | Organisation/person that produced the report, printed in the header via [`provider_line()`](https://davidgz1.github.io/HowMaHiCo/reference/provider_line.md). Default `""` prints a generic attribution naming no organisation. Declared by all nine templates. |
 | `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |

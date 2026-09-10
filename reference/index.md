@@ -4,7 +4,7 @@
 
 Entry points that build the cached pep_all table and render the
 parameterized QC report templates (00_mhc_report all-in-one, or the
-focused 01-06 reports)
+focused 01-07 reports)
 
 - [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
   :
@@ -20,6 +20,9 @@ focused 01-06 reports)
 
 - [`get_report_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.md)
   : Get the HowMaHiCo templates
+
+- [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md)
+  : Copy the guided analysis-pipeline script to the working directory
 
 ## Annotation
 
@@ -54,6 +57,8 @@ length window and palette, and the Condition pairs to compare
   : Names of the built-in MHC classes
 - [`condition_pairs()`](https://davidgz1.github.io/HowMaHiCo/reference/condition_pairs.md)
   : All pairwise Condition comparisons
+- [`provider_line()`](https://davidgz1.github.io/HowMaHiCo/reference/provider_line.md)
+  : Provider sentence of a report header
 
 ## Data loaders
 

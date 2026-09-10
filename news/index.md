@@ -1,5 +1,85 @@
 # Changelog
 
+## HowMaHiCo 0.17.0
+
+### Reports are no longer branded to one platform
+
+- **New optional `Provider` report param, declared by all nine
+  templates.** The header attribution used to be hardcoded into every
+  skeleton (“provided by the Immunopeptidomics Platform (IPP)”), along
+  with a personal `@dkfz.de` contact block and a `**Code author:** DGZ`
+  line in the two `00_*` reports — so every report rendered by anyone
+  was attributed to one lab. The attribution is now rendered from the
+  param by the new exported
+  [`provider_line()`](https://davidgz1.github.io/HowMaHiCo/reference/provider_line.md)
+  (`R/report-helpers.R`), which returns a generic sentence naming no
+  organisation when `Provider` is empty (the default).
+- The helper is called namespaced,
+  `` `r HowMaHiCo::provider_line(params$Provider)` ``: in
+  `00_mhc_report` and `00_mhc_upsets` the header sits *above* their
+  inline setup chunk, so the package is not attached when the inline
+  expression evaluates.
+- `00_mhc_upsets` gained the description and `**Code version:**` lines
+  it was missing — the nine headers are now uniform for the first time.
+
+### A runnable on-ramp
+
+- **New `inst/scripts/howmahico_pipeline.R` + exported
+  [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md)**
+  — a commented walkthrough from raw search output to rendered reports,
+  copied into the working directory the same way
+  [`get_report_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.md)
+  and
+  [`get_dictionary_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_dictionary_template.md)
+  hand out their files. It renders through
+  [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)
+  rather than asking the reader to open a template and knit it by hand.
+- It starts in **demo mode**: sourced as-is it runs the whole pipeline
+  against the simulated dataset in `inst/extdata/sim_fragpipe_dda`, so a
+  fresh install can be exercised before any real data is involved.
+- **The package’s first vignette** (`vignettes/howmahico.Rmd`,
+  `VignetteBuilder: knitr`) narrates the same walkthrough and gives the
+  pkgdown site an Articles tab. Its pipeline chunks are `eval = FALSE`,
+  but the
+  annotation/[`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+  section really runs against the simulated data, so the article cannot
+  silently rot.
+
+### README
+
+- **Fixed: the headline
+  [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)
+  example could not be run.** It passed `Title = ...`, which no template
+  declares, and `rmarkdown` *errors* on an undeclared param
+  (`"render params not declared in YAML"`) — so copy-pasting the primary
+  documented entry point failed outright.
+- Added a Quickstart, a table of what each of the nine reports produces,
+  a full parameter reference (common, focused-only, and the per-report
+  sets for `05`, `06` and `07`), an output section naming the
+  always-written files and the `CsvSave`/`PlotsSave` tiers, and a
+  troubleshooting table. Users are no longer sent to `CLAUDE.md`, which
+  is maintainer-facing.
+- Corrected stale claims: `07_pepchem` was missing from every template
+  list, “mid-conversion, on the `dev` branch”, “~40 functions” (there
+  are 118 exports), the numbered project folders presented as repository
+  contents, and RStudio listed as a requirement rather than pandoc.
+
+### Guards
+
+- `test-report-templates.R` now checks that **every** shipped template
+  declares the common param set, and that no template hardcodes an
+  organisation, author or contact address. A param added to eight of
+  nine templates is not a soft failure: `render()` stops outright when a
+  caller passes a param the template does not declare.
+- `test-get-pipeline-script.R` covers the copy/overwrite behaviour,
+  [`parse()`](https://rdrr.io/r/base/parse.html)s the shipped script so
+  it cannot rot into a syntax error, and asserts every template name it
+  mentions is still offered by
+  [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md).
+- `test-sim-fragpipe.R` renders with and without `Provider` and checks
+  the rendered HTML in both directions — a declared-but-unused param
+  would otherwise pass a YAML-only check while changing nothing.
+
 ## HowMaHiCo 0.16.1
 
 - **Fixed: the pkgdown site had not deployed since v0.8.0.** pkgdown

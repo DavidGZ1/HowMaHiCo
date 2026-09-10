@@ -3,6 +3,8 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/CLAUDE.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/LICENSE-text.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/LICENSE.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/articles/howmahico.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/articles/index.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/authors.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/index.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/news/index.html</loc></url>
@@ -47,6 +49,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_dictionary_template.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_dirs_index_peaks.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_mat_log2area.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_proportion_charge.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/ggprint_rawr.html</loc></url>
@@ -108,6 +111,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_violin_areacv.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/plot_volcano.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/print_annot.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/provider_line.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_annot.html</loc></url>
