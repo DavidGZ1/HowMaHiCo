@@ -4,7 +4,7 @@
 
 Entry points that build the cached pep_all table and render the
 parameterized QC report templates (00_mhc_report all-in-one, or the
-focused 01-04 reports)
+focused 01-06 reports)
 
 - [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
   :
@@ -35,9 +35,25 @@ Read, validate, display, and auto-generate sample annotation tables
 - [`get_annot_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_diann.md)
   : Auto-generate a skeleton annotation table from DIA-NN report.tsv
   files
+- [`get_annot_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_peaks.md)
+  : Auto-generate a skeleton annotation table from a PEAKS export folder
 - [`get_annot_sampleid()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_sampleid.md)
   : Enrich an annotation table with Sample_ID from a Bruker HyStar
   sample list
+
+## Report helpers
+
+Shared settings the report templates derive from their params: the MHC
+length window and palette, and the Condition pairs to compare
+
+- [`mhc_length_window()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_length_window.md)
+  : Peptide-length window of an MHC class
+- [`mhc_class_palette()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_class_palette.md)
+  : Two-colour fill palette of an MHC class
+- [`mhc_classes()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_classes.md)
+  : Names of the built-in MHC classes
+- [`condition_pairs()`](https://davidgz1.github.io/HowMaHiCo/reference/condition_pairs.md)
+  : All pairwise Condition comparisons
 
 ## Data loaders
 
@@ -95,6 +111,29 @@ schema
 
 - [`annotate_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_peaks.md)
   : Join parsed PEAKS results to the sample annotation table
+
+## Custom (dictionary-driven) parsing
+
+The `software = "custom"` path: ingest a tabular export from a tool with
+no built-in loader by editing a YAML dictionary instead of writing R
+code.
+
+- [`get_dictionary_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_dictionary_template.md)
+  : Copy the custom-parser dictionary template to the working directory
+
+- [`read_dictionary()`](https://davidgz1.github.io/HowMaHiCo/reference/read_dictionary.md)
+  : Read and validate a HowMaHiCo parser dictionary
+
+- [`read_custom_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_custom_batch.md)
+  : Batch-read a generic per-sample tabular export
+
+- [`parse_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.md)
+  :
+
+  Parse a raw search-engine export into `pep_all` via a dictionary
+
+- [`annotate_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_unified.md)
+  : Join a dictionary-parsed table to the sample annotation
 
 ## Checks
 
@@ -208,6 +247,9 @@ correlation
 - [`plot_pseudochromatogram()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pseudochromatogram.md)
   : Peptide ID pseudochromatogram: count vs RT, faceted by Condition
 
+- [`plot_pseudomobilogram()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pseudomobilogram.md)
+  : Peptide ID pseudomobilogram: count vs 1/k0, faceted by Condition
+
 - [`plot_2d_distribution()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_2d_distribution.md)
   : 2D binned heatmap for any two continuous peptide properties
 
@@ -235,6 +277,138 @@ correlation
 
 - [`theme_howmahico()`](https://davidgz1.github.io/HowMaHiCo/reference/theme_howmahico.md)
   : HowMaHiCo's unified ggplot theme
+
+## Sample quality score
+
+Per-sample immunopeptidomics quality score behind the 05_quality_score
+report: raw signals (length-window fidelity, canonical-length dominance,
+anchor-motif clarity, non-tryptic specificity, charge plausibility,
+depth, mass accuracy, cross-class contamination), the threshold model,
+and the weighted 0-100 composite.
+
+- [`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md)
+  : Score immunopeptidomics samples for overall quality
+- [`qc_metrics_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.md)
+  : Raw per-sample immunopeptidomics quality metrics
+- [`anchor_information_content()`](https://davidgz1.github.io/HowMaHiCo/reference/anchor_information_content.md)
+  : Per-position anchor information content of equal-length peptides
+- [`score_curve()`](https://davidgz1.github.io/HowMaHiCo/reference/score_curve.md)
+  : Map a raw metric value to a 0-100 quality sub-score
+- [`quality_thresholds_default()`](https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.md)
+  : Default quality-score thresholds and weights
+- [`calibrate_thresholds_from_qc()`](https://davidgz1.github.io/HowMaHiCo/reference/calibrate_thresholds_from_qc.md)
+  : Derive QC-relative thresholds from tagged quality-control samples
+- [`plot_quality_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_heatmap.md)
+  : Traffic-light heatmap of per-sample quality sub-scores
+- [`plot_quality_composite()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_composite.md)
+  : Per-sample composite quality-score bar chart
+- [`plot_cross_class_length()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_cross_class_length.md)
+  : Per-sample peptide-length histogram highlighting cross-class
+  contamination
+
+## Advanced quantification & statistics
+
+Build the quantitative matrix and compare peptide Area between
+Conditions (filtering, normalization, imputation, limma moderated t /
+Welch t, Fisher presence-absence, PERMANOVA) plus the plots of the
+06_quant_stats report
+
+- [`build_quant_matrix()`](https://davidgz1.github.io/HowMaHiCo/reference/build_quant_matrix.md)
+  :
+
+  Build a feature x unit log2(Area) matrix from `pep_all`
+
+- [`filter_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/filter_quant.md)
+  : Filter a quantitative matrix to testable features
+
+- [`normalize_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/normalize_quant.md)
+  : Between-sample normalization of a log2 intensity matrix
+
+- [`impute_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/impute_quant.md)
+  : Left-censored imputation of missing quantitative values
+
+- [`test_differential()`](https://davidgz1.github.io/HowMaHiCo/reference/test_differential.md)
+  : Differential abundance between conditions
+
+- [`test_detection()`](https://davidgz1.github.io/HowMaHiCo/reference/test_detection.md)
+  : Presence/absence test between conditions (Fisher exact)
+
+- [`combine_quant_results()`](https://davidgz1.github.io/HowMaHiCo/reference/combine_quant_results.md)
+  : Combine the quantitative and presence/absence tracks
+
+- [`summarise_significant()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_significant.md)
+  : Count significant features per contrast
+
+- [`permanova_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/permanova_condition.md)
+  : Global permutation test of condition separation (PERMANOVA)
+
+- [`plot_completeness()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_completeness.md)
+  : Data completeness of a quantitative matrix
+
+- [`plot_missing_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_missing_heatmap.md)
+  : Presence/absence map of a quantitative matrix
+
+- [`plot_intensity_dist()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_intensity_dist.md)
+  : Intensity distribution per unit (normalization diagnostic)
+
+- [`plot_dynamic_range()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_dynamic_range.md)
+  : Dynamic range (rank-abundance) per condition
+
+- [`plot_pca()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pca.md)
+  : Principal component analysis of a quantitative matrix
+
+- [`plot_quant_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quant_heatmap.md)
+  : Heatmap of a quantitative matrix, clustered or in annotation order
+
+- [`plot_volcano()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_volcano.md)
+  : Volcano plot of a differential-abundance result
+
+- [`plot_ma()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ma.md)
+  : MA plot of a differential-abundance result
+
+- [`plot_pvalue_hist()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pvalue_hist.md)
+  : P-value histogram (test calibration diagnostic)
+
+- [`plot_sig_summary()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_sig_summary.md)
+  : Significant-feature counts per contrast
+
+## Physicochemical properties
+
+Peptide-chemistry engine behind the 07_pepchem report: amino-acid
+composition, per-position residue frequency and per-peptide descriptors
+(GRAVY, pI, charge, …), summarised per sample and compared between
+Conditions.
+
+- [`peptide_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/peptide_properties.md)
+  : Per-sequence physicochemical descriptors
+- [`pepchem_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_properties.md)
+  : Descriptor columns of a property set
+- [`aa_composition()`](https://davidgz1.github.io/HowMaHiCo/reference/aa_composition.md)
+  : Position-independent amino-acid composition
+- [`aa_position_frequency()`](https://davidgz1.github.io/HowMaHiCo/reference/aa_position_frequency.md)
+  : Per-position amino-acid frequency
+- [`pepchem_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_by_sample.md)
+  : Per-sample peptide physicochemical descriptors
+- [`summarise_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_pepchem.md)
+  : Summarise peptide descriptors within a group
+- [`aggregate_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/aggregate_pepchem.md)
+  : Aggregate per-sample descriptor summaries to Conditions
+- [`cliffs_delta()`](https://davidgz1.github.io/HowMaHiCo/reference/cliffs_delta.md)
+  : Cliff's delta effect size
+- [`compare_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_pepchem.md)
+  : Compare peptide descriptors between Conditions
+- [`compare_aa_frequency()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_aa_frequency.md)
+  : Compare amino-acid frequencies between Conditions
+- [`plot_aa_composition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_aa_composition.md)
+  : Amino-acid composition across groups
+- [`plot_aa_position_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_aa_position_heatmap.md)
+  : Per-position amino-acid frequency heatmap
+- [`plot_property_distribution()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_distribution.md)
+  : Distribution of one peptide descriptor across Conditions
+- [`plot_property_sample_summary()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_sample_summary.md)
+  : Per-Condition mean +/- sd of a descriptor across samples
+- [`plot_property_effectsize()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_effectsize.md)
+  : Effect sizes of the between-condition comparison
 
 ## Export & I/O helpers
 

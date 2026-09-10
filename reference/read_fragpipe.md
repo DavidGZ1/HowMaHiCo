@@ -2,10 +2,9 @@
 
 Reads a single search-engine tsv with
 [`readr::read_tsv()`](https://readr.tidyverse.org/reference/read_delim.html)
-(optionally truncated to the first ~100 rows for fast iteration via
-`testmode`), and tags every row with `samplename`. Shared internally by
-both the FragPipe and DIA-NN batch readers — the two formats only
-diverge once the per-sample frames are parsed into `pep_all` shape.
+and tags every row with `samplename`. Shared internally by both the
+FragPipe and DIA-NN batch readers — the two formats only diverge once
+the per-sample frames are parsed into `pep_all` shape.
 
 ## Usage
 
@@ -26,13 +25,21 @@ read_fragpipe(folder, samplename, testmode = FALSE)
 
 - testmode:
 
-  Logical; if `TRUE`, reads only the first ~100 rows for fast iteration
-  (can break downstream correlation plots on tiny subsets).
+  Logical; if `TRUE`, keeps only the first ~100 rows per run for fast
+  iteration (can break downstream correlation plots on tiny subsets).
 
 ## Value
 
 The tsv contents as a data frame, with `Sample_fp` added and relocated
 to the first column.
+
+## Details
+
+With `testmode = TRUE` the file is read in full and then reduced to the
+first ~100 rows **per run**, so that a combined export (one `psm.tsv`
+holding every run) still yields every sample of the experiment. Test
+mode therefore no longer saves file-reading time on combined exports; it
+produces a small, representative dataset for fast rendering.
 
 ## Examples
 

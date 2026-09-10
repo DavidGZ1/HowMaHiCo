@@ -7,7 +7,7 @@ as a stacked proportion bar chart, with percentage labels.
 ## Usage
 
 ``` r
-plot_charge_proportions(input, variable, label_size = 1.6)
+plot_charge_proportions(input, variable, label_size = 3)
 ```
 
 ## Arguments

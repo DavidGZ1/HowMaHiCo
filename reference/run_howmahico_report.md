@@ -15,7 +15,7 @@ batch-rendering example below) and Docker-idiomatic ("one container run
 ``` r
 run_howmahico_report(
   template = c("00_mhc_report", "00_mhc_upsets", "01_id_counts", "02_overlaps",
-    "03_lcms_qc", "04_quant"),
+    "03_lcms_qc", "04_quant", "05_quality_score", "06_quant_stats", "07_pepchem"),
   params,
   output_file,
   ...
@@ -35,8 +35,14 @@ run_howmahico_report(
   `"01_id_counts"` (general identification QC: counts, size
   distributions, motifs, PTM), `"02_overlaps"` (intra-Condition /
   cross-Condition / pairwise overlap), `"03_lcms_qc"` (RT/1k0/mz
-  distributions, Score/ppm QC), and `"04_quant"` (log2(Area)
-  correlation, Area %CV).
+  distributions, Score/ppm QC), `"04_quant"` (log2(Area) correlation,
+  Area %CV), `"05_quality_score"` (per-sample immunopeptidomics quality
+  score with a traffic-light overview) and `"06_quant_stats"` (advanced
+  quantification: normalization, PCA/clustering and limma differential
+  abundance between Conditions) and `"07_pepchem"` (peptide
+  physicochemical properties: amino-acid composition, per-position
+  residue frequency and descriptors such as GRAVY, compared between
+  Conditions).
 
 - params:
 

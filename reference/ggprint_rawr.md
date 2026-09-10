@@ -1,11 +1,12 @@
 # Print a plot, skipping ones that were never built
 
-Looks up `input` by the name it was called with (via
-`deparse(substitute())`) and only prints it if an object of that name
-exists in the calling environment — the print-time counterpart to
+The print-time counterpart to
 [`ggsave_rawr()`](https://davidgz1.github.io/HowMaHiCo/reference/ggsave_rawr.md),
 so a report chunk can unconditionally request a plot's display even when
-it was conditionally skipped upstream.
+it was conditionally skipped upstream. A bare symbol is looked up by
+name in the **calling** environment; any other expression
+(`plots[[nm]]`, a computed plot) is evaluated and judged by its value,
+so `NULL` counts as "not generated".
 
 ## Usage
 
@@ -17,12 +18,13 @@ ggprint_rawr(input)
 
 - input:
 
-  The object to print (NSE: its variable name is used to check
-  existence, not its value).
+  The object to print. When it is a bare variable name, that name is
+  used to check existence rather than the value.
 
 ## Value
 
-The printed object (invisibly), or a warning if it does not exist.
+The object, so a knitr chunk prints it; invisible `NULL` with a warning
+when it was never generated.
 
 ## Examples
 

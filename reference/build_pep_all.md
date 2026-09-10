@@ -20,7 +20,8 @@ build_pep_all(
   shortpep_range = c(8, 13),
   instrument = "tims_tof",
   test_mode = FALSE,
-  file_rda = NULL
+  file_rda = NULL,
+  dictionary = NULL
 )
 ```
 
@@ -29,8 +30,10 @@ build_pep_all(
 - software:
 
   One of `"fragpipe_dda_combined"`, `"fragpipe_dda_individual"`,
-  `"diann"`, or `"peaks_xpro"` — selects the loader branch (and, for
-  FragPipe, the combined-vs-individual annotation mode).
+  `"diann"`, `"peaks_xpro"`, or `"custom"` — selects the loader branch
+  (and, for FragPipe, the combined-vs-individual annotation mode).
+  `"custom"` routes through the dictionary-driven parser (see
+  `dictionary`).
 
 - folder_data:
 
@@ -57,8 +60,11 @@ build_pep_all(
 
 - test_mode:
 
-  If `TRUE`, the batch readers load only the first ~100 lines per file
-  (fast iteration). Ignored by the PEAKS loader.
+  If `TRUE`, the batch readers reduce each file to its first ~100 rows
+  **per run** (fast iteration on a small but representative subset:
+  every run, Condition and replicate of the experiment is still present,
+  which a plain head-of-file truncation would not give for a combined
+  export). Ignored by the PEAKS loader.
 
 - file_rda:
 
@@ -66,6 +72,16 @@ build_pep_all(
   [`save()`](https://rdrr.io/r/base/save.html)d there (as the object
   name `pep_all`) so report templates can
   [`load()`](https://rdrr.io/r/base/load.html) it.
+
+- dictionary:
+
+  Required when `software = "custom"`: either a path to a YAML parser
+  dictionary or an already-loaded dictionary list (see
+  [`read_dictionary()`](https://davidgz1.github.io/HowMaHiCo/reference/read_dictionary.md)
+  /
+  [`get_dictionary_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_dictionary_template.md)).
+  Its `read:` block sets the per-sample filename and delimiter, and its
+  `mode:` the annotation join. Ignored for the built-in loaders.
 
 ## Value
 

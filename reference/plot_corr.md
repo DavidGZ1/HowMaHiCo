@@ -1,7 +1,7 @@
 # Pearson correlation heatmap of log2(Area)
 
 Plots a correlation matrix (e.g. `cor(., method = "pearson")`) with
-[`ggcorrplot::ggcorrplot()`](https://rdrr.io/pkg/ggcorrplot/man/ggcorrplot.html),
+[`ggcorrplot::ggcorrplot()`](https://rpkgs.datanovia.com/ggcorrplot/reference/ggcorrplot.html),
 using a diverging red-white-blue gradient whose breaks/limits/midpoint
 are derived directly from `mat`'s value range — a symmetric `[-1, 1]`
 matrix gets the `(-1, 1, mid = 0)` scale, anything else gets a

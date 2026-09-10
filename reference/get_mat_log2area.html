@@ -11,7 +11,7 @@ ordering columns by the factor levels of col.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,7 +72,9 @@ averaged (<code>na.rm = TRUE</code>).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A numeric matrix with <code>NA</code>s preserved, rows named by <code>row</code> and
-columns ordered by the factor levels of <code>col</code>.</p>
+columns ordered by the factor levels of <code>col</code>. When no <code>row</code> has a single
+non-missing <code>Log2Area</code> (all Areas absent or zero), a <code>0 x n</code> matrix with the
+expected column names is returned with a warning.</p>
     </div>
 
     <div class="section level2">
@@ -91,7 +93,7 @@ columns ordered by the factor levels of <code>col</code>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

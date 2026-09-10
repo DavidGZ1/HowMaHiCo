@@ -10,7 +10,7 @@ as a stacked proportion bar chart per condition, with percentage labels.
 plot_prop_length_condition(
   input,
   level2plot = "Peptides",
-  label_size = 1.6,
+  label_size = 3,
   palette = NULL,
   x_var = "Condition"
 )

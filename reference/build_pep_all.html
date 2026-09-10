@@ -21,7 +21,7 @@ subset of those reports, each of which simply load()s the cache."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,8 @@ subset of those reports, each of which simply <code><a href="https://rdrr.io/r/b
 <span>  shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span>,</span>
 <span>  instrument <span class="op">=</span> <span class="st">"tims_tof"</span>,</span>
 <span>  test_mode <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  file_rda <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  file_rda <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dictionary <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -77,8 +78,9 @@ subset of those reports, each of which simply <code><a href="https://rdrr.io/r/b
 
 <dl><dt id="arg-software">software<a class="anchor" aria-label="anchor" href="#arg-software"></a></dt>
 <dd><p>One of <code>"fragpipe_dda_combined"</code>, <code>"fragpipe_dda_individual"</code>,
-<code>"diann"</code>, or <code>"peaks_xpro"</code> — selects the loader branch (and, for FragPipe,
-the combined-vs-individual annotation mode).</p></dd>
+<code>"diann"</code>, <code>"peaks_xpro"</code>, or <code>"custom"</code> — selects the loader branch (and,
+for FragPipe, the combined-vs-individual annotation mode). <code>"custom"</code> routes
+through the dictionary-driven parser (see <code>dictionary</code>).</p></dd>
 
 
 <dt id="arg-folder-data">folder_data<a class="anchor" aria-label="anchor" href="#arg-folder-data"></a></dt>
@@ -103,13 +105,24 @@ only affects the PEAKS loader's ion-mobility handling.</p></dd>
 
 
 <dt id="arg-test-mode">test_mode<a class="anchor" aria-label="anchor" href="#arg-test-mode"></a></dt>
-<dd><p>If <code>TRUE</code>, the batch readers load only the first ~100 lines
-per file (fast iteration). Ignored by the PEAKS loader.</p></dd>
+<dd><p>If <code>TRUE</code>, the batch readers reduce each file to its first
+~100 rows <strong>per run</strong> (fast iteration on a small but representative subset:
+every run, Condition and replicate of the experiment is still present, which
+a plain head-of-file truncation would not give for a combined export).
+Ignored by the PEAKS loader.</p></dd>
 
 
 <dt id="arg-file-rda">file_rda<a class="anchor" aria-label="anchor" href="#arg-file-rda"></a></dt>
 <dd><p>Optional path. When non-<code>NULL</code>, <code>pep_all</code> is <code><a href="https://rdrr.io/r/base/save.html" class="external-link">save()</a></code>d there
 (as the object name <code>pep_all</code>) so report templates can <code><a href="https://rdrr.io/r/base/load.html" class="external-link">load()</a></code> it.</p></dd>
+
+
+<dt id="arg-dictionary">dictionary<a class="anchor" aria-label="anchor" href="#arg-dictionary"></a></dt>
+<dd><p>Required when <code>software = "custom"</code>: either a path to a YAML
+parser dictionary or an already-loaded dictionary list (see
+<code><a href="read_dictionary.html">read_dictionary()</a></code> / <code><a href="get_dictionary_template.html">get_dictionary_template()</a></code>). Its <code>read:</code> block sets
+the per-sample filename and delimiter, and its <code>mode:</code> the annotation join.
+Ignored for the built-in loaders.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -142,7 +155,7 @@ per file (fast iteration). Ignored by the PEAKS loader.</p></dd>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

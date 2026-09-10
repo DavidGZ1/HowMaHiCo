@@ -8,7 +8,7 @@ CV and an "n = ..." label annotating each group's peptide count.
 ## Usage
 
 ``` r
-plot_violin_areacv(input, by, label_size = 1.6)
+plot_violin_areacv(input, by, label_size = 3)
 ```
 
 ## Arguments

@@ -40,7 +40,7 @@ experimental conditions and replicates.
 | Folder | Contents |
 |----|----|
 | `R/` | Package source — the ~40 functions (loaders, annotation, counting, plotting, export) plus the [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)/[`derive_filtered_annotation()`](https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.md) entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
 | `man/` | Generated roxygen2 documentation (`.Rd`) |
 | `1_documentation/` | Sample annotation CSVs (one per analysis subset) |
@@ -83,25 +83,43 @@ library(HowMaHiCo)
 
 # FragPipe (psm.tsv layout)
 get_annot_fragpipe(dir_data = "2_data") |>
-  get_annot_sampleid(file_sample_list = "1_documentation/sample_list.xlsx") |>
   write.csv(row.names = FALSE, file = "1_documentation/sample_annotation.csv")
 
 # DIA-NN (report.tsv layout)
 get_annot_diann(dir_data = "2_data") |>
-  get_annot_sampleid(file_sample_list = "1_documentation/sample_list.xlsx") |>
   write.csv(row.names = FALSE, file = "1_documentation/sample_annotation_diann.csv")
+
+# PEAKS (export folders)
+get_annot_peaks(dir_data = "2_data/peaks_export") |>
+  write.csv(row.names = FALSE, file = "1_documentation/sample_annotation_peaks.csv")
 ```
+
+These scan `2_data` and write one row per data file — no
+`sample_list.xlsx` needed to get started (`Sample_ID` can be filled in
+next, by hand or optionally from a HyStar sample list).
 
 **3. Complete the annotation CSV**
 
 Open the generated CSV and fill in the experimental metadata:
 `Condition`, `BioReplicate`, `TechReplicate`, `Sample_ID`. Verify that
-`Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks` (PEAKS) matches the data
-subfolder names exactly, then save.
+`Sample_folder` matches the data subfolder names exactly, then save. The
+column is the same for every search engine; tables from older runs that
+use the engine-specific `Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks`
+(PEAKS) still load unchanged.
 
-*(Optional)* Instead of typing `Sample_ID` by hand, populate it from a
-Bruker HyStar sample list using
-[`get_annot_sampleid()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_sampleid.md):
+> **Two things the annotation table controls:** - **Inclusion** — only
+> samples listed in the annotation table are read and reported. Any
+> sample present in the results folder but missing from the table is
+> silently excluded, so the table is also how you subset a run. -
+> **Ordering** — Conditions, replicates and samples appear in every plot
+> and table in the **row order of the annotation CSV**. Order the rows
+> the way you want them displayed (factor levels are taken from first
+> appearance).
+
+*(Optional)* `Sample_ID` can be populated automatically from a Bruker
+HyStar sample list with
+[`get_annot_sampleid()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_sampleid.md)
+instead of typing it by hand:
 
 ``` r
 
@@ -111,9 +129,11 @@ read.csv("1_documentation/sample_annotation.csv") |>
 ```
 
 [`get_annot_sampleid()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_sampleid.md)
-inner-joins on `Source_file`, so only rows present in both the
-annotation table and the sample list are kept — check the row count
-afterwards.
+joins on `Source_file`, so both sides must use the same run naming. It
+warns when nothing matched (showing example values from each side) and
+when only some rows matched (naming the dropped ones); pass
+`keep_all = TRUE` to keep every annotation row instead, with the
+unmatched `Sample_ID` left empty.
 
 **4. (Optional) Get a local copy of the report template to customise**
 
@@ -123,6 +143,23 @@ get_report_template("MyReport", template = "00_mhc_report")
 ```
 
 **5. Render a report**
+
+**Edit these for your run** (the rest can stay at the example defaults):
+
+- `SampleSet` / `Subset` — experiment name and subset label (used in the
+  title, filenames, and output subfolders)
+- `FolderDocumentation` / `FolderData` / `FolderResults` /
+  `FolderFigures` — absolute (or render-time-cwd-relative) paths
+- `AnnotationFile` — the CSV filled in above
+- `Software` — `fragpipe_dda_combined` \| `fragpipe_dda_individual` \|
+  `diann` \| `peaks_xpro` \| `custom`
+- `Instrument` — `tims_tof` \| `faims_orbi` \| `orbi`
+- `MHCclass` — `MHC1` (human, 8–13 AA), `MHC1_mouse` (murine H-2, 7–11
+  AA) or `MHC2` (12–25 AA)
+- `output_file` — the HTML filename to write
+
+See the full parameter reference (incl. `PepAllSource`, `TestMode`,
+`ResultsOverwrite`, `CsvSave`/`PlotsSave`) in `CLAUDE.md`.
 
 ``` r
 
@@ -142,7 +179,7 @@ run_howmahico_report(
     # ProjectDir     = getwd(),   # set if rendering from a subdirectory
     Instrument       = "tims_tof",    # faims_orbi | orbi
     Software         = "fragpipe_dda_combined",
-    MHCclass         = "MHC1",        # MHC1 (8-13 AA) or MHC2 (12-25 AA)
+    MHCclass         = "MHC1",        # MHC1 (8-13 AA) | MHC1_mouse (7-11 AA) | MHC2 (12-25 AA)
     TestMode         = FALSE,
     ResultsOverwrite = TRUE,
     PlotsSave        = FALSE,
@@ -173,10 +210,12 @@ build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
               annotation = annot, shortpep_range = c(8, 13),
               file_rda = "2_data/dda_all_pep_all.rda")
 
-for (tmpl in c("01_id_counts",  # ID counts, size distributions, motifs, PTM
-               "02_overlaps",   # replicate / condition / pairwise overlap
-               "03_lcms_qc",    # RT/1k0/mz, Score/ppm (advanced)
-               "04_quant")) {   # log2(Area) correlation, Area %CV
+for (tmpl in c("01_id_counts",     # ID counts, size distributions, motifs, PTM
+               "02_overlaps",      # replicate / condition / pairwise overlap
+               "03_lcms_qc",       # RT/1k0/mz, Score/ppm (advanced)
+               "04_quant",         # log2(Area) correlation, Area %CV
+               "05_quality_score", # per-sample immunopeptidomics quality score
+               "06_quant_stats")) {# differential abundance between Conditions
   run_howmahico_report(tmpl,
                        params = list(SampleSet = "project_id", Subset = "dda_all",
                                      FolderData = "2_data", FolderResults = "3_results",
@@ -199,6 +238,17 @@ step above.
 
 `00_mhc_report` (all-in-one) and `00_mhc_upsets` are unchanged and still
 parse the raw files themselves.
+
+`06_quant_stats` compares peptide `Area` between Conditions
+(normalization, data completeness, PCA and clustered/unclustered
+heatmaps, then per-pair differential abundance with volcano plots and a
+presence/absence track for condition-exclusive ligands). It uses
+[limma](https://bioconductor.org/packages/limma), an optional
+Bioconductor dependency — install it with
+`BiocManager::install("limma")`, or render with `StatMethod = "ttest"`
+(and `NormMethod = "median"`) for a Bioconductor-free run; the report
+falls back to that automatically when limma is missing. Its methods and
+their justification are documented in the report itself.
 
 Reports are written to `output_file` (HTML), and result tables/figures
 are written under `<FolderResults>/<subset>/` and

@@ -19,7 +19,7 @@ get_annot_diann(dir_data)
 
 ## Value
 
-A data frame with columns `Source_file`, `Sample_fp`, `Condition`,
+A data frame with columns `Source_file`, `Sample_folder`, `Condition`,
 `BioReplicate`, `TechReplicate`, `Sample`, `Sample_ID`, sorted by
 `Source_file`.
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.8.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.16.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,7 +34,7 @@
     <div class="section level2">
       <h2 id="render-reports">Render reports<a class="anchor" aria-label="anchor" href="#render-reports"></a></h2>
 
-      <div class="section-desc"><p>Entry points that build the cached pep_all table and render the parameterized QC report templates (00_mhc_report all-in-one, or the focused 01-04 reports)</p></div>
+      <div class="section-desc"><p>Entry points that build the cached pep_all table and render the parameterized QC report templates (00_mhc_report all-in-one, or the focused 01-06 reports)</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -108,10 +108,54 @@
 
         <dt>
 
+          <code><a href="get_annot_peaks.html">get_annot_peaks()</a></code>
+
+        </dt>
+        <dd>Auto-generate a skeleton annotation table from a PEAKS export folder</dd>
+
+        <dt>
+
           <code><a href="get_annot_sampleid.html">get_annot_sampleid()</a></code>
 
         </dt>
         <dd>Enrich an annotation table with Sample_ID from a Bruker HyStar sample list</dd>
+      </dl></div><div class="section level2">
+      <h2 id="report-helpers">Report helpers<a class="anchor" aria-label="anchor" href="#report-helpers"></a></h2>
+
+      <div class="section-desc"><p>Shared settings the report templates derive from their params: the MHC length window and palette, and the Condition pairs to compare</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="mhc_length_window.html">mhc_length_window()</a></code>
+
+        </dt>
+        <dd>Peptide-length window of an MHC class</dd>
+
+        <dt>
+
+          <code><a href="mhc_class_palette.html">mhc_class_palette()</a></code>
+
+        </dt>
+        <dd>Two-colour fill palette of an MHC class</dd>
+
+        <dt>
+
+          <code><a href="mhc_classes.html">mhc_classes()</a></code>
+
+        </dt>
+        <dd>Names of the built-in MHC classes</dd>
+
+        <dt>
+
+          <code><a href="condition_pairs.html">condition_pairs()</a></code>
+
+        </dt>
+        <dd>All pairwise Condition comparisons</dd>
       </dl></div><div class="section level2">
       <h2 id="data-loaders">Data loaders<a class="anchor" aria-label="anchor" href="#data-loaders"></a></h2>
 
@@ -205,6 +249,50 @@
 
         </dt>
         <dd>Join parsed PEAKS results to the sample annotation table</dd>
+      </dl></div><div class="section level2">
+      <h2 id="custom-dictionary-driven-parsing">Custom (dictionary-driven) parsing<a class="anchor" aria-label="anchor" href="#custom-dictionary-driven-parsing"></a></h2>
+
+      <div class="section-desc"><p>The <code>software = "custom"</code> path: ingest a tabular export from a tool with no built-in loader by editing a YAML dictionary instead of writing R code.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="get_dictionary_template.html">get_dictionary_template()</a></code>
+
+        </dt>
+        <dd>Copy the custom-parser dictionary template to the working directory</dd>
+
+        <dt>
+
+          <code><a href="read_dictionary.html">read_dictionary()</a></code>
+
+        </dt>
+        <dd>Read and validate a HowMaHiCo parser dictionary</dd>
+
+        <dt>
+
+          <code><a href="read_custom_batch.html">read_custom_batch()</a></code>
+
+        </dt>
+        <dd>Batch-read a generic per-sample tabular export</dd>
+
+        <dt>
+
+          <code><a href="parse_unified.html">parse_unified()</a></code>
+
+        </dt>
+        <dd>Parse a raw search-engine export into <code>pep_all</code> via a dictionary</dd>
+
+        <dt>
+
+          <code><a href="annotate_unified.html">annotate_unified()</a></code>
+
+        </dt>
+        <dd>Join a dictionary-parsed table to the sample annotation</dd>
       </dl></div><div class="section level2">
       <h2 id="checks">Checks<a class="anchor" aria-label="anchor" href="#checks"></a></h2>
 
@@ -431,6 +519,13 @@
 
         <dt>
 
+          <code><a href="plot_pseudomobilogram.html">plot_pseudomobilogram()</a></code>
+
+        </dt>
+        <dd>Peptide ID pseudomobilogram: count vs 1/k0, faceted by Condition</dd>
+
+        <dt>
+
           <code><a href="plot_2d_distribution.html">plot_2d_distribution()</a></code>
 
         </dt>
@@ -491,6 +586,334 @@
 
         </dt>
         <dd>HowMaHiCo's unified ggplot theme</dd>
+      </dl></div><div class="section level2">
+      <h2 id="sample-quality-score">Sample quality score<a class="anchor" aria-label="anchor" href="#sample-quality-score"></a></h2>
+
+      <div class="section-desc"><p>Per-sample immunopeptidomics quality score behind the 05_quality_score report: raw signals (length-window fidelity, canonical-length dominance, anchor-motif clarity, non-tryptic specificity, charge plausibility, depth, mass accuracy, cross-class contamination), the threshold model, and the weighted 0-100 composite.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="score_sample_quality.html">score_sample_quality()</a></code>
+
+        </dt>
+        <dd>Score immunopeptidomics samples for overall quality</dd>
+
+        <dt>
+
+          <code><a href="qc_metrics_by_sample.html">qc_metrics_by_sample()</a></code>
+
+        </dt>
+        <dd>Raw per-sample immunopeptidomics quality metrics</dd>
+
+        <dt>
+
+          <code><a href="anchor_information_content.html">anchor_information_content()</a></code>
+
+        </dt>
+        <dd>Per-position anchor information content of equal-length peptides</dd>
+
+        <dt>
+
+          <code><a href="score_curve.html">score_curve()</a></code>
+
+        </dt>
+        <dd>Map a raw metric value to a 0-100 quality sub-score</dd>
+
+        <dt>
+
+          <code><a href="quality_thresholds_default.html">quality_thresholds_default()</a></code>
+
+        </dt>
+        <dd>Default quality-score thresholds and weights</dd>
+
+        <dt>
+
+          <code><a href="calibrate_thresholds_from_qc.html">calibrate_thresholds_from_qc()</a></code>
+
+        </dt>
+        <dd>Derive QC-relative thresholds from tagged quality-control samples</dd>
+
+        <dt>
+
+          <code><a href="plot_quality_heatmap.html">plot_quality_heatmap()</a></code>
+
+        </dt>
+        <dd>Traffic-light heatmap of per-sample quality sub-scores</dd>
+
+        <dt>
+
+          <code><a href="plot_quality_composite.html">plot_quality_composite()</a></code>
+
+        </dt>
+        <dd>Per-sample composite quality-score bar chart</dd>
+
+        <dt>
+
+          <code><a href="plot_cross_class_length.html">plot_cross_class_length()</a></code>
+
+        </dt>
+        <dd>Per-sample peptide-length histogram highlighting cross-class contamination</dd>
+      </dl></div><div class="section level2">
+      <h2 id="advanced-quantification-statistics">Advanced quantification &amp; statistics<a class="anchor" aria-label="anchor" href="#advanced-quantification-statistics"></a></h2>
+
+      <div class="section-desc"><p>Build the quantitative matrix and compare peptide Area between Conditions (filtering, normalization, imputation, limma moderated t / Welch t, Fisher presence-absence, PERMANOVA) plus the plots of the 06_quant_stats report</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="build_quant_matrix.html">build_quant_matrix()</a></code>
+
+        </dt>
+        <dd>Build a feature x unit log2(Area) matrix from <code>pep_all</code></dd>
+
+        <dt>
+
+          <code><a href="filter_quant.html">filter_quant()</a></code>
+
+        </dt>
+        <dd>Filter a quantitative matrix to testable features</dd>
+
+        <dt>
+
+          <code><a href="normalize_quant.html">normalize_quant()</a></code>
+
+        </dt>
+        <dd>Between-sample normalization of a log2 intensity matrix</dd>
+
+        <dt>
+
+          <code><a href="impute_quant.html">impute_quant()</a></code>
+
+        </dt>
+        <dd>Left-censored imputation of missing quantitative values</dd>
+
+        <dt>
+
+          <code><a href="test_differential.html">test_differential()</a></code>
+
+        </dt>
+        <dd>Differential abundance between conditions</dd>
+
+        <dt>
+
+          <code><a href="test_detection.html">test_detection()</a></code>
+
+        </dt>
+        <dd>Presence/absence test between conditions (Fisher exact)</dd>
+
+        <dt>
+
+          <code><a href="combine_quant_results.html">combine_quant_results()</a></code>
+
+        </dt>
+        <dd>Combine the quantitative and presence/absence tracks</dd>
+
+        <dt>
+
+          <code><a href="summarise_significant.html">summarise_significant()</a></code>
+
+        </dt>
+        <dd>Count significant features per contrast</dd>
+
+        <dt>
+
+          <code><a href="permanova_condition.html">permanova_condition()</a></code>
+
+        </dt>
+        <dd>Global permutation test of condition separation (PERMANOVA)</dd>
+
+        <dt>
+
+          <code><a href="plot_completeness.html">plot_completeness()</a></code>
+
+        </dt>
+        <dd>Data completeness of a quantitative matrix</dd>
+
+        <dt>
+
+          <code><a href="plot_missing_heatmap.html">plot_missing_heatmap()</a></code>
+
+        </dt>
+        <dd>Presence/absence map of a quantitative matrix</dd>
+
+        <dt>
+
+          <code><a href="plot_intensity_dist.html">plot_intensity_dist()</a></code>
+
+        </dt>
+        <dd>Intensity distribution per unit (normalization diagnostic)</dd>
+
+        <dt>
+
+          <code><a href="plot_dynamic_range.html">plot_dynamic_range()</a></code>
+
+        </dt>
+        <dd>Dynamic range (rank-abundance) per condition</dd>
+
+        <dt>
+
+          <code><a href="plot_pca.html">plot_pca()</a></code>
+
+        </dt>
+        <dd>Principal component analysis of a quantitative matrix</dd>
+
+        <dt>
+
+          <code><a href="plot_quant_heatmap.html">plot_quant_heatmap()</a></code>
+
+        </dt>
+        <dd>Heatmap of a quantitative matrix, clustered or in annotation order</dd>
+
+        <dt>
+
+          <code><a href="plot_volcano.html">plot_volcano()</a></code>
+
+        </dt>
+        <dd>Volcano plot of a differential-abundance result</dd>
+
+        <dt>
+
+          <code><a href="plot_ma.html">plot_ma()</a></code>
+
+        </dt>
+        <dd>MA plot of a differential-abundance result</dd>
+
+        <dt>
+
+          <code><a href="plot_pvalue_hist.html">plot_pvalue_hist()</a></code>
+
+        </dt>
+        <dd>P-value histogram (test calibration diagnostic)</dd>
+
+        <dt>
+
+          <code><a href="plot_sig_summary.html">plot_sig_summary()</a></code>
+
+        </dt>
+        <dd>Significant-feature counts per contrast</dd>
+      </dl></div><div class="section level2">
+      <h2 id="physicochemical-properties">Physicochemical properties<a class="anchor" aria-label="anchor" href="#physicochemical-properties"></a></h2>
+
+      <div class="section-desc"><p>Peptide-chemistry engine behind the 07_pepchem report: amino-acid composition, per-position residue frequency and per-peptide descriptors (GRAVY, pI, charge, …), summarised per sample and compared between Conditions.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="peptide_properties.html">peptide_properties()</a></code>
+
+        </dt>
+        <dd>Per-sequence physicochemical descriptors</dd>
+
+        <dt>
+
+          <code><a href="pepchem_properties.html">pepchem_properties()</a></code>
+
+        </dt>
+        <dd>Descriptor columns of a property set</dd>
+
+        <dt>
+
+          <code><a href="aa_composition.html">aa_composition()</a></code>
+
+        </dt>
+        <dd>Position-independent amino-acid composition</dd>
+
+        <dt>
+
+          <code><a href="aa_position_frequency.html">aa_position_frequency()</a></code>
+
+        </dt>
+        <dd>Per-position amino-acid frequency</dd>
+
+        <dt>
+
+          <code><a href="pepchem_by_sample.html">pepchem_by_sample()</a></code>
+
+        </dt>
+        <dd>Per-sample peptide physicochemical descriptors</dd>
+
+        <dt>
+
+          <code><a href="summarise_pepchem.html">summarise_pepchem()</a></code>
+
+        </dt>
+        <dd>Summarise peptide descriptors within a group</dd>
+
+        <dt>
+
+          <code><a href="aggregate_pepchem.html">aggregate_pepchem()</a></code>
+
+        </dt>
+        <dd>Aggregate per-sample descriptor summaries to Conditions</dd>
+
+        <dt>
+
+          <code><a href="cliffs_delta.html">cliffs_delta()</a></code>
+
+        </dt>
+        <dd>Cliff's delta effect size</dd>
+
+        <dt>
+
+          <code><a href="compare_pepchem.html">compare_pepchem()</a></code>
+
+        </dt>
+        <dd>Compare peptide descriptors between Conditions</dd>
+
+        <dt>
+
+          <code><a href="compare_aa_frequency.html">compare_aa_frequency()</a></code>
+
+        </dt>
+        <dd>Compare amino-acid frequencies between Conditions</dd>
+
+        <dt>
+
+          <code><a href="plot_aa_composition.html">plot_aa_composition()</a></code>
+
+        </dt>
+        <dd>Amino-acid composition across groups</dd>
+
+        <dt>
+
+          <code><a href="plot_aa_position_heatmap.html">plot_aa_position_heatmap()</a></code>
+
+        </dt>
+        <dd>Per-position amino-acid frequency heatmap</dd>
+
+        <dt>
+
+          <code><a href="plot_property_distribution.html">plot_property_distribution()</a></code>
+
+        </dt>
+        <dd>Distribution of one peptide descriptor across Conditions</dd>
+
+        <dt>
+
+          <code><a href="plot_property_sample_summary.html">plot_property_sample_summary()</a></code>
+
+        </dt>
+        <dd>Per-Condition mean +/- sd of a descriptor across samples</dd>
+
+        <dt>
+
+          <code><a href="plot_property_effectsize.html">plot_property_effectsize()</a></code>
+
+        </dt>
+        <dd>Effect sizes of the between-condition comparison</dd>
       </dl></div><div class="section level2">
       <h2 id="export-i-o-helpers">Export &amp; I/O helpers<a class="anchor" aria-label="anchor" href="#export-i-o-helpers"></a></h2>
 
@@ -554,7 +977,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

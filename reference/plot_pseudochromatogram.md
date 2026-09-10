@@ -1,6 +1,7 @@
 # Peptide ID pseudochromatogram: count vs RT, faceted by Condition
 
-Peptide ID pseudochromatogram: count vs RT, faceted by Condition
+Bars are coloured by their own peptide count (a density gradient), so
+dense RT regions stand out within each Condition facet.
 
 ## Usage
 

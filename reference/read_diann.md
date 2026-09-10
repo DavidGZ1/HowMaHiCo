@@ -27,7 +27,8 @@ read_diann(folder, samplename, testmode = FALSE)
 
 - testmode:
 
-  Logical; if `TRUE`, reads only the first ~100 rows.
+  Logical; if `TRUE`, keeps only the first ~100 rows per run (the `Run`
+  column), so every run of a combined report survives.
 
 ## Value
 

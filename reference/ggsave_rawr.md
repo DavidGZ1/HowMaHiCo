@@ -19,8 +19,8 @@ ggsave_rawr(input, file, folder, width = 8, height = 10)
 
 - input:
 
-  The plot object to save (NSE: its variable name is used to check
-  existence, not its value).
+  The plot object to save. When it is a bare variable name, that name is
+  used to check existence rather than the value.
 
 - file:
 
@@ -48,6 +48,12 @@ Reconciles two near-duplicate report-inline variants (one hardcoding
 chunk-local `FolderFigures`) into a single canonical version that takes
 `folder`/`width`/`height` as ordinary explicit arguments — callers
 compute and pass whatever values their report context needs.
+
+A bare symbol is looked up by name in the **calling** environment; any
+other expression (`plots[[nm]]`, a computed plot) is evaluated and
+judged by its value, so the idiomatic
+`for (nm in names(plots)) ggsave_rawr(plots[[nm]], file = nm, ...)`
+export loop works as well.
 
 ## Examples
 

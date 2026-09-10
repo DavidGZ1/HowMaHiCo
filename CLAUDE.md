@@ -8,12 +8,282 @@ search-engine output (FragPipe, DIA-NN, PEAKS), normalizes it into one
 unified long-format table (`pep_all`), and renders self-contained
 interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.8.0** — Phases 1–6 of the package conversion are
-complete. v0.8.0 gave the four focused reports a `PepAllSource` param
-(`"cached"` \| `"rda"` \| `"build"`, via
-`inst/rmarkdown/shared/setup.Rmd`) so each can load the default cache,
-load an explicit `.rda` (`PepAllFile`), or self-build from raw results
-via
+**Current version: 0.16.0** — Phases 1–6 of the package conversion are
+complete. v0.16.0 added the **peptide-chemistry report `07_pepchem`**
+and its engine `R/pepchem.R` — the first part of HowMaHiCo that
+describes what the ligands are *made of* rather than which they are.
+[`pepchem_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_by_sample.md)
+reduces `pep_all` to its distinct `Sequence` per `Sample` and attaches
+the descriptors from
+[`peptide_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/peptide_properties.md)
+(`GRAVY`, `pI`, `Charge`, `MW`, `Boman`, `HydrophobicMoment`,
+`InstabilityIndex`, `AliphaticIndex` + `frac_*` amino-acid class
+fractions), computed **once over the unique sequences**;
+[`aa_composition()`](https://davidgz1.github.io/HowMaHiCo/reference/aa_composition.md)
+and
+[`aa_position_frequency()`](https://davidgz1.github.io/HowMaHiCo/reference/aa_position_frequency.md)
+give the position-independent and per-position residue tables (the
+latter generalises
+[`anchor_information_content()`](https://davidgz1.github.io/HowMaHiCo/reference/anchor_information_content.md),
+and the two now share `.aa_alphabet()` / `.resolve_positions()`). **The
+unit of analysis is the sample, not the peptide**:
+[`summarise_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_pepchem.md)
+collapses each sample to one value per descriptor,
+[`aggregate_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/aggregate_pepchem.md)
+gives the per-Condition mean ± sd across samples, and
+`compare_pepchem(level = "sample")` tests across samples
+(Kruskal-Wallis + pairwise Wilcoxon, BH within a contrast,
+`MedianDiff` + the new scale-free
+[`cliffs_delta()`](https://davidgz1.github.io/HowMaHiCo/reference/cliffs_delta.md)).
+That test is deliberately low-powered — on 3 vs 3 samples a two-sided
+Wilcoxon cannot reach p \< 0.1, the same structural limit
+`06_quant_stats` documents for its Fisher track — so `level = "peptide"`
+is reported alongside as an explicitly pseudo-replicated, descriptive
+track.
+[`compare_aa_frequency()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_aa_frequency.md)
+applies the same machinery per residue to per-sample frequencies
+(**not** a chi-square on pooled residue counts, which would treat every
+residue as an independent draw). New plots in `R/plots.R`:
+[`plot_aa_composition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_aa_composition.md)
+(bar / heatmap / log2 enrichment vs. the pooled composition),
+[`plot_aa_position_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_aa_position_heatmap.md),
+[`plot_property_distribution()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_distribution.md),
+[`plot_property_sample_summary()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_sample_summary.md),
+[`plot_property_effectsize()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_effectsize.md).
+**New dependency `Peptides`** (CRAN, GPL-2, Rcpp only) in `Imports` —
+vectorised and the canonical GRAVY implementation, so the scales are not
+re-derived;
+[`Peptides::aaComp()`](https://rdrr.io/pkg/Peptides/man/aaComp.html) is
+*not* used (per-sequence list) and its per-descriptor “unrecognized
+amino acid types” warnings are consolidated into one. Peptide **position
+within the parent protein** was deferred — see *Deferred designs* below.
+**Two silent-failure fixes found while verifying it**: (a)
+[`ggsave_rawr()`](https://davidgz1.github.io/HowMaHiCo/reference/ggsave_rawr.md)
+/
+[`ggprint_rawr()`](https://davidgz1.github.io/HowMaHiCo/reference/ggprint_rawr.md)
+resolved the plot name with a bare
+[`exists()`](https://rdrr.io/r/base/exists.html), which searches from
+the *helper’s own* frame outwards (namespace →
+[`globalenv()`](https://rdrr.io/r/base/environment.html)) and never
+reaches a report’s knit env (`new.env(parent = globalenv())`) — so
+`PlotsSave = TRUE` wrote **no** png in any report and
+[`ggprint_rawr()`](https://davidgz1.github.io/HowMaHiCo/reference/ggprint_rawr.md)
+returned the warning string instead of the plot, swallowed by
+`warning = FALSE` chunks. The name is now resolved in the caller’s frame
+via the shared internal `.plot_was_built()` (`R/theme-and-save.R`), and
+a non-symbol argument (`plots[[nm]]`, the export-loop idiom) is judged
+by value so a `NULL` plot is skipped; (b) `05_quality_score` had **never
+rendered** — an inline `` `r ...` `` expression ended in a bare
+comma-separated string list instead of a
+[`paste0()`](https://rdrr.io/r/base/paste.html) call, a syntax error
+caught only at inline-parse time, and no test rendered that template.
+Both are guarded by new tests. v0.15.0 was a robustness + schema pass
+driven by `plans_dgz.md`. **Mouse MHC-I**: `MHCclass` accepts
+**`"MHC1_mouse"`** (7–11 AAs) next to `MHC1` (8–13) and `MHC2` (12–25);
+the windows/palettes now come from
+[`mhc_length_window()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_length_window.md)
+/
+[`mhc_class_palette()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_class_palette.md)
+in the new **`R/report-helpers.R`** instead of three copy-pasted lists
+in the skeletons plus a fourth inside `.cross_class_range()`. The
+quality score follows: for mouse, `frac_9mer` counts **8- and 9-mers**
+(H-2Kb favours 8-mers, H-2Db 9-mers) with the label “8/9-mer fraction”
+and higher cut-offs
+([`quality_thresholds_default()`](https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.md)
+gained an `mhcclass` arg), and the anchor motif is scored on whichever
+of the two lengths dominates — metric *keys* unchanged. **Three
+abort/silent-failure fixes**: (a) a single-Condition subset no longer
+kills every report — `combn(conditions, 2)` is replaced by the exported
+[`condition_pairs()`](https://davidgz1.github.io/HowMaHiCo/reference/condition_pairs.md)
+(empty list for one Condition, `self = TRUE` for the overlap matrix
+diagonal); (b) an all-zero-`Area` dataset no longer aborts —
+[`get_mat_log2area()`](https://davidgz1.github.io/HowMaHiCo/reference/get_mat_log2area.md)
+returns a `0 x n` matrix with a warning and the correlation chunks test
+for it *before* [`cor()`](https://rdrr.io/r/stats/cor.html) (which
+errors with `'x' is empty`); (c)
+[`get_annot_sampleid()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_sampleid.md)
+warns when nothing/only some of the annotation matched the HyStar sample
+list and gained `keep_all = TRUE` (left join). **`TestMode` rebuilt**:
+files are read in full and reduced to ~100 rows **per run**
+(`subsample_testmode()` in `R/utils-loaders.R`) instead of the first 100
+lines of the file — for a combined FragPipe `psm.tsv` the old behaviour
+kept only the first run and broke the annotation join. **One annotation
+format for every engine**:
+[`read_annot()`](https://davidgz1.github.io/HowMaHiCo/reference/read_annot.md)
+accepts a canonical **`Sample_folder`** column and derives `Sample_fp`
+(verbatim) and `Sample_peaks` (PEAKS-normalized) from it, so the loaders
+are untouched and legacy CSVs still load;
+[`get_annot_fragpipe()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_fragpipe.md)/[`get_annot_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_diann.md)
+emit `Sample_folder`, and PEAKS gained
+**[`get_annot_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_peaks.md)**.
+v0.14.0 added the **advanced-quantification report `06_quant_stats`**
+and its engine `R/quant-stats.R` — the first part of HowMaHiCo that
+*compares* conditions rather than describing them.
+[`build_quant_matrix()`](https://davidgz1.github.io/HowMaHiCo/reference/build_quant_matrix.md)
+collapses `pep_all` into a feature × unit log2 matrix (`Area` summed
+over precursors on the linear scale, technical replicates averaged into
+their `BioReplicate`), then
+[`filter_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/filter_quant.md)
+→
+[`normalize_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/normalize_quant.md)
+→
+[`impute_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/impute_quant.md)
+→
+[`test_differential()`](https://davidgz1.github.io/HowMaHiCo/reference/test_differential.md)
+(limma `~ 0 + Condition` with pairwise contrasts and
+`eBayes(trend = TRUE, robust = TRUE)`, or a dependency-free Welch
+`"ttest"`) →
+[`test_detection()`](https://davidgz1.github.io/HowMaHiCo/reference/test_detection.md)
+(Fisher exact on detection counts) →
+[`combine_quant_results()`](https://davidgz1.github.io/HowMaHiCo/reference/combine_quant_results.md)
+/
+[`summarise_significant()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_significant.md),
+plus
+[`permanova_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/permanova_condition.md)
+(base-R Anderson-2001 pseudo-F permutation test). **Missing values run
+on two tracks**: the quantitative test on observed (or imputed) values,
+and a presence/absence track for condition-exclusive ligands whose fold
+change is undefined — flagged by a *detection-count* rule, not an FDR
+cut-off, because a 3-vs-3 Fisher test cannot go below p = 0.1. **`limma`
+is a `Suggests` dependency**, guarded by the internal
+`.require_limma()`; the report falls back to `StatMethod = "ttest"` /
+`NormMethod = "median"` automatically when it is absent. New plots in
+`R/plots.R`:
+[`plot_completeness()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_completeness.md),
+[`plot_missing_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_missing_heatmap.md),
+[`plot_intensity_dist()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_intensity_dist.md),
+[`plot_dynamic_range()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_dynamic_range.md),
+[`plot_pca()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pca.md),
+[`plot_quant_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quant_heatmap.md)
+(clustered/unclustered ggplot2 tile map —
+[`plot_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_heatmap.md)
+writes a png and cannot be printed in a tabset),
+[`plot_volcano()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_volcano.md),
+[`plot_ma()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ma.md),
+[`plot_pvalue_hist()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pvalue_hist.md),
+[`plot_sig_summary()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_sig_summary.md).
+The report carries its own “Methods & justification” section. Also
+fixed: `run_howmahico_report("05_quality_score")` was unreachable
+(documented but absent from the `match.arg` choices) — `05` and `06` are
+now registered and `test-report-templates.R` guards that every shipped
+template directory is offered. v0.13.0 was a plots/exports pass driven
+by `plans_dgz.md`:
+[`plot_pseudochromatogram()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pseudochromatogram.md)
+now fills RT bars by peptide count (density gradient) instead of
+per-Condition colour; new
+[`plot_pseudomobilogram()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pseudomobilogram.md)
+(count vs `invk0`, configurable `binwidth`, default 0.2) was added next
+to it and wired into `03_lcms_qc` (new “Pseudomobilograms” tab in the
+RT/1k0/mz view config) and `00_mhc_report`;
+[`plot_charge_proportions()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_charge_proportions.md)
+bars gained a black outline; the peptide-motif window was extended to
+**7–25 AAs** (`01_id_counts`/`00_mhc_report`, was capped at 24); and a
+**subset prefix** is now applied to every result filename via a shared
+`result_prefix` (`= Subset`, `NULL` when unset) passed to
+[`write.csv_rawr()`](https://davidgz1.github.io/HowMaHiCo/reference/write.csv_rawr.md)
+/
+[`write_input_params()`](https://davidgz1.github.io/HowMaHiCo/reference/write_input_params.md)
+and the `seq_by_condition.xlsx` write (e.g. `dda_all_pep_all.csv`;
+`input_params` combines subset + report name to avoid collisions). The
+“implement safeguard when some conditions/replicates give 0 areas” item
+was moved to standby (no repro). v0.12.0 was a focused-report polish
+pass (no new engines): `01_id_counts` gained an **Average +/- sd per
+BioReplicate** section mirroring the per-Condition one
+([`plot_count_mean_sd()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_count_mean_sd.md)
+gained a `group_var` arg, default `"Condition"`); its **Proportion by
+length** content was pulled into its own 2nd-level section with
+Condition / BioReplicate / Sample tabs (previously nested under the
+Total-by sections). `02_overlaps` gained an **Overlap intra-Condition
+(%)** section
+([`plot_overlap_intra_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_overlap_intra_condition.md)
+gained a `value` arg, `"count"`/`"percent"`). Across the focused
+templates, “Selected peptides” headers now show the active length window
+(e.g. “(8 to 13 AAs)”) via `shortpep_range`, and the “Proteins” ID-level
+**headers/labels** were renamed to “Parent proteins” — display only: the
+data keys (`counts_levels`, `n_Proteins` columns, `count_lim$Level`) and
+plot axis labels are unchanged (a separate `counts_labels` display
+vector backs the renamed headers). The InteractivePlots/ggplotly toggle
+remains on the to-do list. v0.11.0 added a **cross-class (MHC1↔︎MHC2)
+contamination** dimension to the quality score: `frac_cross_class` flags
+MHC-II ligands co-enriched in an MHC-I pulldown (and vice versa) by
+their length signature — the fraction of peptides in the *other* class’s
+canonical window (MHC1 8–13, MHC2 12–25) that falls outside the current
+window (the internal `.cross_class_range()` is the single source of
+truth; the “outside-current” qualifier handles the 12–13 AA overlap).
+Scored `lower_better` at low weight (a small tail is biologically
+normal), `NA`/dropped for custom length windows. New plot
+[`plot_cross_class_length()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_cross_class_length.md)
+(per-sample length histogram with the cross-class region highlighted) +
+a “Cross-class contamination” section in the `05_quality_score` report.
+v0.10.0 added a per-sample **immunopeptidomics quality score** (inspired
+by the author’s HowDirty contamination score, but inverted — it scores
+how strongly a sample resembles a real HLA immunopeptidome). New engine
+`R/quality-score.R` exports
+[`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md)
+(per-sample composite 0–100 + traffic-light category),
+[`qc_metrics_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.md)
+(raw signals: length-window fidelity, 9-mer dominance, anchor-motif
+clarity via
+[`anchor_information_content()`](https://davidgz1.github.io/HowMaHiCo/reference/anchor_information_content.md),
+non-tryptic specificity, charge plausibility, depth, mass accuracy — all
+from `pep_all`, no external data, no new dependency),
+[`score_curve()`](https://davidgz1.github.io/HowMaHiCo/reference/score_curve.md),
+[`quality_thresholds_default()`](https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.md),
+[`calibrate_thresholds_from_qc()`](https://davidgz1.github.io/HowMaHiCo/reference/calibrate_thresholds_from_qc.md);
+plus
+[`plot_quality_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_heatmap.md)
+/
+[`plot_quality_composite()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_composite.md)
+in `R/plots.R`. The non-tryptic signal is split: overall C-terminal K/R
+fraction is a low-weight *diagnostic* (some HLA-I alleles use K/R
+anchors), while the *scored* metric isolates tryptic background in the
+out-of-window long-peptide tail. Thresholds use literature defaults
+**or** are calibrated from samples tagged as QC controls via an optional
+annotation `QC` column (`ThresholdMode = "qc_relative"`); undefined
+dimensions (MHC-II anchors, DIA-NN dummy `ppm`) drop out of the weighted
+composite instead of penalising the sample. New focused report
+`05_quality_score` (`inst/rmarkdown/templates/05_quality_score/`)
+renders the score against the cached `pep_all` like the other focused
+reports. `tests/testthat/test-quality-score.R` covers
+[`score_curve()`](https://davidgz1.github.io/HowMaHiCo/reference/score_curve.md)
+/
+[`anchor_information_content()`](https://davidgz1.github.io/HowMaHiCo/reference/anchor_information_content.md)
+(pure math, no synthetic peptide data). v0.9.0 added a
+**dictionary-driven unified parser** so a tabular search-engine export
+from a tool with no built-in loader can be ingested by editing a YAML
+dictionary (no R coding, no new loader). New
+[`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+branch `software = "custom"` (with a `dictionary` arg) runs
+[`read_custom_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_custom_batch.md)
+→
+[`parse_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.md)
+→
+[`annotate_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_unified.md).
+The dictionary maps raw→`pep_all` columns, sets the `Found_By` constant,
+and derives the shared recipe (`Log2Area`, `Length_range`,
+`Nter`/`Cter`, `PeptideID`, `Charge` formatting); per-tool transforms
+(unit conversions, regex extraction, accession splitting) are pre-clean
+responsibilities, not dictionary-expressible. New exports:
+[`read_dictionary()`](https://davidgz1.github.io/HowMaHiCo/reference/read_dictionary.md),
+[`parse_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.md)
+(`R/parse-unified.R`),
+[`read_custom_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_custom_batch.md),
+[`annotate_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_unified.md)
+(`R/loaders-custom.R`),
+[`get_dictionary_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_dictionary_template.md)
+(`R/get-dictionary.R`). Reference dictionaries ship in
+`inst/extdata/dictionaries/` (`custom_template.yaml` + `fragpipe.yaml` /
+`diann.yaml` / `peaks.yaml`); the three built-in loaders are unchanged.
+`tests/testthat/test-parse-unified.R` round-trips
+[`parse_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.md)
+against the FragPipe loader. New dependency: `yaml` (transitive via
+`rmarkdown`). Custom software has no inline-parsing path in the two
+`00_*` reports — run `build_pep_all("custom", dictionary=...)` once,
+then render the focused reports with `PepAllSource = "cached"`. v0.8.0
+gave the four focused reports a `PepAllSource` param (`"cached"` \|
+`"rda"` \| `"build"`, via `inst/rmarkdown/shared/setup.Rmd`) so each can
+load the default cache, load an explicit `.rda` (`PepAllFile`), or
+self-build from raw results via
 [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md);
 and added a simulated FragPipe dataset
 (`inst/extdata/sim_fragpipe_dda/`, moved out of `data/`) with
@@ -95,7 +365,8 @@ anywhere: CI/Docker/installs).
 | Folder | Contents |
 |----|----|
 | `R/` | Package source: all exported functions (~40) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
 | `example/` | Legacy `0_code/`, `1_documentation/` pre-migration reference copies (gitignored) |
@@ -159,6 +430,97 @@ first); see the v0.6.0 framework note above.
   `derive_filtered_annotation`
 - **`R/get-report.R`** — `get_report_template` (copies a skeleton to the
   working dir)
+- **`R/parse-unified.R`** —
+  [`read_dictionary()`](https://davidgz1.github.io/HowMaHiCo/reference/read_dictionary.md) +
+  [`parse_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.md):
+  the dictionary-driven parser for the `software = "custom"` path
+  (rename + `Found_By` + shared derived recipe + `validate_pep_all`
+  guard)
+- **`R/loaders-custom.R`** —
+  [`read_custom_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_custom_batch.md)
+  (generic configurable per-sample reader) +
+  [`annotate_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_unified.md)
+  (generic annotation join)
+- **`R/get-dictionary.R`** — `get_dictionary_template` (copies the YAML
+  dictionary template to the working dir)
+- **`R/quality-score.R`** — the immunopeptidomics quality-score engine:
+  [`qc_metrics_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.md),
+  [`anchor_information_content()`](https://davidgz1.github.io/HowMaHiCo/reference/anchor_information_content.md),
+  [`score_curve()`](https://davidgz1.github.io/HowMaHiCo/reference/score_curve.md),
+  [`quality_thresholds_default()`](https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.md),
+  [`calibrate_thresholds_from_qc()`](https://davidgz1.github.io/HowMaHiCo/reference/calibrate_thresholds_from_qc.md),
+  [`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md)
+  plus the internal `.cross_class_range()` (MHC1↔︎MHC2 cross-class
+  window) feeding the `frac_cross_class` metric (consumed by the
+  `05_quality_score` report;
+  [`plot_quality_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_heatmap.md)/[`plot_quality_composite()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_composite.md)/[`plot_cross_class_length()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_cross_class_length.md)
+  live in `R/plots.R`)
+- **`R/quant-stats.R`** — the advanced-quantification engine behind
+  `06_quant_stats`:
+  [`build_quant_matrix()`](https://davidgz1.github.io/HowMaHiCo/reference/build_quant_matrix.md),
+  [`filter_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/filter_quant.md),
+  [`normalize_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/normalize_quant.md),
+  [`impute_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/impute_quant.md),
+  [`test_differential()`](https://davidgz1.github.io/HowMaHiCo/reference/test_differential.md),
+  [`test_detection()`](https://davidgz1.github.io/HowMaHiCo/reference/test_detection.md),
+  [`combine_quant_results()`](https://davidgz1.github.io/HowMaHiCo/reference/combine_quant_results.md),
+  [`summarise_significant()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_significant.md),
+  [`permanova_condition()`](https://davidgz1.github.io/HowMaHiCo/reference/permanova_condition.md)
+  plus the internal `.require_limma()` / `.pairwise_contrasts()`.
+  `limma` is a `Suggests` dependency; the `method = "ttest"` /
+  `NormMethod = "median"` path needs no Bioconductor package. Its plots
+  ([`plot_completeness()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_completeness.md),
+  [`plot_missing_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_missing_heatmap.md),
+  [`plot_intensity_dist()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_intensity_dist.md),
+  [`plot_dynamic_range()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_dynamic_range.md),
+  [`plot_pca()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pca.md),
+  [`plot_quant_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quant_heatmap.md),
+  [`plot_volcano()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_volcano.md),
+  [`plot_ma()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ma.md),
+  [`plot_pvalue_hist()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pvalue_hist.md),
+  [`plot_sig_summary()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_sig_summary.md))
+  live in `R/plots.R`
+- **`R/pepchem.R`** — the peptide-chemistry engine behind `07_pepchem`:
+  [`peptide_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/peptide_properties.md)
+  (per-**unique**-sequence descriptors via `Peptides`),
+  [`pepchem_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_properties.md)
+  (the `core`/`extended` PropertySet lists),
+  [`aa_composition()`](https://davidgz1.github.io/HowMaHiCo/reference/aa_composition.md),
+  [`aa_position_frequency()`](https://davidgz1.github.io/HowMaHiCo/reference/aa_position_frequency.md)
+  (per-position residue table; negative positions count from the
+  C-terminus),
+  [`pepchem_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_by_sample.md),
+  [`summarise_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_pepchem.md)
+  →
+  [`aggregate_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/aggregate_pepchem.md)
+  (the two-step per-sample → per-Condition aggregation),
+  [`cliffs_delta()`](https://davidgz1.github.io/HowMaHiCo/reference/cliffs_delta.md),
+  [`compare_pepchem()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_pepchem.md)
+  and
+  [`compare_aa_frequency()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_aa_frequency.md),
+  plus the internal `.aa_alphabet()` / `.resolve_positions()` (shared
+  with
+  [`anchor_information_content()`](https://davidgz1.github.io/HowMaHiCo/reference/anchor_information_content.md)),
+  `.aa_classes()`, `.residue_counts()` and the `.compare_groups()` test
+  scaffold. Its plots
+  ([`plot_aa_composition()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_aa_composition.md),
+  [`plot_aa_position_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_aa_position_heatmap.md),
+  [`plot_property_distribution()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_distribution.md),
+  [`plot_property_sample_summary()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_sample_summary.md),
+  [`plot_property_effectsize()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_effectsize.md))
+  live in `R/plots.R`
+- **`R/report-helpers.R`** — the settings the templates derive from
+  their params:
+  [`mhc_length_window()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_length_window.md)
+  (MHC1 8–13 / MHC1_mouse 7–11 / MHC2 12–25, else the
+  `ShortPeptideLength*` params),
+  [`mhc_class_palette()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_class_palette.md),
+  [`mhc_classes()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_classes.md)
+  and
+  [`condition_pairs()`](https://davidgz1.github.io/HowMaHiCo/reference/condition_pairs.md)
+  (all pairwise Condition comparisons; empty list for a single
+  Condition, `self = TRUE` adds the diagonal). Single source of truth —
+  the skeletons and `R/quality-score.R`/`R/quant-stats.R` all call these
 - **`R/loaders-peaks-dirs.R`** —
   [`get_dirs_index_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/get_dirs_index_peaks.md),
   the internal PEAKS export-subfolder indexer used by
@@ -176,9 +538,14 @@ first); see the v0.6.0 framework note above.
 - **`inst/rmarkdown/templates/00_mhc_upsets/skeleton/skeleton.Rmd`** —
   secondary report focused on overlap/UpSet plots (loads from cached
   `.rda`, same params)
-- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant}/`**
-  — the focused reports (each a slice of `00_mhc_report`), sharing
-  `inst/rmarkdown/shared/setup.Rmd` and loading the `pep_all` cache from
+- **`inst/rmarkdown/templates/{01_id_counts,02_overlaps,03_lcms_qc,04_quant,05_quality_score,06_quant_stats,07_pepchem}/`**
+  — the focused reports (`01`–`04` each a slice of `00_mhc_report`;
+  `05_quality_score` is the per-sample quality-score report from
+  `R/quality-score.R`; `06_quant_stats` is the advanced-quantification /
+  differential-abundance report from `R/quant-stats.R`; `07_pepchem` is
+  the peptide-physicochemical-properties report from `R/pepchem.R`),
+  sharing `inst/rmarkdown/shared/setup.Rmd` and loading the `pep_all`
+  cache from
   [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
   (`R/build-pep-all.R`)
 
@@ -186,12 +553,31 @@ first); see the v0.6.0 framework note above.
 
 Required columns (checked by `read_annot`): - `Condition`,
 `BioReplicate`, `TechReplicate`, `Sample` — always required -
-`Sample_fp` (FragPipe/DIA-NN) or `Sample_peaks` (PEAKS) — at least one
-required; matches the data subfolder name
-(e.g. `fragpipe_dda_combined/JY`) - `Source_file` — required when
-`mode = "combined_file"` (FragPipe combined PSM, DIA-NN); matches the
-spectrum/run name within that subfolder - `Sample_ID` — free-text
-human-readable identifier
+`Sample_folder` — the data subfolder name
+(e.g. `fragpipe_dda_combined/JY`), **the same column whatever the search
+engine**. The engine-specific legacy names `Sample_fp` (FragPipe/DIA-NN)
+and `Sample_peaks` (PEAKS) are still accepted; at least one of the three
+is required.
+[`read_annot()`](https://davidgz1.github.io/HowMaHiCo/reference/read_annot.md)
+derives the missing ones: `Sample_fp` is a verbatim copy of
+`Sample_folder`, `Sample_peaks` a copy with PEAKS’ hyphen/space
+normalization — so the loaders, which key on `Sample_fp`/`Sample_peaks`,
+are unchanged. A user-supplied alias is never overwritten -
+`Source_file` — required when `mode = "combined_file"` (FragPipe
+combined PSM, DIA-NN); matches the spectrum/run name within that
+subfolder - `Sample_ID` — free-text human-readable identifier - `QC`
+*(optional)* — flags experiment quality-control samples (`TRUE`/`"QC"`);
+consumed by the `05_quality_score` report to mark QC samples and, with
+`ThresholdMode = "qc_relative"`, to calibrate the score thresholds.
+`read_annot` passes it through untouched (no schema change needed)
+
+[`get_annot_fragpipe()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_fragpipe.md)
+/
+[`get_annot_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_diann.md)
+/
+[`get_annot_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_peaks.md)
+generate the skeleton table (with `Sample_folder`) for their respective
+exports.
 
 Matching key for joining annotation ↔︎ data: `Sample_fp` alone for
 `fragpipe_dda_individual`; `Sample_fp` + `Source_file` for
@@ -277,19 +663,22 @@ hardcoded `1_documentation/`):
 
 | Param | Purpose |
 |----|----|
-| `Software` | `fragpipe_dda_combined` \| `fragpipe_dda_individual` \| `diann` \| `peaks_xpro` — selects the loader branch |
+| `Software` | `fragpipe_dda_combined` \| `fragpipe_dda_individual` \| `diann` \| `peaks_xpro` \| `custom` — selects the loader branch (`custom` = dictionary-driven via `build_pep_all`) |
 | `SampleSet` | Human-readable experiment name; used in the auto-generated report title |
 | `Subset` | Subset name; becomes a filename prefix and a subfolder under `FolderResults`/`FolderFigures` |
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
-| `PepAllSource` | **Focused reports only** (the four `01`–`04` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md) and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PepAllSource` | **Focused reports only** (the seven `01`–`07` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md) and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PeptideSet` / `QuantFeature` / `QuantUnit` / `MinReplicates` / `NormMethod` / `ImputeMethod` / `StatMethod` / `BlockVar` / `FdrCutoff` / `Log2FcCutoff` / `MinDetectExclusive` / `TopNHeatmap` / `PermutationTest` | **`06_quant_stats` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the matrix rows (`Peptide` default \| `Sequence` \| `PeptideID` \| `ProteinFirst`) and columns (`BioReplicate` default \| `Sample` \| `Condition`), the filtering cut-off (default 2 units in ≥1 Condition), normalization (`median` default \| `quantile` \| `cyclicloess` \| `scale` \| `none`), imputation (`none` default \| `minprob` \| `mindet`), test (`limma` default \| `ttest`), an optional [`limma::duplicateCorrelation`](https://rdrr.io/pkg/limma/man/dupcor.html) blocking column, the significance cut-offs, the detection-count rule for condition-exclusive features, the heatmap feature count, and whether to run the PERMANOVA permutation test. |
+| `PeptideSet` / `PropertySet` / `MotifLength` / `TerminalPositions` / `ChargePh` / `MinPeptidesSample` / `FdrCutoff` | **`07_pepchem` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the descriptor set (`core` = Length/GRAVY/pI/Charge \| `extended` adds MW, Boman, hydrophobic moment, instability + aliphatic index and the `frac_*` class fractions — see [`pepchem_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_properties.md)), the peptide length used for the per-position frequency map (`"auto"` = modal length, or an integer), the comma-separated positions profiled across all lengths (negative counts from the C-terminus), the pH of the net-charge descriptor, the unique-sequence count below which a sample is flagged as noisy, and the BH significance cut-off. |
+| `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |
-| `MHCclass` | `"MHC1"` (8–13 AA, default) or `"MHC2"` (12–25 AA) — sets `shortpep_range`; overrides `ShortPeptideLengthMin/Max` |
+| `MHCclass` | `"MHC1"` (human, 8–13 AA, default), `"MHC1_mouse"` (murine H-2, 7–11 AA) or `"MHC2"` (12–25 AA) — sets `shortpep_range` and the palette via [`mhc_length_window()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_length_window.md)/[`mhc_class_palette()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_class_palette.md); overrides `ShortPeptideLengthMin/Max` |
 | `ShortPeptideLengthMin/Max` | Custom `pep_short` window; used only when `MHCclass` is not a recognised value |
 | `ResultsOverwrite` | FALSE makes `check_output_exists`/`check_file_exists` abort if outputs already exist |
-| `TestMode` | TRUE = load only first ~100 lines per file (fast iteration; can break correlation plots) |
+| `TestMode` | TRUE = keep only the first ~100 rows **per run** (fast iteration on a representative subset — every run/Condition/replicate survives, unlike a head-of-file truncation of a combined export; can still break correlation plots) |
 | `CsvSave` / `PlotsSave` | TRUE = also export intermediary csvs / png plots |
 
 [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)
@@ -316,7 +705,11 @@ natively in `R/loaders-peaks-dirs.R`.
   Rmd’s “Loading files” chunk dispatches on this string
   (`grepl("fragpipe_dda", ...)`, `== "diann"`, `== "peaks_xpro"`). Valid
   combined-vs-individual mode is inferred from whether
-  `"combined"`/`"individual"` appears in the `Software` string.
+  `"combined"`/`"individual"` appears in the `Software` string. The
+  `"custom"` value is handled only in
+  [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+  (not the inline-parsing `00_*` reports): it dispatches on the YAML
+  `dictionary` instead of hard-coded loader logic.
 - **FragPipe currently reads `psm.tsv`**, not peptide-level results —
   this means FDR is applied only at the PSM level, not the peptide level
   (a [`warning()`](https://rdrr.io/r/base/warning.html) documents this
@@ -364,3 +757,47 @@ natively in `R/loaders-peaks-dirs.R`.
   Docker, Shiny app, CI/release process) this project is expected to
   follow once matured into a distributable tool, see
   `project-style-guide.md`.
+
+## Deferred designs
+
+Work that was planned in detail, then parked. Kept here (rather than
+only as a one-line `plans_dgz.md` standby entry) so it can be resumed
+without re-deriving the investigation.
+
+### Peptide position within the parent protein (deferred v0.16.0)
+
+The third part of the physicochemical-properties request. Out of scope
+of `07_pepchem` because it is the only part needing user-supplied input
+beyond `pep_all`.
+
+- **No loader carries a position column.** FragPipe’s `psm.tsv`
+  `select()` whitelist (`R/loaders-fragpipe.R`) drops
+  `Protein Start`/`Protein End`; DIA-NN’s `report.tsv` has none at all
+  (`RT.Start`/`RT.Stop` are *retention time*); PEAKS’ start/end live in
+  `protein-peptides.csv`, which the package never reads. The
+  `software = "custom"` dictionary path is the one place a `Start`
+  column would survive today, since
+  [`parse_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.md)
+  imposes no whitelist beyond the dictionary.
+- **Approach when resumed:** an optional `FastaFile` report param plus a
+  ~25-line base-R FASTA reader (`read_fasta()` → `Header`, `Accession`,
+  `Sequence`, `ProteinLength`; accession = field 2 of a `sp|P01234|NAME`
+  header, else the first whitespace token) and
+  `map_peptide_positions()`, joining `ProteinFirst` (first entry when
+  `;`-separated) to the FASTA and locating each peptide with
+  `stringr::str_locate(..., fixed(Sequence))` → `Start`, `End`,
+  `RelPosition`, `DistNterm`, `DistCterm`, warning with the unmapped
+  fraction. No new dependency. It would also unlock a true proteome
+  background for the composition section, replacing the pooled-subset
+  reference `07_pepchem` currently uses.
+- **Plot:**
+  `plot_protein_position(pos, type = c("relative", "terminal"))`, in a
+  `results='asis'` section that emits its own heading only when a FASTA
+  is given (the `imputation-section` pattern in `06_quant_stats`).
+- **Test fixture needed:** the shipped sim data has 462 peptides over
+  *synthetic* accessions (`sp|Q8R3TN|NM3_HUMAN` …) with no real protein
+  to locate them in. Generate
+  `inst/extdata/sim_fragpipe_dda_proteins.fasta` — one ~150–250 AA
+  synthetic protein per `Protein ID`, each embedding its peptide(s) at a
+  random offset (~80 KB against the existing 532 KB fixture dir). Leave
+  a few accessions out to exercise the unmapped-fraction warning.

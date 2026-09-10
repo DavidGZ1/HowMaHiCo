@@ -37,7 +37,7 @@ read_fragpipe_batch(
 
   Logical; passed through to
   [`read_fragpipe()`](https://davidgz1.github.io/HowMaHiCo/reference/read_fragpipe.md)
-  (loads only the first ~100 rows per file when `TRUE`, for fast
+  (keeps only the first ~100 rows per run when `TRUE`, for fast
   iteration).
 
 ## Value

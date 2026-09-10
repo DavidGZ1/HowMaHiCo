@@ -32,7 +32,9 @@ get_mat_log2area(input, row, col)
 ## Value
 
 A numeric matrix with `NA`s preserved, rows named by `row` and columns
-ordered by the factor levels of `col`.
+ordered by the factor levels of `col`. When no `row` has a single
+non-missing `Log2Area` (all Areas absent or zero), a `0 x n` matrix with
+the expected column names is returned with a warning.
 
 ## Examples
 

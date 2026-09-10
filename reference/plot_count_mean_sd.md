@@ -8,7 +8,7 @@ faceted barplot showing mean ± SD across BioReplicates per Condition.
 ## Usage
 
 ``` r
-plot_count_mean_sd(df, level, lim_level)
+plot_count_mean_sd(df, level, lim_level, group_var = "Condition")
 ```
 
 ## Arguments
@@ -28,6 +28,14 @@ plot_count_mean_sd(df, level, lim_level)
   Upper y-axis limit (e.g. looked up from a `count_lim` table by
   `Level`/`"Limit_mean"`).
 
+- group_var:
+
+  Name of the column mapped to the x-axis (and fill), across which the
+  mean ± SD is computed. Default `"Condition"` (mean across the
+  replicate samples per Condition); pass `"BioReplicate"` for a per-
+  BioReplicate variant (mean across the TechReplicate samples per
+  BioReplicate).
+
 ## Value
 
 A `ggpubr` barplot with mean ± SD error bars and viridis fill.
@@ -37,5 +45,6 @@ A `ggpubr` barplot with mean ± SD error bars and viridis fill.
 ``` r
 if (FALSE) { # \dontrun{
 plot_count_mean_sd(counts_size, "Peptides", lim_level = 30000)
+plot_count_mean_sd(counts_size, "Peptides", 30000, group_var = "BioReplicate")
 } # }
 ```
