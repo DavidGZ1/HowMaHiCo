@@ -1,5 +1,38 @@
 # Changelog
 
+## HowMaHiCo 0.16.1
+
+- **Fixed: the pkgdown site had not deployed since v0.8.0.** pkgdown
+  aborts the whole build when an exported function is missing from the
+  `_pkgdown.yml` reference index, and three release cycles
+  (v0.9.0-v0.13.0) added exports without indexing them: the
+  dictionary-driven parser family
+  ([`parse_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.md),
+  [`read_dictionary()`](https://davidgz1.github.io/HowMaHiCo/reference/read_dictionary.md),
+  [`read_custom_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_custom_batch.md),
+  [`annotate_unified()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_unified.md),
+  [`get_dictionary_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_dictionary_template.md)),
+  the quality-score engine
+  ([`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md)
+  and friends, plus
+  [`plot_quality_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_heatmap.md),
+  [`plot_quality_composite()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_composite.md),
+  [`plot_cross_class_length()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_cross_class_length.md))
+  and
+  [`plot_pseudomobilogram()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pseudomobilogram.md).
+  All 15 are now indexed, in two new reference sections plus one
+  insertion.
+- **New guard `tests/testthat/test-pkgdown-index.R`.**
+  `devtools::check()` never reads `_pkgdown.yml`, and the pkgdown
+  workflow only runs on `master`, so the failure could only be
+  discovered *after* a merge. The suite now checks that every
+  [`getNamespaceExports()`](https://rdrr.io/r/base/ns-reflect.html)
+  entry appears in the index, that no index entry names a function that
+  is not exported (a rename or removal breaks the build the same way),
+  and that nothing is listed twice. `_pkgdown.yml` is `.Rbuildignore`d,
+  so the test locates it by walking up from the test directory and skips
+  when no source tree is reachable.
+
 ## HowMaHiCo 0.16.0
 
 - **New report `07_pepchem` + engine `R/pepchem.R`: peptide

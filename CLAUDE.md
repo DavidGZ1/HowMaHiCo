@@ -8,10 +8,20 @@ search-engine output (FragPipe, DIA-NN, PEAKS), normalizes it into one
 unified long-format table (`pep_all`), and renders self-contained
 interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.16.0** — Phases 1–6 of the package conversion are
-complete. v0.16.0 added the **peptide-chemistry report `07_pepchem`**
-and its engine `R/pepchem.R` — the first part of HowMaHiCo that
-describes what the ligands are *made of* rather than which they are.
+**Current version: 0.16.1** — Phases 1–6 of the package conversion are
+complete. v0.16.1 fixed the **pkgdown site build**, which had failed on
+every `master` push since v0.8.0: pkgdown aborts when an exported
+function is missing from the `_pkgdown.yml` reference index, and
+v0.9.0–v0.13.0 added 15 exports without indexing them.
+`devtools::check()` never reads `_pkgdown.yml` and the pkgdown workflow
+only runs on `master`, so the break was only visible after a merge —
+`tests/testthat/test-pkgdown-index.R` now guards it in the ordinary
+suite (exports ⊆ index, no stale entries, no duplicates; it walks up to
+find the `.Rbuildignore`d `_pkgdown.yml` and skips when no source tree
+is reachable). v0.16.0 added the **peptide-chemistry report
+`07_pepchem`** and its engine `R/pepchem.R` — the first part of
+HowMaHiCo that describes what the ligands are *made of* rather than
+which they are.
 [`pepchem_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_by_sample.md)
 reduces `pep_all` to its distinct `Sequence` per `Sample` and attaches
 the descriptors from
