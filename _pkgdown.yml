@@ -50,6 +50,17 @@ reference:
   - parse_peaks
   - annotate_peaks
 
+- title: Custom (dictionary-driven) parsing
+  desc: >
+    The `software = "custom"` path: ingest a tabular export from a tool with no
+    built-in loader by editing a YAML dictionary instead of writing R code.
+  contents:
+  - get_dictionary_template
+  - read_dictionary
+  - read_custom_batch
+  - parse_unified
+  - annotate_unified
+
 - title: Checks
   desc: Guard against clobbering existing output and summarise global ID composition
   contents:
@@ -89,6 +100,7 @@ reference:
   - plot_upset
   - plot_upset_batch
   - plot_pseudochromatogram
+  - plot_pseudomobilogram
   - plot_2d_distribution
   - plot_violin_areacv
   - plot_qc_box
@@ -98,6 +110,24 @@ reference:
   - ggseqlogo_bylength
   - theme_rawr
   - theme_howmahico
+
+- title: Sample quality score
+  desc: >
+    Per-sample immunopeptidomics quality score behind the 05_quality_score
+    report: raw signals (length-window fidelity, canonical-length dominance,
+    anchor-motif clarity, non-tryptic specificity, charge plausibility, depth,
+    mass accuracy, cross-class contamination), the threshold model, and the
+    weighted 0-100 composite.
+  contents:
+  - score_sample_quality
+  - qc_metrics_by_sample
+  - anchor_information_content
+  - score_curve
+  - quality_thresholds_default
+  - calibrate_thresholds_from_qc
+  - plot_quality_heatmap
+  - plot_quality_composite
+  - plot_cross_class_length
 
 - title: Advanced quantification & statistics
   desc: >
