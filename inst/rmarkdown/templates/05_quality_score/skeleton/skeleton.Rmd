@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation"
@@ -46,11 +47,12 @@ title: "`r paste0('05_quality_score | ', params$SampleSet, if (nzchar(params$Sub
 
 # Report information
 
-Focused **sample-quality** report for immunopeptidomics experiments, provided by
-the Immunopeptidomics Platform (IPP). It condenses several interpretable signals
-into one per-sample **quality score** — how strongly each sample resembles a real
-HLA immunopeptidome — inspired by the HowDirty contamination score but inverted
-(goodness rather than badness).
+Focused **sample-quality** report for immunopeptidomics experiments. It
+condenses several interpretable signals into one per-sample **quality score** —
+how strongly each sample resembles a real HLA immunopeptidome — inspired by the
+HowDirty contamination score but inverted (goodness rather than badness).
+
+`r HowMaHiCo::provider_line(params$Provider)`
 
 **Sample Set:** `r params$SampleSet`
 

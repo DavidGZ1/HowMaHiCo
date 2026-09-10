@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation"
@@ -51,13 +52,15 @@ title: "`r paste0('07_pepchem | ', params$SampleSet, if (nzchar(params$Subset)) 
 
 # Report information
 
-Focused **peptide-chemistry** report for immunopeptidomics experiments, provided
-by the Immunopeptidomics Platform (IPP). Where the other reports describe *which*
-peptides were found, this one describes *what they are made of*: amino-acid
-composition, per-position residue preferences, and per-peptide physicochemical
-descriptors (GRAVY, pI, net charge, ...), compared between Conditions. The
+Focused **peptide-chemistry** report for immunopeptidomics experiments. Where
+the other reports describe *which* peptides were found, this one describes
+*what they are made of*: amino-acid composition, per-position residue
+preferences, and per-peptide physicochemical descriptors (GRAVY, pI, net
+charge, ...), compared between Conditions. The
 methods and the reasoning behind them are documented in the *Methods &
 justification* section at the end.
+
+`r HowMaHiCo::provider_line(params$Provider)`
 
 **Sample Set:** `r params$SampleSet`
 

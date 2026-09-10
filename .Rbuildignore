@@ -20,4 +20,6 @@
 ^2_data$
 ^3_results$
 ^4_figures$
-^.*\.html$
+^[^/]*\.html$
+^doc$
+^Meta$

@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation"
@@ -57,14 +58,16 @@ title: "`r paste0('06_quant_stats | ', params$SampleSet, if (nzchar(params$Subse
 
 # Report information
 
-Focused **advanced-quantification** report for immunopeptidomics experiments,
-provided by the Immunopeptidomics Platform (IPP). It compares peptide `Area`
-between Conditions: an unsupervised multivariate overview (PCA, clustering,
-permutation test) followed by per-peptide differential abundance with
+Focused **advanced-quantification** report for immunopeptidomics experiments.
+It compares peptide `Area` between Conditions: an unsupervised multivariate
+overview (PCA, clustering, permutation test) followed by per-peptide
+differential abundance with
 [limma](https://bioconductor.org/packages/limma) moderated t-statistics, plus a
 presence/absence track for the condition-exclusive ligands a quantitative test
 cannot rank. The methods and the reasoning behind them are documented in the
 *Methods & justification* section at the end.
+
+`r HowMaHiCo::provider_line(params$Provider)`
 
 **Sample Set:** `r params$SampleSet`
 

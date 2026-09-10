@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation"
@@ -45,8 +46,10 @@ title: "`r paste0('03_lcms_qc | ', params$SampleSet, if (nzchar(params$Subset)) 
 # Report information
 
 Focused **LC-MS / identification QC** report (RT / 1k0 / m/z distributions,
-Score and mass-error QC, PTM profile) for immunopeptidomics experiments,
-provided by the Immunopeptidomics Platform (IPP). Intended for advanced users.
+Score and mass-error QC, PTM profile) for immunopeptidomics experiments.
+Intended for advanced users.
+
+`r HowMaHiCo::provider_line(params$Provider)`
 
 **Sample Set:** `r params$SampleSet`
 

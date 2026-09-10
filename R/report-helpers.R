@@ -81,6 +81,37 @@ mhc_class_palette <- function(mhcclass = "MHC1") {
     palettes[[mhcclass]] else palettes$MHC1
 }
 
+#' Provider sentence of a report header
+#'
+#' The one-line attribution every report template prints under its description.
+#' The organisation used to be hardcoded into each skeleton's opening paragraph,
+#' which branded every rendered report of a distributable package to a single
+#' platform; it is now the optional `Provider` report param, and this helper
+#' turns that param into the sentence.
+#'
+#' An empty/unset `Provider` yields a neutral sentence naming no organisation,
+#' so a report is never attributed to someone who did not produce it.
+#'
+#' @param provider Organisation or person that produced the report, as a single
+#'   string. `""` (the param default), `NA` or `NULL` select the generic
+#'   sentence.
+#'
+#' @return A single string, ready to be emitted from an inline `\\Sexpr`-style
+#'   `` `r ...` `` expression in a report template.
+#'
+#' @export
+#'
+#' @examples
+#' provider_line("Immunopeptidomics Platform (IPP)")
+#' provider_line("")
+provider_line <- function(provider = "") {
+  generic <- "Generated with the HowMaHiCo R package."
+  if (is.null(provider) || length(provider) == 0) return(generic)
+  provider <- as.character(provider)[1]
+  if (is.na(provider) || !nzchar(trimws(provider))) return(generic)
+  paste0("Provided by ", trimws(provider), ".")
+}
+
 #' All pairwise Condition comparisons
 #'
 #' Replacement for the bare `combn(conditions, 2)` the report templates used to

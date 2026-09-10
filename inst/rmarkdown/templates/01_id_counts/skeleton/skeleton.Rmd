@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation"
@@ -45,8 +46,9 @@ title: "`r paste0('01_id_counts | ', params$SampleSet, if (nzchar(params$Subset)
 # Report information
 
 Focused **general identification-QC** report (ID counts, size distributions and
-motifs) for immunopeptidomics experiments, provided by the Immunopeptidomics
-Platform (IPP).
+motifs) for immunopeptidomics experiments.
+
+`r HowMaHiCo::provider_line(params$Provider)`
 
 **Sample Set:** `r params$SampleSet`
 

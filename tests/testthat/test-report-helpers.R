@@ -56,3 +56,38 @@ test_that("condition_pairs(self = TRUE) appends the self-comparisons", {
   expect_equal(names(one), "A_vs_A")
   expect_equal(one[[1]], c("A", "A"))
 })
+
+# provider_line() (v0.17.0): the report header attribution used to be a hardcoded
+# organisation in every skeleton, which branded every rendered report of a
+# distributable package to one platform. It is now the optional `Provider` param.
+
+test_that("provider_line names the provider when one is given", {
+  expect_equal(provider_line("My Lab"), "Provided by My Lab.")
+  expect_equal(provider_line("Immunopeptidomics Platform (IPP)"),
+               "Provided by Immunopeptidomics Platform (IPP).")
+  # surrounding whitespace should not leak into the sentence
+  expect_equal(provider_line("  My Lab  "), "Provided by My Lab.")
+})
+
+test_that("provider_line falls back to a generic sentence naming no organisation", {
+  generic <- "Generated with the HowMaHiCo R package."
+
+  expect_equal(provider_line(""), generic)          # the param default
+  expect_equal(provider_line(), generic)
+  expect_equal(provider_line("   "), generic)       # whitespace only
+  expect_equal(provider_line(NA), generic)
+  expect_equal(provider_line(NA_character_), generic)
+  expect_equal(provider_line(NULL), generic)        # rmarkdown drops YAML-null params
+  expect_equal(provider_line(character(0)), generic)
+
+  # a report must never be attributed to someone who did not produce it
+  expect_false(grepl("Provided by", generic, fixed = TRUE))
+})
+
+test_that("provider_line always returns a single string", {
+  for (x in list("Lab", "", NA, NULL, c("A", "B"))) {
+    out <- provider_line(x)
+    expect_type(out, "character")
+    expect_length(out, 1L)
+  }
+})
