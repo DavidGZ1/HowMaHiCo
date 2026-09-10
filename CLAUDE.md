@@ -7,7 +7,31 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.17.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.18.0** — Phases 1–6 of the package conversion are complete.
+v0.18.0 added the **protein-level table and report** (`R/prot-all.R` +
+`08_prot_all`): `build_prot_all()` condenses `pep_all` to one row per (protein,
+`Sample`) — ligands contributed, summed `Area` (linear-scale sum then log2, as
+`build_quant_matrix()` does, **not** the `Log2Area` average that
+`get_mat_log2area()` uses), unique-peptide counts from the previously unused
+`Is_Unique`/`Proteotypic` flags, and the protein annotation. The protein key is a
+param (`ProteinFeature`: `ProteinFirst` default \| `GeneFirst` \| `Accession`)
+because `Accession` is a protein *group* only for DIA-NN and PEAKS; and
+`MultiMapping` (`leading` default \| `all`) chooses how a ligand that maps to
+several proteins is counted, with `expand_mapped_proteins()` resolving the
+engine-specific mapped-protein column via `Found_By`. **Engine-reported
+protein-level values are carried through**: `prot_engine_columns()` finds DIA-NN's
+`PG.*`/`Genes.*` quantities and q-values (already in `pep_all`, previously
+unused) and `build_prot_all()` carries them by a unique-within-group rule that
+returns `NA` rather than averaging when a value genuinely varies;
+`plot_ligand_vs_protein_quant()` compares them against the summed ligand
+intensity. `parse_diann()`'s protein-column selection moved to
+`dplyr::any_of(diann_protein_columns())` so a report using either DIA-NN naming
+generation (`PG.Quantity` vs `PG.Abundance`) keeps its quantities instead of
+having them silently dropped — or aborting the parse. Descriptive only: no
+differential testing (use `06_quant_stats` with `QuantFeature = "ProteinFirst"`)
+and no length normalisation, which needs the FASTA (see *Deferred designs*).
+**Note the protein count here need not match `01_id_counts`**, which counts
+`n_distinct(Accession)`; the report says so explicitly.
 v0.17.0 is a **distributability pass**: the report header attribution is no longer
 hardcoded. Every skeleton branded its output to one platform ("provided by the
 Immunopeptidomics Platform (IPP)", plus a personal `@dkfz.de` address and a
@@ -277,7 +301,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (100+) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/`, `08_prot_all/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
 | `inst/scripts/` | `howmahico_pipeline.R` — the guided, runnable walkthrough handed out by `get_pipeline_script()` |
 | `vignettes/` | `howmahico.Rmd` — the narrated walkthrough (`vignette("howmahico")`) |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
@@ -380,6 +404,16 @@ note above.
   scaffold. Its plots (`plot_aa_composition()`, `plot_aa_position_heatmap()`,
   `plot_property_distribution()`, `plot_property_sample_summary()`,
   `plot_property_effectsize()`) live in `R/plots.R`
+- **`R/prot-all.R`** — the protein-level engine behind `08_prot_all`:
+  `build_prot_all()` (one row per protein x Sample), `summarise_prot_all()`,
+  `top_source_proteins()`, `expand_mapped_proteins()` (engine-specific
+  mapped-protein column, dispatched on `Found_By`), `prot_engine_columns()` and
+  `diann_protein_columns()` (the shared registry `parse_diann()`'s `any_of()`
+  also uses), plus internals `.mapped_protein_column()`,
+  `.unique_peptide_flag()` and `.unique_or_na()`. Its plots
+  (`plot_proteins_per_sample()`, `plot_peptides_per_protein()`,
+  `plot_top_proteins()`, `plot_protein_detection()`,
+  `plot_ligand_vs_protein_quant()`) live in `R/plots.R`
 - **`R/report-helpers.R`** — the settings the templates derive from their params:
   `mhc_length_window()` (MHC1 8–13 / MHC1_mouse 7–11 / MHC2 12–25, else the
   `ShortPeptideLength*` params), `mhc_class_palette()`, `mhc_classes()` and
@@ -508,6 +542,7 @@ didn't need (they hardcoded `1_documentation/`):
 | `PeptideSet` / `QuantFeature` / `QuantUnit` / `MinReplicates` / `NormMethod` / `ImputeMethod` / `StatMethod` / `BlockVar` / `FdrCutoff` / `Log2FcCutoff` / `MinDetectExclusive` / `TopNHeatmap` / `PermutationTest` | **`06_quant_stats` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the matrix rows (`Peptide` default \| `Sequence` \| `PeptideID` \| `ProteinFirst`) and columns (`BioReplicate` default \| `Sample` \| `Condition`), the filtering cut-off (default 2 units in ≥1 Condition), normalization (`median` default \| `quantile` \| `cyclicloess` \| `scale` \| `none`), imputation (`none` default \| `minprob` \| `mindet`), test (`limma` default \| `ttest`), an optional `limma::duplicateCorrelation` blocking column, the significance cut-offs, the detection-count rule for condition-exclusive features, the heatmap feature count, and whether to run the PERMANOVA permutation test. |
 | `PeptideSet` / `PropertySet` / `MotifLength` / `TerminalPositions` / `ChargePh` / `MinPeptidesSample` / `FdrCutoff` | **`07_pepchem` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the descriptor set (`core` = Length/GRAVY/pI/Charge \| `extended` adds MW, Boman, hydrophobic moment, instability + aliphatic index and the `frac_*` class fractions — see `pepchem_properties()`), the peptide length used for the per-position frequency map (`"auto"` = modal length, or an integer), the comma-separated positions profiled across all lengths (negative counts from the C-terminus), the pH of the net-charge descriptor, the unique-sequence count below which a sample is flagged as noisy, and the BH significance cut-off. |
 | `Provider` | Organisation/person that produced the report, printed in the header via `provider_line()`. Default `""` prints a generic attribution naming no organisation. Declared by all nine templates. |
+| `PeptideSet` / `ProteinFeature` / `MultiMapping` / `TopNProteins` / `MinPeptidesProtein` | **`08_prot_all` only**: which peptides to condense, the protein grouping column (`ProteinFirst` default \| `GeneFirst` \| `Accession`), how a multi-mapping ligand is counted (`leading` default \| `all`), and the size/threshold of the source-protein ranking. |
 | `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |

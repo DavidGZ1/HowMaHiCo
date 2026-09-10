@@ -219,7 +219,8 @@ focused <- c(
   "04_quant",         # log2(Area) correlation between samples, Area %CV
   "05_quality_score", # per-sample immunopeptidomics quality score, traffic-light overview
   "06_quant_stats",   # differential abundance between Conditions (limma / Welch t)
-  "07_pepchem"        # amino-acid composition, positional motifs, GRAVY and other descriptors
+  "07_pepchem",       # amino-acid composition, positional motifs, GRAVY and other descriptors
+  "08_prot_all"       # source proteins: ligands per protein, engine-reported protein values
 )
 
 for (tmpl in focused) {

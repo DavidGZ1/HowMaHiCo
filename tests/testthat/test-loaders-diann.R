@@ -57,3 +57,47 @@ test_that("annotate_diann requires the minimal annotation columns", {
 
   expect_error(annotate_diann(parsed, bad_annot), "missing from the annotation table")
 })
+
+# Protein-column tolerance (v0.18.0): parse_diann()'s select() was a bare-name
+# whitelist, so a report that lacked any one of ~45 columns aborted the parse, and
+# a report using DIA-NN's newer protein-quantity names (PG.Abundance rather than
+# PG.Quantity) had those columns silently dropped before reaching pep_all. The
+# protein/gene-level names now go through dplyr::any_of(diann_protein_columns()).
+
+test_that("parse_diann survives a report missing the optional protein-quant columns", {
+  raw <- make_diann_report_raw()
+  raw <- raw[, setdiff(names(raw), c("PG.Quantity", "PG.Normalised", "PG.MaxLFQ",
+                                     "Genes.Quantity", "Genes.Normalised",
+                                     "Genes.MaxLFQ", "Genes.MaxLFQ.Unique",
+                                     "PG.Q.Value", "Global.PG.Q.Value",
+                                     "GG.Q.Value"))]
+
+  expect_no_error(out <- parse_diann(raw, shortpep_range = c(8, 13)))
+  expect_equal(nrow(out), 3)
+  # the core schema is untouched, the absent optional columns simply are not there
+  expect_true(all(c("Accession", "ProteinFirst", "GeneFirst", "Area") %in% names(out)))
+  expect_false("PG.MaxLFQ" %in% names(out))
+  # Protein.Q.Value is still present and still carried
+  expect_true("Protein.Q.Value" %in% names(out))
+})
+
+test_that("parse_diann keeps newer-generation DIA-NN protein-quantity names", {
+  raw <- make_diann_report_raw()
+  names(raw)[names(raw) == "PG.Quantity"]  <- "PG.Abundance"
+  names(raw)[names(raw) == "PG.Normalised"] <- "PG.NormalisedAbundance"
+  raw$PG.Abundance <- c(111, 222, 333)
+
+  out <- parse_diann(raw, shortpep_range = c(8, 13))
+
+  expect_true("PG.Abundance" %in% names(out))
+  expect_true("PG.NormalisedAbundance" %in% names(out))
+  expect_equal(out$PG.Abundance, c(111, 222, 333))
+  # and the old spelling is gone rather than silently duplicated
+  expect_false("PG.Quantity" %in% names(out))
+
+  # the protein engine picks the new spelling up downstream, alongside whatever
+  # other quantity columns the report happens to carry
+  quant <- prot_engine_columns(out)$quantity
+  expect_true(all(c("PG.Abundance", "PG.NormalisedAbundance") %in% quant))
+  expect_false("PG.Quantity" %in% quant)
+})

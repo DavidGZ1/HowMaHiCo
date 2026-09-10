@@ -1,0 +1,12 @@
+name: 08_prot_all
+description: >
+  Focused protein-level report: condenses the peptide table to one row per
+  source protein and sample (the `prot_all` table). Reports source proteins per
+  sample, the distribution of ligands per protein, the most prolific source
+  proteins, how widely each protein is detected across samples and Conditions,
+  and summed ligand intensity per protein. Where the search engine reports its
+  own protein-level values (DIA-NN PG/Genes quantities and q-values) they are
+  carried through and compared against the summed ligand intensity. Descriptive
+  only: no differential testing, and no length normalisation. Renders against a
+  cached `pep_all` table built by build_pep_all() (or by 00_mhc_report).
+create_dir: false

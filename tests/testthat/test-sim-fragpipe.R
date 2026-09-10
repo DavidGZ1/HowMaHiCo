@@ -405,3 +405,105 @@ test_that("the Provider param reaches the rendered report, and is generic when u
   expect_false(grepl("Immunopeptidomics Platform", html_unset, fixed = TRUE))
   expect_false(grepl("@dkfz.de", html_unset, fixed = TRUE))
 })
+
+test_that("08_prot_all renders end-to-end against the simulated data", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("simprot_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  out <- suppressWarnings(suppressMessages(
+    run_howmahico_report(
+      "08_prot_all",
+      params = list(
+        SampleSet           = "sim",
+        Software            = "fragpipe_dda_individual",
+        Instrument          = "tims_tof",
+        FolderDocumentation = proj,
+        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+        FolderData          = file.path(proj, "sim_fragpipe_dda"),
+        FolderResults       = proj,
+        FolderFigures       = proj,
+        ProjectDir          = proj,
+        PepAllSource        = "build",
+        Subset              = "",
+        MHCclass            = "MHC1",
+        PeptideSet          = "all",
+        ProteinFeature      = "ProteinFirst",
+        MultiMapping        = "leading",
+        TopNProteins        = 15,
+        ResultsOverwrite    = TRUE,
+        PlotsSave           = FALSE,
+        CsvSave             = FALSE
+      ),
+      output_file = "sim_08_prot_all.html",
+      quiet = TRUE)))
+
+  expect_true(file.exists(out))
+  expect_true(file.exists(file.path(proj, "prot_all.csv")))
+  expect_true(file.exists(file.path(proj, "prot_summary.csv")))
+
+  prot <- utils::read.csv(file.path(proj, "prot_all.csv"))
+  expect_true(all(c("Protein", "Sample", "Condition", "n_Peptides", "n_Sequences",
+                    "Area", "Log2Area") %in% names(prot)))
+  # one row per (protein, sample), and the proteins are the pep_all ones
+  expect_equal(nrow(prot), nrow(unique(prot[, c("Protein", "Sample")])))
+  expect_equal(length(unique(prot$Protein)), 413L)
+
+  # FragPipe reports no protein quantity, so that section degrades to its note.
+  # Assert the absence on the exported table rather than the HTML: the Methods
+  # section names PG.MaxLFQ in prose, so the string is legitimately in the report.
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  expect_true(grepl("reports no protein-level values", html, fixed = TRUE))
+  expect_equal(intersect(diann_protein_columns(), names(prot)), character(0))
+})
+
+test_that("08_prot_all falls back to leading proteins when none are mapped", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  # The shipped fixture's `Mapped Proteins` column is blank in every row, so
+  # MultiMapping = "all" has nothing to expand and must degrade to "leading"
+  # rather than fail -- which is also what a PEAKS or custom-dictionary run does.
+  proj <- tempfile("simprotall_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  out <- suppressWarnings(suppressMessages(
+    run_howmahico_report(
+      "08_prot_all",
+      params = list(
+        SampleSet           = "sim",
+        Software            = "fragpipe_dda_individual",
+        Instrument          = "tims_tof",
+        FolderDocumentation = proj,
+        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+        FolderData          = file.path(proj, "sim_fragpipe_dda"),
+        FolderResults       = proj,
+        FolderFigures       = proj,
+        ProjectDir          = proj,
+        PepAllSource        = "build",
+        Subset              = "mm",
+        MHCclass            = "MHC1",
+        MultiMapping        = "all",
+        ResultsOverwrite    = TRUE,
+        PlotsSave           = FALSE,
+        CsvSave             = FALSE
+      ),
+      output_file = "sim_08_prot_all_mm.html",
+      quiet = TRUE)))
+
+  expect_true(file.exists(out))
+  prot <- utils::read.csv(file.path(proj, "mm", "mm_prot_all.csv"))
+  # no protein was invented by the expansion
+  expect_equal(length(unique(prot$Protein)), 413L)
+  expect_true(all(prot$n_Peptides_shared == 0))
+})

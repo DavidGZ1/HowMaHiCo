@@ -176,19 +176,16 @@ parse_diann <- function(input, shortpep_range = c(8, 13)){
                   Area_MS2 = Precursor.Normalised,
                   Protein.Ids,
                   Protein.Names,
-                  PG.Quantity,
-                  PG.Normalised,
-                  PG.MaxLFQ,
-                  Genes.Quantity,
-                  Genes.Normalised,
-                  Genes.MaxLFQ,
-                  Genes.MaxLFQ.Unique,
+                  # Protein/gene-level quantities and q-values are matched with
+                  # any_of(): DIA-NN renamed several of them between releases
+                  # (PG.Quantity -> PG.Abundance, PG.Normalised ->
+                  # PG.NormalisedAbundance), and a bare name would abort the whole
+                  # parse on a report that uses the other generation's spelling.
+                  # Both spellings are listed so whichever the report carries is
+                  # kept; prot_engine_columns() picks them up downstream.
+                  dplyr::any_of(diann_protein_columns()),
                   PEP,
                   Global.Q.Value,
-                  Protein.Q.Value,
-                  PG.Q.Value,
-                  Global.PG.Q.Value,
-                  GG.Q.Value,
                   Translated.Q.Value,
                   Proteotypic,
                   Precursor.Quantity,
