@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation" # ABSOLUTE path (or relative to the render-time working directory) containing AnnotationFile
@@ -42,13 +43,12 @@ title: "`r paste0('00_mhc_report | ', params$SampleSet, if (nzchar(params$Subset
 
 # Report information
 
-This is a quality control report for immunopeptidomics experiments provided by:
+All-in-one quality-control report for immunopeptidomics experiments: it parses
+the raw search-engine output itself and covers identification counts, overlaps,
+size and charge distributions, RT/ion-mobility/m z distributions, quantitative
+correlation and %CV, identification QC, sequence motifs and the PTM profile.
 
-Immunopeptidomics Platform (IPP)
-
-Dr. David Gomez-Zepeda, Platform Head
-
-email: david.gomez-zepeda@dkfz.de
+`r HowMaHiCo::provider_line(params$Provider)`
 
 ## Data set information
 
@@ -58,9 +58,7 @@ email: david.gomez-zepeda@dkfz.de
 
 **Data Analysis: ** `r params$DataAnalysisNames`
 
-**Date:**  `r Sys.Date()` 
-
-**Code author:** DGZ
+**Date:**  `r Sys.Date()`
 
 **Code version:** `r packageVersion("HowMaHiCo")`
 

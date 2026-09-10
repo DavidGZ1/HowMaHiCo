@@ -343,3 +343,65 @@ test_that("05_quality_score renders end-to-end against the simulated data", {
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_gt(length(gregexpr("<img", html)[[1]]), 0)
 })
+
+# Provider guard (v0.17.0): the report header attribution moved from hardcoded
+# text in nine skeletons to the optional `Provider` param. This asserts it in
+# BOTH directions -- a param that is declared but never reaches the output would
+# pass a YAML-only check while silently changing nothing.
+
+test_that("the Provider param reaches the rendered report, and is generic when unset", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("simprovider_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  base_params <- list(
+    SampleSet           = "sim",
+    Software            = "fragpipe_dda_individual",
+    Instrument          = "tims_tof",
+    FolderDocumentation = proj,
+    AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+    FolderData          = file.path(proj, "sim_fragpipe_dda"),
+    FolderResults       = proj,
+    FolderFigures       = proj,
+    ProjectDir          = proj,
+    PepAllSource        = "build",
+    Subset              = "",
+    MHCclass            = "MHC1",
+    ResultsOverwrite    = TRUE,
+    PlotsSave           = FALSE,
+    CsvSave             = FALSE
+  )
+
+  named <- suppressWarnings(suppressMessages(run_howmahico_report(
+    "01_id_counts",
+    params = c(base_params, list(Provider = "Test Platform (TP)")),
+    output_file = "sim_provider_named.html", quiet = TRUE)))
+  html_named <- paste(readLines(named, warn = FALSE), collapse = "\n")
+
+  expect_true(grepl("Provided by Test Platform (TP).", html_named, fixed = TRUE))
+  expect_false(grepl("Generated with the HowMaHiCo R package", html_named, fixed = TRUE))
+
+  # and the param is recorded for reproducibility
+  ip <- utils::read.csv(file.path(proj, "01_id_counts_input_params.csv"))
+  expect_equal(ip$Value[ip$Parameter == "Provider"], "Test Platform (TP)")
+
+  unset <- suppressWarnings(suppressMessages(run_howmahico_report(
+    "01_id_counts", params = base_params,
+    output_file = "sim_provider_unset.html", quiet = TRUE)))
+  html_unset <- paste(readLines(unset, warn = FALSE), collapse = "\n")
+
+  expect_true(grepl("Generated with the HowMaHiCo R package", html_unset, fixed = TRUE))
+  expect_false(grepl("Provided by", html_unset, fixed = TRUE))
+  # no residual branding from the pre-v0.17.0 hardcoded header. Match the full
+  # contact string, not a bare "dkfz": a self-contained report embeds fonts as
+  # base64, and any short alphanumeric run turns up in that blob by chance. "@"
+  # and "." are outside the base64 alphabet, so this cannot false-positive.
+  expect_false(grepl("Immunopeptidomics Platform", html_unset, fixed = TRUE))
+  expect_false(grepl("@dkfz.de", html_unset, fixed = TRUE))
+})

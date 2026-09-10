@@ -1,6 +1,6 @@
 Package: HowMaHiCo
 Title: LC-Immunopeptidomics QC Reporting Workflow
-Version: 0.16.1
+Version: 0.17.0
 Authors@R:
     person("David", "Gomez-Zepeda", , "davidgz.science@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-9467-1213"))
@@ -54,3 +54,4 @@ Suggests:
     shiny,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+VignetteBuilder: knitr

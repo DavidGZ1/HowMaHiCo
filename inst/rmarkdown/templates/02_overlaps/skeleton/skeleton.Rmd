@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation"
@@ -45,8 +46,9 @@ title: "`r paste0('02_overlaps | ', params$SampleSet, if (nzchar(params$Subset))
 # Report information
 
 Focused **identification-overlap** report (intra-Condition replicate overlap,
-UpSet across Conditions, pairwise overlap) for immunopeptidomics experiments,
-provided by the Immunopeptidomics Platform (IPP).
+UpSet across Conditions, pairwise overlap) for immunopeptidomics experiments.
+
+`r HowMaHiCo::provider_line(params$Provider)`
 
 **Sample Set:** `r params$SampleSet`
 

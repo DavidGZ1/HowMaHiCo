@@ -7,12 +7,13 @@ reference:
 - title: Render reports
   desc: >
     Entry points that build the cached pep_all table and render the parameterized
-    QC report templates (00_mhc_report all-in-one, or the focused 01-06 reports)
+    QC report templates (00_mhc_report all-in-one, or the focused 01-07 reports)
   contents:
   - build_pep_all
   - run_howmahico_report
   - derive_filtered_annotation
   - get_report_template
+  - get_pipeline_script
 
 - title: Annotation
   desc: Read, validate, display, and auto-generate sample annotation tables
@@ -33,6 +34,7 @@ reference:
   - mhc_class_palette
   - mhc_classes
   - condition_pairs
+  - provider_line
 
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema

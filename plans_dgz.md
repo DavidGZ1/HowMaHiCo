@@ -10,7 +10,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 
 
-
 ## In standby
 * peptide position within the parent protein (the third part of the physicochemical-properties item) — deferred; it is the only part that needs a user-supplied search FASTA, since no loader carries a position column (FragPipe psm.tsv, DIA-NN report.tsv and PEAKS peptide.csv all lack one). Full design recorded in CLAUDE.md under "Deferred designs".
 * implement safeguard when some conditions or replicates give 0 areas, currently throwing error — moved to standby (no repro available; e.g. CHEB\_001 all dda dataset not in repo). The all-NA Area/CV and all-NA correlation cases are already guarded in the report chunks; the partial (some groups 0/NA) failure needs a repro to target.
@@ -24,8 +23,9 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * maybe generate a report in long format
 * include whole folder with dia-quant-output when diann
 * check and deal with license discrepancies between howmahico, peptides, limma
+* readme: add a glossary of the column headers in pep_all
 
-* 
+
 
 ### to be done by DGZ
 
@@ -34,8 +34,6 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
 * reorder plots in a way that makes more sense
 * manual checking and re-writing text by me
-* add more detailed instructions to the readme
-* make a runnable R code with instructions based on the readme, use render instead of opening the report
 * check way sample\_annotation is named in the reports, should be the same as in the example
 * check which column is used as quant for each software
 * get\_report\_template change param order, start with template then file
@@ -154,3 +152,6 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * quantitative report heatmap with and without clustering, dynamic range, volcano plots: plot\_quant\_heatmap(cluster = TRUE/FALSE), plot\_dynamic\_range(), plot\_volcano()/plot\_ma(), all in 06\_quant\_stats (v0.14.0)
 * fixed run\_howmahico\_report("05\_quality\_score") being unreachable (template documented but missing from the match.arg choices); 05 and 06 registered + regression guard test that every shipped template dir is offered (v0.14.0)
 * peptide physicochemical properties report: new `07_pepchem` template + `R/pepchem.R` engine (peptide\_properties, pepchem\_properties, aa\_composition, aa\_position\_frequency, pepchem\_by\_sample, summarise\_pepchem, aggregate\_pepchem, cliffs\_delta, compare\_pepchem, compare\_aa\_frequency) comparing amino-acid composition (overall / per sample / enrichment vs. the pooled composition), per-position residue frequency (dominant length + N-/C-terminal profile across all lengths) and per-peptide descriptors (GRAVY, pI, charge, MW, Boman, hydrophobic moment, instability/aliphatic index, AA class fractions) between Conditions. Descriptors are summarised per SAMPLE and then tested across samples (Kruskal-Wallis + pairwise Wilcoxon, BH, MedianDiff + Cliff's delta), with a pooled peptide-level track reported alongside as explicitly descriptive; new plots plot\_aa\_composition / plot\_aa\_position\_heatmap / plot\_property\_distribution / plot\_property\_sample\_summary / plot\_property\_effectsize; new dependency Peptides (CRAN, Rcpp only) in Imports, justified as the canonical GRAVY implementation. Position-within-the-protein moved to standby (v0.16.0)
+* the provider in the templates context is now the optional `Provider` param: all 9 templates declare it and render the attribution through the new exported provider\_line() (R/report-helpers.R), which falls back to a generic sentence naming no organisation when empty; removed the hardcoded "Immunopeptidomics Platform (IPP)" text, the personal @dkfz.de contact block and the "Code author: DGZ" lines, and gave 00\_mhc\_upsets the description + Code version lines it lacked. Guarded by a test that every template declares the common params and that none hardcodes an organisation/author/contact, plus a render test checking the header in both directions (v0.17.0)
+* runnable R code as a guide through: new inst/scripts/howmahico\_pipeline.R + exported get\_pipeline\_script() (sibling of get\_report\_template()/get\_dictionary\_template()), a commented walkthrough from raw search output to rendered reports that renders via run\_howmahico\_report() rather than opening a template; starts in demo mode (RUN\_DEMO = TRUE) running end-to-end against the shipped sim\_fragpipe\_dda dataset with no user data — verified: 7 focused reports in ~1 min. Plus the package's first vignette (vignettes/howmahico.Rmd, VignetteBuilder: knitr), which gives the pkgdown site an Articles tab (v0.17.0)
+* more detailed instructions in the readme: FIXED the headline run\_howmahico\_report() example, which passed a Title param no template declares — rmarkdown errors on undeclared params, so it failed on copy-paste; added a Quickstart, a table of what each of the 9 reports produces, a full parameter reference (common + focused-only + the 05/06/07 sets), an output section (always-written vs CsvSave/PlotsSave tiers) and a troubleshooting table; corrected stale claims (07\_pepchem missing everywhere, "mid-conversion on dev", "~40 functions" vs 118 exports, the numbered project folders shown as repo contents, RStudio listed as a requirement instead of pandoc) (v0.17.0)

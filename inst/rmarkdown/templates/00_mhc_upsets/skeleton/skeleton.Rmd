@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "OBIM_001 MM"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "MF, DGZ"
   DataAcquisitionNames: "LK" # operator(s) who ran the LC-MS acquisition; shown in the report header
   WetLabNames: "LK"
@@ -42,6 +43,12 @@ title: "`r paste0('00_mhc_upsets | ', params$SampleSet, if (nzchar(params$Subset
 
 # Report information
 
+Secondary **overlap / UpSet** report for immunopeptidomics experiments: peptide
+and protein overlap across Conditions and replicates, rendered against a cached
+`pep_all` table.
+
+`r HowMaHiCo::provider_line(params$Provider)`
+
 ## Data set information
 
 **Sample Set:** `r params$SampleSet`
@@ -52,9 +59,9 @@ title: "`r paste0('00_mhc_upsets | ', params$SampleSet, if (nzchar(params$Subset
 
 **Data Analysis: ** `r params$DataAnalysisNames`
 
-**Date:**  `r Sys.Date()` 
+**Date:**  `r Sys.Date()`
 
-**Code author:** DGZ
+**Code version:** `r packageVersion("HowMaHiCo")`
 
 ```{r setup, include=FALSE, echo=FALSE}
 #General parameters for knitr

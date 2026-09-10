@@ -10,6 +10,7 @@ output:
   chunk_output_type: inline
 params:
   SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
   DataAnalysisNames: "DGZ"
   WetLabNames: "operator"
   FolderDocumentation: "1_documentation"
@@ -45,7 +46,9 @@ title: "`r paste0('04_quant | ', params$SampleSet, if (nzchar(params$Subset)) pa
 # Report information
 
 Focused **quantitative-data** report (log2(Area) correlation and Area %CV) for
-immunopeptidomics experiments, provided by the Immunopeptidomics Platform (IPP).
+immunopeptidomics experiments.
+
+`r HowMaHiCo::provider_line(params$Provider)`
 
 **Sample Set:** `r params$SampleSet`
 
