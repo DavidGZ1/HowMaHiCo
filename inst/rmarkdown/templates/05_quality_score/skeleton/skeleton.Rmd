@@ -23,12 +23,12 @@ params:
   ProjectDir: ~
   Instrument: "tims_tof"
   Software: "fragpipe_dda_combined"
-  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  MHCclass: "MHC1" # MHC1 (human, 8-13 AAs), MHC1_mouse (murine H-2, 7-11 AAs) or MHC2 (12-25 AAs); overrides ShortPeptideLengthMin/Max
   ShortPeptideLengthMin: 8
   ShortPeptideLengthMax: 13
   QCColumn: "QC" # annotation column flagging experiment QC controls (TRUE/"QC"); empty disables QC tagging
   ThresholdMode: "default" # "default" (literature thresholds) or "qc_relative" (calibrate from QC samples)
-  TestMode: FALSE
+  TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
   CsvSave: FALSE
@@ -89,10 +89,12 @@ scores <- score_sample_quality(pep_all, shortpep_range = shortpep_range,
                                threshold_mode = threshold_mode)
 thresholds_used <- if (threshold_mode == "qc_relative")
   calibrate_thresholds_from_qc(qc_metrics_by_sample(pep_all, shortpep_range, params$MHCclass),
-                               qc_samples) else quality_thresholds_default()
+                               qc_samples,
+                               thresholds = quality_thresholds_default(params$MHCclass)) else
+  quality_thresholds_default(params$MHCclass)
 ```
 
-`r if (length(qc_samples) > 0) paste0("**QC control samples:** ", paste(qc_samples, collapse = ", "), " (marked with * in plots).") else "No QC control samples tagged (set an annotation ", "<code>", params$QCColumn, "</code> column to enable QC-relative thresholds)."`
+`r if (length(qc_samples) > 0) paste0("**QC control samples:** ", paste(qc_samples, collapse = ", "), " (marked with * in plots).") else paste0("No QC control samples tagged (set an annotation <code>", params$QCColumn, "</code> column to enable QC-relative thresholds).")`
 
 **Threshold mode:** `r threshold_mode`
 
@@ -175,6 +177,9 @@ thresholds_used |>
 - **Length in window / 9-mer fraction** — the hallmark of an HLA immunopeptidome:
   peptides concentrate in the expected ligand-length window (here
   `r paste0(shortpep_range[1], "-", shortpep_range[2])` AAs) and, for HLA-I, peak at 9-mers.
+  With `MHCclass = "MHC1_mouse"` the metric counts **8- and 9-mers** instead, since
+  murine H-2 ligands peak at both (H-2Kb favours 8-mers, H-2Db 9-mers), and its
+  green/amber thresholds are raised accordingly.
 - **Anchor motif clarity** — Shannon information (bits) at the P2 and PΩ anchor
   positions of 9-mers; sharp anchors indicate genuine allele-restricted ligands.
   Computed from the data only (no binding predictor or HLA typing).

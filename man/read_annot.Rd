@@ -9,20 +9,33 @@ read_annot(file_annot)
 \arguments{
 \item{file_annot}{Path to a csv file with the annotation table, including at
 least the columns \code{Condition}, \code{BioReplicate}, \code{TechReplicate}, \code{Sample},
-and one of \code{Sample_fp}/\code{Sample_peaks}.}
+and one of \code{Sample_folder} (preferred) / \code{Sample_fp} / \code{Sample_peaks}.}
 }
 \value{
 The annotation data frame, with \code{Source_file} extensions stripped,
-\code{Sample_peaks} hyphens/spaces normalized to underscores, and every
-character column converted to a factor ordered by first appearance.
+\code{Sample_folder}/\code{Sample_fp}/\code{Sample_peaks} all populated (\code{Sample_peaks}
+with hyphens/spaces normalized to underscores), and every character column
+converted to a factor ordered by first appearance.
 }
 \description{
 Reads the annotation csv, strips \code{.d}/\code{.raw} extensions from \code{Source_file}
-(if present), checks that the required columns are present, normalizes
+(if present), checks that the required columns are present, harmonizes the
+data-folder column across search engines (see below), normalizes
 \code{Sample_peaks} to match PEAKS' own export-naming behavior (hyphens/spaces
 replaced by underscores), and sets factor levels for every character column
 from the row order in the csv — this is what gives downstream plots/tables
 their condition/sample ordering.
+}
+\details{
+\strong{One annotation format for every software.} The column naming the data
+subfolder of each sample is \code{Sample_folder}, whatever the search engine. The
+historical, engine-specific names are still accepted: a table providing
+\code{Sample_fp} (FragPipe/DIA-NN/custom) or \code{Sample_peaks} (PEAKS) loads
+unchanged. Whichever is present, the others are derived: \code{Sample_fp} is a
+verbatim copy of \code{Sample_folder}, and \code{Sample_peaks} is a copy with PEAKS'
+hyphen/space normalization applied — so the loaders, which key on
+\code{Sample_fp}/\code{Sample_peaks}, keep working either way. A column the user
+supplied is never overwritten.
 }
 \examples{
 \dontrun{

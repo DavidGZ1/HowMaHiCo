@@ -22,8 +22,8 @@ When provided without \code{files}, only \code{Sample_fp} entries present in
 \item{files}{Optional character vector of \code{psm.tsv} file paths or parent
 folder paths to read directly.}
 
-\item{testmode}{Logical; passed through to \code{\link[=read_fragpipe]{read_fragpipe()}} (loads only the
-first ~100 rows per file when \code{TRUE}, for fast iteration).}
+\item{testmode}{Logical; passed through to \code{\link[=read_fragpipe]{read_fragpipe()}} (keeps only the
+first ~100 rows per run when \code{TRUE}, for fast iteration).}
 }
 \value{
 The merged raw PSM data frame across every file found, with

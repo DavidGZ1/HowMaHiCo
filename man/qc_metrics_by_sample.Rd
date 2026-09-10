@@ -16,9 +16,12 @@ schema): one row per peptide-sample observation, with at least \code{Sample},
 expected ligand-length window (e.g. \code{c(8, 13)} for HLA-I, \code{c(12, 25)} for
 HLA-II).}
 
-\item{mhcclass}{\code{"MHC1"} or \code{"MHC2"}. For \code{"MHC2"} the 9-mer and anchor-motif
-metrics are returned as \code{NA} (no fixed-length anchor model), so they drop
-out of the composite downstream.}
+\item{mhcclass}{\code{"MHC1"}, \code{"MHC1_mouse"} or \code{"MHC2"}. For \code{"MHC2"} the
+canonical-length and anchor-motif metrics are returned as \code{NA} (no
+fixed-length anchor model), so they drop out of the composite downstream.
+For \code{"MHC1_mouse"}, \code{frac_9mer} counts 8- \strong{and} 9-mers (both canonical for
+murine H-2) and the anchor motif is scored on whichever of the two the
+sample has more of.}
 }
 \value{
 A data frame with one row per \code{Sample} and columns: \code{frac_in_window},

@@ -7,7 +7,7 @@ reference:
 - title: Render reports
   desc: >
     Entry points that build the cached pep_all table and render the parameterized
-    QC report templates (00_mhc_report all-in-one, or the focused 01-04 reports)
+    QC report templates (00_mhc_report all-in-one, or the focused 01-06 reports)
   contents:
   - build_pep_all
   - run_howmahico_report
@@ -21,7 +21,18 @@ reference:
   - print_annot
   - get_annot_fragpipe
   - get_annot_diann
+  - get_annot_peaks
   - get_annot_sampleid
+
+- title: Report helpers
+  desc: >
+    Shared settings the report templates derive from their params: the MHC
+    length window and palette, and the Condition pairs to compare
+  contents:
+  - mhc_length_window
+  - mhc_class_palette
+  - mhc_classes
+  - condition_pairs
 
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema
@@ -87,6 +98,55 @@ reference:
   - ggseqlogo_bylength
   - theme_rawr
   - theme_howmahico
+
+- title: Advanced quantification & statistics
+  desc: >
+    Build the quantitative matrix and compare peptide Area between Conditions
+    (filtering, normalization, imputation, limma moderated t / Welch t, Fisher
+    presence-absence, PERMANOVA) plus the plots of the 06_quant_stats report
+  contents:
+  - build_quant_matrix
+  - filter_quant
+  - normalize_quant
+  - impute_quant
+  - test_differential
+  - test_detection
+  - combine_quant_results
+  - summarise_significant
+  - permanova_condition
+  - plot_completeness
+  - plot_missing_heatmap
+  - plot_intensity_dist
+  - plot_dynamic_range
+  - plot_pca
+  - plot_quant_heatmap
+  - plot_volcano
+  - plot_ma
+  - plot_pvalue_hist
+  - plot_sig_summary
+
+- title: Physicochemical properties
+  desc: >
+    Peptide-chemistry engine behind the 07_pepchem report: amino-acid
+    composition, per-position residue frequency and per-peptide descriptors
+    (GRAVY, pI, charge, ...), summarised per sample and compared between
+    Conditions.
+  contents:
+  - peptide_properties
+  - pepchem_properties
+  - aa_composition
+  - aa_position_frequency
+  - pepchem_by_sample
+  - summarise_pepchem
+  - aggregate_pepchem
+  - cliffs_delta
+  - compare_pepchem
+  - compare_aa_frequency
+  - plot_aa_composition
+  - plot_aa_position_heatmap
+  - plot_property_distribution
+  - plot_property_sample_summary
+  - plot_property_effectsize
 
 - title: Export & I/O helpers
   desc: Write report outputs (plots, csvs, render parameters) to disk

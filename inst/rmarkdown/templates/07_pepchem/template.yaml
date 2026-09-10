@@ -1,0 +1,15 @@
+name: 07_pepchem
+description: >
+  Focused peptide-chemistry report: compares the physicochemical properties of
+  the ligand repertoire between Conditions. Reports amino-acid composition
+  (overall, per sample, and as enrichment against the pooled composition),
+  per-position residue frequency at the dominant peptide length plus an N-/C-
+  terminal profile across all lengths, and per-peptide descriptors (GRAVY, pI,
+  net charge, molecular weight, Boman index, hydrophobic moment, instability and
+  aliphatic indices, amino-acid class fractions). Descriptors are summarised per
+  sample and then compared across Conditions with Kruskal-Wallis and pairwise
+  Wilcoxon tests, BH-corrected, with median differences and Cliff's delta as
+  effect sizes; a pooled peptide-level track is reported alongside as a
+  descriptive, pseudo-replicated comparison. Renders against a cached `pep_all`
+  table built by build_pep_all() (or by 00_mhc_report).
+create_dir: false

@@ -10,7 +10,7 @@ score_sample_quality(
   mhcclass = "MHC1",
   qc_samples = NULL,
   threshold_mode = c("default", "qc_relative"),
-  thresholds = quality_thresholds_default(),
+  thresholds = NULL,
   weights = NULL
 )
 }
@@ -19,7 +19,8 @@ score_sample_quality(
 
 \item{shortpep_range}{Length-2 numeric \code{c(min, max)} ligand-length window.}
 
-\item{mhcclass}{\code{"MHC1"} or \code{"MHC2"}.}
+\item{mhcclass}{\code{"MHC1"}, \code{"MHC1_mouse"} (7-11 AA window, 8/9-mer canonical
+lengths) or \code{"MHC2"}; also selects the default threshold table.}
 
 \item{qc_samples}{Optional character vector of \code{Sample} values flagged as QC
 controls (e.g. from an annotation \code{QC} column). Used to mark samples and,
@@ -29,8 +30,8 @@ when \code{threshold_mode = "qc_relative"}, to calibrate thresholds.}
 \code{"qc_relative"} (thresholds derived from \code{qc_samples}). \code{"qc_relative"}
 falls back to defaults if no QC samples are supplied.}
 
-\item{thresholds}{Optional scoring table overriding
-\code{\link[=quality_thresholds_default]{quality_thresholds_default()}}.}
+\item{thresholds}{Optional scoring table overriding the class-appropriate
+\code{\link[=quality_thresholds_default]{quality_thresholds_default()}} (which is used when this is \code{NULL}).}
 
 \item{weights}{Optional named numeric vector overriding the \code{weight} column of
 \code{thresholds} (names = metric names).}

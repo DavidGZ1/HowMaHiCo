@@ -1,3 +1,169 @@
+# HowMaHiCo 0.16.0
+
+* **New report `07_pepchem` + engine `R/pepchem.R`: peptide physicochemical
+  properties compared between Conditions.** Where the other reports describe
+  *which* peptides were found, this one describes what they are made of:
+  amino-acid composition (overall, per sample, and as log2 enrichment against
+  the pooled composition of the subset), per-position residue frequency at the
+  dominant peptide length plus an N-/C-terminal profile resolved across all
+  lengths, and per-peptide descriptors — `GRAVY`, `pI`, net `Charge`, `MW`,
+  `Boman`, `HydrophobicMoment`, `InstabilityIndex`, `AliphaticIndex` and the
+  amino-acid class fractions.
+* **The unit of analysis is the sample, not the peptide.** Descriptors are
+  computed once over the unique sequences and attached to each sample that
+  identified them; each sample is summarised first
+  (`pepchem_by_sample()` -> `summarise_pepchem()` -> `aggregate_pepchem()`) and
+  Conditions are then compared across samples. Peptides within a Condition are
+  not independent replicates, so pooling them would return enormous nominal
+  significance for effects carried by one sample.
+* **Two comparison tracks, both labelled.** `compare_pepchem(level = "sample")`
+  is the primary, replicate-respecting test (Kruskal-Wallis + pairwise Wilcoxon,
+  BH-corrected within each contrast, with `MedianDiff` and the new scale-free
+  `cliffs_delta()` as effect sizes) — and is deliberately low-powered: on 3 vs 3
+  samples a two-sided Wilcoxon cannot reach p < 0.1, the same structural limit
+  `06_quant_stats` documents for its Fisher track. `level = "peptide"` pools the
+  repertoire and is reported alongside as explicitly descriptive.
+  `compare_aa_frequency()` applies the same machinery per residue to per-sample
+  frequencies rather than a chi-square on pooled residue counts.
+* New exports: `peptide_properties()`, `pepchem_properties()`,
+  `aa_composition()`, `aa_position_frequency()`, `pepchem_by_sample()`,
+  `summarise_pepchem()`, `aggregate_pepchem()`, `cliffs_delta()`,
+  `compare_pepchem()`, `compare_aa_frequency()`, plus `plot_aa_composition()`,
+  `plot_aa_position_heatmap()`, `plot_property_distribution()`,
+  `plot_property_sample_summary()` and `plot_property_effectsize()` in
+  `R/plots.R`.
+* `aa_position_frequency()` generalises the per-position frequency table that
+  `anchor_information_content()` collapses to Shannon bits, and the two now
+  share the alphabet and the negative-position helper (`-1` = C-terminus)
+  instead of keeping duplicate copies.
+* **New dependency: `Peptides`** (CRAN, GPL-2, Rcpp only) in `Imports` — it is
+  vectorised and is the canonical implementation of GRAVY (mean Kyte-Doolittle),
+  so the scales are not re-derived. `Peptides::aaComp()` is not used (it returns
+  a per-sequence list); the class fractions are derived from the composition
+  matrix. Its per-descriptor "unrecognized amino acid types" warnings are
+  consolidated into one `peptide_properties()` warning naming the count.
+* Peptide **position within the parent protein** — the third part of the
+  original request — is deferred; no loader carries a position column, so it
+  needs a user-supplied search FASTA. The design is recorded under *Deferred
+  designs* in `CLAUDE.md`.
+
+## Fixes found while verifying the new report
+
+* **Fixed: `PlotsSave = TRUE` never saved anything, and `ggprint_rawr()`
+  silently dropped plots.** Both helpers resolved the plot name with a bare
+  `exists(deparse(substitute(input)))`, which searches from the *helper's own*
+  frame outwards through its lexical parents — the HowMaHiCo namespace, then
+  `globalenv()` — and so never reaches a report's knit environment
+  (`rmarkdown::render()` knits in `new.env(parent = globalenv())`). Every lookup
+  from a report therefore failed: `ggsave_rawr()` warned and wrote no png, and
+  `ggprint_rawr()` returned the warning string instead of the plot, which
+  `warning = FALSE` chunks then swallowed. The name is now resolved in the
+  **calling** frame via the shared internal `.plot_was_built()`, and a
+  non-symbol argument (`plots[[nm]]`, the export-loop idiom used by `06` and
+  `07`) is evaluated and judged by value, so a `NULL` plot is skipped rather
+  than saved. On the simulated dataset `07_pepchem` goes from 8 to 14 figures
+  and from 0 to 14 saved pngs; `04_quant`, `05_quality_score` and
+  `06_quant_stats` recover their `PlotsSave` output too.
+* **Fixed: `05_quality_score` could not render at all.** An inline `` `r ...` ``
+  expression ended in a bare comma-separated string list
+  (`else "a ", "<code>", params$QCColumn, "</code> b"`) instead of a `paste0()`
+  call — a syntax error, so the template aborted at the inline-parse stage.
+  The report had never rendered and nothing caught it, because the suite only
+  rendered `01` and `06`; `test-sim-fragpipe.R` now carries a render guard for
+  `05` (which also asserts that `PlotsSave` writes files and that figures reach
+  the HTML).
+
+# HowMaHiCo 0.15.0
+
+* **Mouse MHC-I support.** `MHCclass` accepts a new value **`"MHC1_mouse"`**
+  (7-11 AAs, the murine H-2 ligand window) alongside `"MHC1"` (8-13) and
+  `"MHC2"` (12-25). The windows and their palettes now come from two exported
+  helpers, `mhc_length_window()` and `mhc_class_palette()` (`R/report-helpers.R`),
+  instead of three copy-pasted lists in the skeletons and a fourth inside the
+  quality-score engine.
+* **Quality score is mouse-aware**: for `"MHC1_mouse"` the canonical-length
+  metric counts **8- and 9-mers** (H-2Kb favours 8-mers, H-2Db 9-mers) with the
+  label "8/9-mer fraction" and raised green/amber cut-offs
+  (`quality_thresholds_default()` gained an `mhcclass` argument); the anchor
+  motif is scored on whichever of the two lengths the sample has more of; the
+  cross-class window follows the 7-11 window. The metric *keys* are unchanged.
+* **Fixed: a single-Condition subset aborted every report.**
+  `combn(conditions, 2)` errors with `n < m`; the new exported
+  `condition_pairs()` returns an empty list instead (and `self = TRUE` gives the
+  overlap matrix its diagonal), and the skeletons use it. Guarded by an
+  end-to-end single-Condition render test.
+* **Fixed: an all-zero `Area` dataset aborted the render.**
+  `get_mat_log2area()` now returns a well-formed `0 x n` matrix with a warning
+  when every ID is a phantom, and the correlation chunks of `04_quant` /
+  `00_mhc_report` test for that *before* calling `cor()` (which errors with
+  `'x' is empty`) and before computing the colour limits.
+* **`TestMode` now builds a representative minimal dataset.** It used to read
+  only the first ~100 lines of each file, which for a combined FragPipe
+  `psm.tsv` (one file holding every run) kept just the first run and broke the
+  annotation join. Files are now read in full and reduced to ~100 rows **per
+  run**, so every run, Condition and replicate survives. The misleading
+  "only the first 50 lines were loaded" warning is gone.
+* **One annotation format for every search engine.** `read_annot()` accepts a
+  canonical **`Sample_folder`** column and derives the loader-facing aliases from
+  it (`Sample_fp` verbatim, `Sample_peaks` with PEAKS’ hyphen/space
+  normalization). Legacy tables providing `Sample_fp` or `Sample_peaks` load
+  unchanged, and a user-supplied alias is never overwritten.
+  `get_annot_fragpipe()`/`get_annot_diann()` now emit `Sample_folder` instead of
+  `Sample_fp` (**user-visible change to the generated skeleton**), and PEAKS
+  finally has a generator of its own: **`get_annot_peaks()`**.
+* **`get_annot_sampleid()` no longer fails silently**: it warns when nothing
+  matched the sample list (showing example `Source_file` values from both sides)
+  and when only some rows matched (naming the dropped ones), and gained
+  `keep_all = TRUE` to left-join so no annotation row is lost.
+* New tests: `test-report-helpers.R`; all-zero-`Area` coverage in
+  `test-counting.R`; `Sample_folder`/`get_annot_peaks()`/`get_annot_sampleid()`
+  coverage in `test-annotation.R`; mouse metrics in `test-quality-score.R`;
+  per-run test-mode subsampling in `test-loaders-fragpipe.R`; single-Condition
+  and mouse-window end-to-end renders in `test-sim-fragpipe.R`.
+
+# HowMaHiCo 0.14.0
+
+* **New advanced-quantification report `06_quant_stats`** and its engine
+  `R/quant-stats.R`: multivariate and differential statistical comparison of
+  peptide `Area` between Conditions, rendered against the cached `pep_all` like
+  the other focused reports. Sections: quantitative matrix and filtering summary,
+  data completeness (per unit / per feature / presence-absence map),
+  normalization diagnostics, dynamic range, optional imputation diagnostics,
+  unsupervised overview (PCA scores/scree/loadings, clustered **and**
+  unclustered heatmaps, PERMANOVA-style permutation test), per-contrast
+  differential abundance (volcano, MA, p-value histogram, top-feature table),
+  a presence/absence section for condition-exclusive ligands, a significance
+  summary, and a "Methods & justification" section documenting every choice.
+* **New exported engine functions**: `build_quant_matrix()` (long `pep_all` ->
+  feature x unit log2 matrix; `Area` summed over precursors on the linear scale,
+  technical replicates averaged), `filter_quant()`, `normalize_quant()`,
+  `impute_quant()`, `test_differential()`, `test_detection()`,
+  `combine_quant_results()`, `summarise_significant()`, `permanova_condition()`.
+* **New plots**: `plot_completeness()`, `plot_missing_heatmap()`,
+  `plot_intensity_dist()`, `plot_dynamic_range()`, `plot_pca()`,
+  `plot_quant_heatmap()` (clustered/unclustered, ggplot2 — printable inside a
+  tabset, unlike the png-writing `plot_heatmap()`), `plot_volcano()`,
+  `plot_ma()`, `plot_pvalue_hist()`, `plot_sig_summary()`.
+* **Two complementary missing-value tracks.** limma moderated t-statistics
+  (`eBayes(trend = TRUE, robust = TRUE)`) on the observed values, optionally after
+  left-censored imputation (`minprob` / `mindet`), *plus* a Fisher exact test on
+  detection counts for condition-exclusive features, whose fold change is
+  undefined. Exclusivity is flagged by a detection-count rule rather than an FDR
+  cut-off, because a 3-vs-3 Fisher test cannot go below p = 0.1.
+* **`limma` is a `Suggests` dependency**, not an `Imports`: it is guarded at
+  runtime (with a `BiocManager::install("limma")` message) and
+  `StatMethod = "ttest"` / `NormMethod = "median"` give a fully
+  Bioconductor-free path, which the report falls back to automatically.
+* **Fixed: `run_howmahico_report("05_quality_score")` was unreachable** — the
+  template was documented but missing from the function's `template` choices, so
+  `match.arg()` rejected it. Both `05_quality_score` and `06_quant_stats` are now
+  registered, and `tests/testthat/test-report-templates.R` guards that every
+  shipped template directory appears in the choices.
+* `tests/testthat/test-quant-stats.R` covers the engine (aggregation, filtering,
+  normalization, imputation, limma/t-test agreement, detection test, PERMANOVA,
+  the limma guard); `test-sim-fragpipe.R` renders `06_quant_stats` end-to-end
+  against the simulated FragPipe dataset.
+
 # HowMaHiCo 0.13.0
 
 * **Pseudochromatogram coloured by density.** `plot_pseudochromatogram()` now

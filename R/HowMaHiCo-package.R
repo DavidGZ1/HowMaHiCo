@@ -51,7 +51,7 @@ utils::globalVariables(c(
   "Protein_ID", "Proteotypic",
   "Q.Value", "QC", "Quantity.Quality", "Qvalue",
   "RT", "RT.Start", "RT.Stop", "Retention", "Run",
-  "Sample", "Sample_ID", "Sample_fp", "Sample_peaks", "Sample_type", "Sequence",
+  "Sample", "Sample_ID", "Sample_folder", "Sample_fp", "Sample_peaks", "Sample_type", "Sequence",
   "Source_File", "Source_file", "Spectrum", "Spectrum.Similarity", "Spectrum_File",
   "Stripped.Sequence",
   "TechReplicate", "Total", "Translated.Q.Value", "Translated.Quality", "Type",
@@ -62,5 +62,15 @@ utils::globalVariables(c(
   "n", "n_Peptides", "n_Proteins", "n_Samples", "n_Sequences",
   "path_full", "ppm",
   "metric", "region", "res_file", "score", "var",
-  ":=", "Result.Path", "Sample.Comment", "in_range", "ind", "values"
+  ":=", "Result.Path", "Sample.Comment", "in_range", "ind", "values",
+  # quant-stats engine and its plots (R/quant-stats.R, plot_* in R/plots.R)
+  "AveExpr", "Contrast", "Detected", "Exclusive_in", "Feature", "Feature_",
+  "Loading", "P.Value", "P.Value_det", "PCx", "PCy", "Rank", "Status", "Unit",
+  "Unit_", "Value", "Variance", "adj.P.Val", "adj.P.Val_det", "logFC",
+  "n_det_ref", "n_det_test", "n_tot_ref", "n_tot_test", "n_units", "PC", "x", "y",
+  # pepchem engine and its plots (R/pepchem.R, plot_* in R/plots.R)
+  "AA", "CliffsDelta", "Flag", "Frequency", "Group", "Log2Enrichment",
+  "Log2Ratio", "Property", "p_adj",
+  # pre-existing NSE names that R CMD check still listed as undefined
+  "invk0", "invk0_bin", "perc_num"
 ))

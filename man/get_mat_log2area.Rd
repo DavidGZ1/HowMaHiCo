@@ -20,7 +20,9 @@ averaged (\code{na.rm = TRUE}).}
 }
 \value{
 A numeric matrix with \code{NA}s preserved, rows named by \code{row} and
-columns ordered by the factor levels of \code{col}.
+columns ordered by the factor levels of \code{col}. When no \code{row} has a single
+non-missing \code{Log2Area} (all Areas absent or zero), a \verb{0 x n} matrix with the
+expected column names is returned with a warning.
 }
 \description{
 Pivots \code{input} to a wide \code{row} × \code{col} matrix of (mean, if needed)

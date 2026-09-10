@@ -34,8 +34,11 @@ step to set \code{Length_range}.}
 \item{instrument}{Instrument string (\code{"tims_tof"}, \code{"faims_orbi"}, \code{"orbi"});
 only affects the PEAKS loader's ion-mobility handling.}
 
-\item{test_mode}{If \code{TRUE}, the batch readers load only the first ~100 lines
-per file (fast iteration). Ignored by the PEAKS loader.}
+\item{test_mode}{If \code{TRUE}, the batch readers reduce each file to its first
+~100 rows \strong{per run} (fast iteration on a small but representative subset:
+every run, Condition and replicate of the experiment is still present, which
+a plain head-of-file truncation would not give for a combined export).
+Ignored by the PEAKS loader.}
 
 \item{file_rda}{Optional path. When non-\code{NULL}, \code{pep_all} is \code{save()}d there
 (as the object name \code{pep_all}) so report templates can \code{load()} it.}

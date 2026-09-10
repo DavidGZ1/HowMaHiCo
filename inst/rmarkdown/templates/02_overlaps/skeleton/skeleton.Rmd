@@ -23,10 +23,10 @@ params:
   ProjectDir: ~
   Instrument: "tims_tof"
   Software: "fragpipe_dda_combined"
-  MHCclass: "MHC1" # MHC1 (8-13 AAs) or MHC2 (12-25 AAs); sets the selected-length window
+  MHCclass: "MHC1" # MHC1 (human, 8-13 AAs), MHC1_mouse (murine H-2, 7-11 AAs) or MHC2 (12-25 AAs); overrides ShortPeptideLengthMin/Max
   ShortPeptideLengthMin: 8
   ShortPeptideLengthMax: 13
-  TestMode: FALSE
+  TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
   CsvSave: FALSE
@@ -234,10 +234,9 @@ npep_all_overlap <- pep_all |>
   dplyr::summarise(total_Peptides = dplyr::n_distinct(Peptide), .groups = "drop")
 
 #complete condition comparison with same condition in each side
-comp_condition_replicated <- c(combn(conditions, 2, simplify =  FALSE) ,
-                               as.list(as.data.frame(t(data.frame(x = conditions, y = conditions)))))
-#rename
-names(comp_condition_replicated) <-  sapply(comp_condition_replicated, function(x) paste0(x, collapse  = "_vs_"))
+# all pairs plus the self-comparisons; condition_pairs() returns just the
+# self-comparisons when the subset has a single Condition (combn() would error)
+comp_condition_replicated <- condition_pairs(conditions, self = TRUE)
 
 
 

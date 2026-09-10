@@ -1,3 +1,28 @@
+# Was the plot behind `expr` actually built?
+#
+# Shared by ggprint_rawr() and ggsave_rawr(), which both let a report chunk name
+# a plot that an upstream chunk may have skipped.
+#
+# `caller` is the frame the plot name has to be resolved in. Passing it matters:
+# bare exists("p_x") searches from the *calling function's own* frame outwards
+# through its lexical parents -- for these two exported helpers that is the
+# HowMaHiCo namespace, then globalenv, and NEVER the report's knit environment
+# (rmarkdown renders in new.env(parent = globalenv())). Every lookup from a
+# report therefore used to fail, so ggsave_rawr() silently saved nothing under
+# PlotsSave = TRUE and ggprint_rawr() silently dropped the plot it was asked to
+# display.
+#
+# Only a bare symbol gets the existence check; anything else (plots[[nm]], a
+# computed plot) is evaluated in `caller` and judged by value, so the idiomatic
+# `for (nm in names(plots)) ggsave_rawr(plots[[nm]], ...)` loop works too.
+.plot_was_built <- function(expr, caller) {
+  if (is.symbol(expr))
+    return(exists(deparse(expr), envir = caller) &&
+             !is.null(eval(expr, envir = caller)))
+  value <- tryCatch(eval(expr, envir = caller), error = function(e) NULL)
+  !is.null(value)
+}
+
 #' HowMaHiCo's shared ggplot theme
 #'
 #' A [ggpubr::theme_pubr()] variant used across every report plot: blank facet
@@ -58,16 +83,17 @@ theme_howmahico <- function(base_size = 8) {
 
 #' Print a plot, skipping ones that were never built
 #'
-#' Looks up `input` by the name it was called with (via `deparse(substitute())`)
-#' and only prints it if an object of that name exists in the calling
-#' environment — the print-time counterpart to [ggsave_rawr()], so a report
-#' chunk can unconditionally request a plot's display even when it was
-#' conditionally skipped upstream.
+#' The print-time counterpart to [ggsave_rawr()], so a report chunk can
+#' unconditionally request a plot's display even when it was conditionally
+#' skipped upstream. A bare symbol is looked up by name in the **calling**
+#' environment; any other expression (`plots[[nm]]`, a computed plot) is
+#' evaluated and judged by its value, so `NULL` counts as "not generated".
 #'
-#' @param input The object to print (NSE: its variable name is used to check
-#'   existence, not its value).
+#' @param input The object to print. When it is a bare variable name, that name
+#'   is used to check existence rather than the value.
 #'
-#' @return The printed object (invisibly), or a warning if it does not exist.
+#' @return The object, so a knitr chunk prints it; invisible `NULL` with a
+#'   warning when it was never generated.
 #'
 #' @export
 #'
@@ -76,9 +102,9 @@ theme_howmahico <- function(base_size = 8) {
 #' ggprint_rawr(p_corr_log2area_all)
 #' }
 ggprint_rawr <- function(input) {
-  if(exists(deparse(substitute(input)))){
-    input
-  }else{
+  if (!.plot_was_built(substitute(input), parent.frame())) {
     warning(paste0(deparse(substitute(input)), " was not generated"))
+    return(invisible(NULL))
   }
+  input
 }

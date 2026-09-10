@@ -1327,3 +1327,768 @@ plot_cross_class_length <- function(pep_all, shortpep_range = c(8, 13), mhcclass
     theme_howmahico() +
     ggplot2::ggtitle("Peptide length distribution and cross-class contamination")
 }
+
+# ---- quantitative-statistics plots (06_quant_stats) -------------------------
+
+#' Data completeness of a quantitative matrix
+#'
+#' Two views of the missingness structure that governs every downstream test:
+#' `type = "unit"` shows how many features are quantified in each unit (sample or
+#' bioreplicate), `type = "feature"` how many units each feature is quantified in
+#' — the distribution that the [filter_quant()] cut-off acts on.
+#'
+#' @param mat Numeric matrix from [build_quant_matrix()].
+#' @param coldata Matching column metadata (`Unit`, `Condition`).
+#' @param type `"unit"` (default) or `"feature"`.
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_completeness(qm$mat, qm$coldata, type = "unit")
+#' }
+plot_completeness <- function(mat, coldata, type = c("unit", "feature")) {
+  type <- match.arg(type)
+
+  if (type == "unit") {
+    df <- data.frame(Unit = factor(colnames(mat), levels = colnames(mat)),
+                     Count = as.integer(colSums(!is.na(mat))))
+    df$Condition <- coldata$Condition[match(as.character(df$Unit), as.character(coldata$Unit))]
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = Unit, y = Count, fill = Condition)) +
+        ggplot2::geom_bar(stat = "identity", alpha = 0.8, color = "black") +
+        ggplot2::geom_text(ggplot2::aes(label = Count), vjust = -0.4, size = 2.5) +
+        ggplot2::scale_y_continuous(n.breaks = 5) +
+        viridis::scale_fill_viridis(discrete = TRUE, end = 0.9) +
+        ggplot2::xlab(NULL) + ggplot2::ylab("Quantified features") +
+        theme_howmahico() + ggpubr::rotate_x_text(70) +
+        ggplot2::ggtitle("Quantified features per unit")
+    )
+  }
+
+  n_obs <- as.integer(rowSums(!is.na(mat)))
+  df <- as.data.frame(table(factor(n_obs, levels = seq_len(ncol(mat)))))
+  names(df) <- c("n_units", "Count")
+  ggplot2::ggplot(df, ggplot2::aes(x = n_units, y = Count)) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.8, color = "black", fill = "#440154") +
+    ggplot2::geom_text(ggplot2::aes(label = Count), vjust = -0.4, size = 2.5) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab("Units in which the feature is quantified") + ggplot2::ylab("Features") +
+    theme_howmahico() +
+    ggplot2::ggtitle("Feature completeness")
+}
+
+#' Presence/absence map of a quantitative matrix
+#'
+#' Tile map of quantified (dark) versus missing (light) values, features sorted by
+#' completeness, so a block of condition-specific missingness is visible at a
+#' glance and can be told apart from random dropout.
+#'
+#' @param mat Numeric matrix from [build_quant_matrix()].
+#' @param coldata Matching column metadata (`Unit`, `Condition`).
+#' @param max_features Maximum number of features drawn (the most complete ones
+#'   are kept, with a note in the subtitle). Default `3000`.
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_missing_heatmap(qm$mat, qm$coldata)
+#' }
+plot_missing_heatmap <- function(mat, coldata, max_features = 3000) {
+  ord <- order(rowSums(!is.na(mat)), decreasing = TRUE)
+  subtitle <- NULL
+  if (length(ord) > max_features) {
+    subtitle <- paste0("showing the ", max_features, " most complete of ", nrow(mat), " features")
+    ord <- ord[seq_len(max_features)]
+  }
+  sub_mat <- mat[ord, , drop = FALSE]
+
+  df <- expand.grid(Feature = seq_len(nrow(sub_mat)),
+                    Unit = factor(colnames(sub_mat), levels = colnames(sub_mat)))
+  df$Detected <- ifelse(!is.na(as.vector(sub_mat)), "quantified", "missing")
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Unit, y = Feature, fill = Detected)) +
+    ggplot2::geom_raster() +
+    ggplot2::scale_fill_manual(values = c(quantified = "#440154", missing = "grey88")) +
+    ggplot2::scale_y_reverse() +
+    ggplot2::xlab(NULL) + ggplot2::ylab("Features (sorted by completeness)") +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle("Presence / absence map", subtitle = subtitle)
+}
+
+#' Intensity distribution per unit (normalization diagnostic)
+#'
+#' Boxplots or densities of the log2 intensities of every unit. Comparing the
+#' same plot before and after [normalize_quant()] is what makes the chosen
+#' normalization auditable rather than a black box.
+#'
+#' @param mat Numeric matrix of log2 intensities.
+#' @param coldata Matching column metadata (`Unit`, `Condition`).
+#' @param type `"box"` (default) or `"density"`.
+#' @param title Plot title. Default `NULL`.
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_intensity_dist(mat_n, qm$coldata, title = "After median normalization")
+#' }
+plot_intensity_dist <- function(mat, coldata, type = c("box", "density"), title = NULL) {
+  type <- match.arg(type)
+  df <- data.frame(Unit = factor(rep(colnames(mat), each = nrow(mat)), levels = colnames(mat)),
+                   Log2Area = as.vector(mat))
+  df <- df[!is.na(df$Log2Area), , drop = FALSE]
+  df$Condition <- coldata$Condition[match(as.character(df$Unit), as.character(coldata$Unit))]
+
+  p <- if (type == "box") {
+    ggplot2::ggplot(df, ggplot2::aes(x = Unit, y = Log2Area, fill = Condition)) +
+      ggplot2::geom_boxplot(alpha = 0.6, outlier.size = 0.3) +
+      ggplot2::xlab(NULL) + ggplot2::ylab("log2(Area)") +
+      ggpubr::rotate_x_text(70)
+  } else {
+    ggplot2::ggplot(df, ggplot2::aes(x = Log2Area, color = Unit, linetype = Condition)) +
+      ggplot2::geom_density(na.rm = TRUE) +
+      ggplot2::xlab("log2(Area)") + ggplot2::ylab("Density")
+  }
+  p +
+    viridis::scale_fill_viridis(discrete = TRUE, end = 0.9) +
+    viridis::scale_color_viridis(discrete = TRUE, end = 0.9) +
+    theme_howmahico() +
+    ggplot2::ggtitle(title)
+}
+
+#' Dynamic range (rank-abundance) per condition
+#'
+#' Mean log2 intensity of every feature within a condition, plotted against its
+#' abundance rank. The span of the curve is the observed dynamic range, and its
+#' end shows where the quantification runs into the detection limit — the region
+#' in which missingness is left-censored rather than biological.
+#'
+#' @param mat Numeric matrix of log2 intensities.
+#' @param coldata Matching column metadata (`Unit`, `Condition`).
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_dynamic_range(mat_n, qm$coldata)
+#' }
+plot_dynamic_range <- function(mat, coldata) {
+  grp <- as.character(coldata$Condition)[match(colnames(mat), as.character(coldata$Unit))]
+  df <- do.call(rbind, lapply(unique(grp), function(g) {
+    v <- rowMeans(mat[, grp == g, drop = FALSE], na.rm = TRUE)
+    v <- sort(v[is.finite(v)], decreasing = TRUE)
+    if (length(v) == 0) return(NULL)
+    data.frame(Condition = g, Rank = seq_along(v), Log2Area = unname(v))
+  }))
+  if (is.null(df) || nrow(df) == 0) return(NULL)
+  df$Condition <- factor(df$Condition, levels = levels(coldata$Condition))
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Rank, y = Log2Area, color = Condition)) +
+    ggplot2::geom_line(linewidth = 0.6) +
+    viridis::scale_color_viridis(discrete = TRUE, end = 0.9) +
+    ggplot2::scale_y_continuous(n.breaks = 6) +
+    ggplot2::xlab("Abundance rank") + ggplot2::ylab("Mean log2(Area)") +
+    theme_howmahico() +
+    ggplot2::ggtitle("Dynamic range")
+}
+
+#' Principal component analysis of a quantitative matrix
+#'
+#' Unsupervised overview of the quantitative data: whether the units group by
+#' condition at all, before any per-feature claim is made. The PCA runs on
+#' complete features only (a rotation cannot be computed with missing values), so
+#' the number of features used is reported in the subtitle.
+#'
+#' @param mat Numeric matrix of log2 intensities (optionally imputed).
+#' @param coldata Matching column metadata (`Unit`, `Condition`).
+#' @param type `"scores"` (default, PC1 vs PC2), `"scree"` (explained variance)
+#'   or `"loadings"` (features contributing most to `pc`).
+#' @param pc Principal components to display, length 2 for `"scores"`
+#'   (default `c(1, 2)`); the first element selects the component for
+#'   `"loadings"`.
+#' @param n_loadings Number of features shown by `type = "loadings"`. Default `15`.
+#'
+#' @return A ggplot object, or `NULL` (with a warning) when fewer than two
+#'   complete features or fewer than three units are available.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_pca(mat_n, qm$coldata)
+#' }
+plot_pca <- function(mat, coldata, type = c("scores", "scree", "loadings"),
+                     pc = c(1, 2), n_loadings = 15) {
+  type <- match.arg(type)
+  complete <- mat[stats::complete.cases(mat), , drop = FALSE]
+  if (nrow(complete) < 2 || ncol(complete) < 3) {
+    warning("plot_pca(): not enough complete features or units for a PCA.", call. = FALSE)
+    return(NULL)
+  }
+  pca <- stats::prcomp(t(complete), center = TRUE, scale. = FALSE)
+  var_expl <- 100 * pca$sdev^2 / sum(pca$sdev^2)
+  subtitle <- paste0(nrow(complete), " features quantified in every unit")
+
+  if (type == "scree") {
+    k <- min(10, length(var_expl))
+    df <- data.frame(PC = factor(paste0("PC", seq_len(k)), levels = paste0("PC", seq_len(k))),
+                     Variance = var_expl[seq_len(k)])
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = PC, y = Variance)) +
+        ggplot2::geom_bar(stat = "identity", alpha = 0.8, color = "black", fill = "#440154") +
+        ggplot2::geom_text(ggplot2::aes(label = paste0(round(Variance, 1), "%")),
+                           vjust = -0.4, size = 2.5) +
+        ggplot2::xlab(NULL) + ggplot2::ylab("Explained variance (%)") +
+        theme_howmahico() +
+        ggplot2::ggtitle("PCA scree plot", subtitle = subtitle)
+    )
+  }
+
+  if (type == "loadings") {
+    load <- pca$rotation[, pc[1]]
+    top <- utils::head(order(abs(load), decreasing = TRUE), n_loadings)
+    df <- data.frame(Feature = factor(names(load)[top], levels = rev(names(load)[top])),
+                     Loading = unname(load[top]))
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = Loading, y = Feature, fill = Loading > 0)) +
+        ggplot2::geom_bar(stat = "identity", alpha = 0.8, color = "black") +
+        ggplot2::scale_fill_manual(values = c(`TRUE` = "#b2182b", `FALSE` = "#2166ac"),
+                                   guide = "none") +
+        ggplot2::xlab(paste0("PC", pc[1], " loading")) + ggplot2::ylab(NULL) +
+        theme_howmahico() +
+        ggplot2::ggtitle(paste0("Top ", n_loadings, " PC", pc[1], " loadings"), subtitle = subtitle)
+    )
+  }
+
+  df <- data.frame(Unit = rownames(pca$x),
+                   PCx = pca$x[, pc[1]], PCy = pca$x[, pc[2]])
+  df$Condition <- coldata$Condition[match(df$Unit, as.character(coldata$Unit))]
+  ggplot2::ggplot(df, ggplot2::aes(x = PCx, y = PCy, color = Condition, label = Unit)) +
+    ggplot2::geom_point(size = 2.5) +
+    ggplot2::geom_text(vjust = -0.8, size = 2.5, show.legend = FALSE) +
+    viridis::scale_color_viridis(discrete = TRUE, end = 0.9) +
+    ggplot2::xlab(paste0("PC", pc[1], " (", round(var_expl[pc[1]], 1), "%)")) +
+    ggplot2::ylab(paste0("PC", pc[2], " (", round(var_expl[pc[2]], 1), "%)")) +
+    theme_howmahico() +
+    ggplot2::ggtitle("PCA scores", subtitle = subtitle)
+}
+
+#' Heatmap of a quantitative matrix, clustered or in annotation order
+#'
+#' ggplot2 tile heatmap of the most variable features, drawn either with
+#' hierarchical clustering of both dimensions (`cluster = TRUE`) or in the order
+#' given by the annotation table (`cluster = FALSE`) — the two views answer
+#' different questions: whether the data cluster by condition on their own, and
+#' how the conditions look side by side as designed. Unlike [plot_heatmap()],
+#' which writes a png through `gplots::heatmap.2`, this returns a ggplot object
+#' that can be printed inside a knitted tabset.
+#'
+#' @param mat Numeric matrix of log2 intensities.
+#' @param coldata Matching column metadata (`Unit`, `Condition`).
+#' @param cluster Cluster rows and columns (`TRUE`, default) or keep the
+#'   annotation order (`FALSE`).
+#' @param top_n Number of most variable features to show. Default `500`.
+#' @param center_rows Subtract the feature mean, so the colour encodes the log2
+#'   ratio to the feature average rather than absolute abundance. Default `TRUE`.
+#' @param title Plot title. Default `NULL` (auto-generated).
+#'
+#' @return A ggplot object, or `NULL` (with a warning) when the matrix is empty.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_quant_heatmap(mat_n, qm$coldata, cluster = TRUE, top_n = 300)
+#' }
+plot_quant_heatmap <- function(mat, coldata, cluster = TRUE, top_n = 500,
+                               center_rows = TRUE, title = NULL) {
+  if (nrow(mat) == 0 || ncol(mat) == 0) {
+    warning("plot_quant_heatmap(): empty matrix.", call. = FALSE)
+    return(NULL)
+  }
+  row_sd <- apply(mat, 1, stats::sd, na.rm = TRUE)
+  keep <- utils::head(order(row_sd, decreasing = TRUE, na.last = NA), min(top_n, nrow(mat)))
+  sub_mat <- mat[sort(keep), , drop = FALSE]
+  if (center_rows)
+    sub_mat <- sweep(sub_mat, 1, rowMeans(sub_mat, na.rm = TRUE), FUN = "-")
+
+  feature_order <- rownames(sub_mat)
+  unit_order <- colnames(sub_mat)
+  if (cluster && nrow(sub_mat) > 2 && ncol(sub_mat) > 2) {
+    # hclust cannot take NAs; fill them with the feature minimum for the
+    # ordering only (the plotted values keep their NAs)
+    filled <- sub_mat
+    row_min <- apply(filled, 1, min, na.rm = TRUE)
+    row_min[!is.finite(row_min)] <- 0
+    filled[is.na(filled)] <- row_min[row(filled)[is.na(filled)]]
+    hr <- tryCatch(stats::hclust(stats::dist(filled)), error = function(e) NULL)
+    hc <- tryCatch(stats::hclust(stats::dist(t(filled))), error = function(e) NULL)
+    if (!is.null(hr)) feature_order <- rownames(sub_mat)[hr$order]
+    if (!is.null(hc)) unit_order <- colnames(sub_mat)[hc$order]
+  }
+
+  df <- expand.grid(Feature = rownames(sub_mat), Unit = colnames(sub_mat),
+                    stringsAsFactors = FALSE)
+  df$Value <- as.vector(sub_mat)
+  df$Feature <- factor(df$Feature, levels = feature_order)
+  df$Unit <- factor(df$Unit, levels = unit_order)
+
+  lim <- max(abs(df$Value), na.rm = TRUE)
+  if (!is.finite(lim) || lim == 0) lim <- 1
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Unit, y = Feature, fill = Value)) +
+    ggplot2::geom_raster() +
+    ggplot2::scale_fill_gradientn(
+      colours = rev(RColorBrewer::brewer.pal(11, "RdBu")),
+      limits = c(-lim, lim), na.value = "grey88",
+      name = if (center_rows) "log2 ratio\nto feature mean" else "log2(Area)") +
+    ggplot2::xlab(NULL) +
+    ggplot2::ylab(paste0("Top ", nrow(sub_mat), " variable features")) +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::theme(axis.text.y = ggplot2::element_blank(),
+                   axis.ticks.y = ggplot2::element_blank()) +
+    ggplot2::ggtitle(if (is.null(title)) paste0(if (cluster) "Clustered" else "Unclustered", " heatmap") else title)
+}
+
+#' Volcano plot of a differential-abundance result
+#'
+#' Standard volcano (log2 fold change against -log10 adjusted p-value) of one
+#' contrast, with the condition-exclusive features from the presence/absence
+#' track drawn as triangles at the plot margin: their fold change is undefined,
+#' so they cannot sit on the x axis, but they are usually the most interesting
+#' hits in an immunopeptidomics comparison and must stay visible.
+#'
+#' @param results Output of [combine_quant_results()], filtered to a single
+#'   contrast (or containing several, in which case the plot is facetted).
+#' @param fdr Adjusted p-value cut-off drawn as a horizontal line. Default `0.05`.
+#' @param log2fc Absolute fold-change cut-off drawn as vertical lines. Default `1`.
+#' @param title Plot title. Default `NULL` (the contrast name).
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_volcano(subset(results, Contrast == "TREAT_vs_CTRL"))
+#' }
+plot_volcano <- function(results, fdr = 0.05, log2fc = 1, title = NULL) {
+  status_colors <- c(up = "#b2182b", down = "#2166ac", exclusive_up = "#d6604d",
+                     exclusive_down = "#4393c3", ns = "grey70")
+  quant <- results[!is.na(results$logFC) & !is.na(results$adj.P.Val), , drop = FALSE]
+  excl  <- results[is.na(results$logFC) & !is.na(results$Exclusive_in), , drop = FALSE]
+
+  x_max <- if (nrow(quant) > 0) max(abs(quant$logFC), na.rm = TRUE) else 1
+  y_max <- if (nrow(quant) > 0) max(-log10(quant$adj.P.Val), na.rm = TRUE) else 1
+  if (!is.finite(x_max) || x_max == 0) x_max <- 1
+  if (!is.finite(y_max) || y_max == 0) y_max <- 1
+
+  quant$x <- quant$logFC
+  quant$y <- -log10(quant$adj.P.Val)
+  p <- ggplot2::ggplot(quant, ggplot2::aes(x = x, y = y, color = Status)) +
+    ggplot2::geom_point(size = 0.9, alpha = 0.7)
+
+  if (nrow(excl) > 0) {
+    excl$x <- ifelse(excl$Status == "exclusive_down", -x_max * 1.15, x_max * 1.15)
+    excl$y <- pmin(-log10(pmax(excl$adj.P.Val_det, .Machine$double.xmin)), y_max * 1.05)
+    excl$y[!is.finite(excl$y)] <- y_max * 1.05
+    p <- p + ggplot2::geom_point(data = excl,
+                                 ggplot2::aes(x = x, y = y, color = Status),
+                                 shape = 17, size = 1.6, alpha = 0.8)
+  }
+
+  if (dplyr::n_distinct(results$Contrast) > 1)
+    p <- p + ggplot2::facet_wrap(~ Contrast)
+
+  p +
+    ggplot2::geom_hline(yintercept = -log10(fdr), linetype = "dashed", color = "grey40") +
+    ggplot2::geom_vline(xintercept = c(-log2fc, log2fc), linetype = "dashed", color = "grey40") +
+    ggplot2::scale_color_manual(values = status_colors, drop = FALSE, name = NULL) +
+    ggplot2::xlab("log2 fold change (test vs reference)") +
+    ggplot2::ylab("-log10(adjusted p-value)") +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title)) unique(results$Contrast)[1] else title,
+                     subtitle = if (nrow(excl) > 0)
+                       "triangles at the margins: detected in one condition only (Fisher test)" else NULL)
+}
+
+#' MA plot of a differential-abundance result
+#'
+#' Fold change against average abundance — the diagnostic that shows whether the
+#' fold changes are intensity-dependent, i.e. whether the normalization did its
+#' job.
+#'
+#' @param results Output of [combine_quant_results()] (one or several contrasts).
+#' @param log2fc Absolute fold-change cut-off drawn as horizontal lines.
+#'   Default `1`.
+#' @param title Plot title. Default `NULL` (the contrast name).
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_ma(subset(results, Contrast == "TREAT_vs_CTRL"))
+#' }
+plot_ma <- function(results, log2fc = 1, title = NULL) {
+  status_colors <- c(up = "#b2182b", down = "#2166ac", exclusive_up = "#d6604d",
+                     exclusive_down = "#4393c3", ns = "grey70")
+  df <- results[!is.na(results$logFC) & !is.na(results$AveExpr), , drop = FALSE]
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = AveExpr, y = logFC, color = Status)) +
+    ggplot2::geom_point(size = 0.9, alpha = 0.7) +
+    ggplot2::geom_hline(yintercept = 0, color = "grey40") +
+    ggplot2::geom_hline(yintercept = c(-log2fc, log2fc), linetype = "dashed", color = "grey40")
+  if (dplyr::n_distinct(df$Contrast) > 1) p <- p + ggplot2::facet_wrap(~ Contrast)
+
+  p +
+    ggplot2::scale_color_manual(values = status_colors, drop = FALSE, name = NULL) +
+    ggplot2::xlab("Average log2(Area)") + ggplot2::ylab("log2 fold change") +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title)) unique(df$Contrast)[1] else title)
+}
+
+#' P-value histogram (test calibration diagnostic)
+#'
+#' Histogram of the raw p-values of one contrast. A well-behaved test gives a
+#' uniform histogram with a spike near zero; a hump towards 1, or a wave, means
+#' the model assumptions are violated (wrong design, unaccounted batch, over-
+#' aggressive imputation) and the FDR is not trustworthy.
+#'
+#' @param results Output of [test_differential()] or [combine_quant_results()].
+#' @param title Plot title. Default `NULL` (the contrast name).
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_pvalue_hist(subset(results, Contrast == "TREAT_vs_CTRL"))
+#' }
+plot_pvalue_hist <- function(results, title = NULL) {
+  df <- results[!is.na(results$P.Value), , drop = FALSE]
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = P.Value)) +
+    ggplot2::geom_histogram(binwidth = 0.025, boundary = 0, alpha = 0.8,
+                            color = "black", fill = "#440154")
+  if (dplyr::n_distinct(df$Contrast) > 1) p <- p + ggplot2::facet_wrap(~ Contrast)
+
+  p +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab("Raw p-value") + ggplot2::ylab("Features") +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title)) unique(df$Contrast)[1] else title)
+}
+
+#' Significant-feature counts per contrast
+#'
+#' Bar chart of the [summarise_significant()] table: how many features change in
+#' each direction, and how many are condition-exclusive, per comparison.
+#'
+#' @param summary_df Output of [summarise_significant()].
+#'
+#' @return A ggplot object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_sig_summary(summarise_significant(results))
+#' }
+plot_sig_summary <- function(summary_df) {
+  status_colors <- c(up = "#b2182b", down = "#2166ac", exclusive_up = "#d6604d",
+                     exclusive_down = "#4393c3")
+  df <- summary_df |>
+    tidyr::pivot_longer(cols = dplyr::any_of(names(status_colors)),
+                        names_to = "Status", values_to = "Count") |>
+    dplyr::mutate(Status = factor(Status, levels = names(status_colors)))
+
+  ggplot2::ggplot(df, ggplot2::aes(x = Contrast, y = Count, fill = Status)) +
+    ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(width = 0.9),
+                      alpha = 0.85, color = "black") +
+    ggplot2::geom_text(ggplot2::aes(label = Count),
+                       position = ggplot2::position_dodge(width = 0.9),
+                       vjust = -0.4, size = 2.5) +
+    ggplot2::scale_fill_manual(values = status_colors, drop = FALSE, name = NULL) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab(NULL) + ggplot2::ylab("Features") +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle("Significant features per contrast")
+}
+
+# ---- physicochemical-property plots (07_pepchem) ----------------------------
+
+#' Amino-acid composition across groups
+#'
+#' Draws the [aa_composition()] table three ways. `"bar"` and `"heatmap"` show
+#' the residue frequency itself; `"enrichment"` shows log2 of each group's
+#' frequency over the pooled frequency of the whole table, which puts every
+#' residue on a common, centred axis and makes a compositional shift between
+#' Conditions visible without an external proteome background.
+#'
+#' @param comp Output of [aa_composition()] (needs `Frequency`).
+#' @param type `"bar"` (default), `"heatmap"` or `"enrichment"`.
+#' @param title Plot title. `NULL` (default) picks one from `type`.
+#'
+#' @return A ggplot object, or `NULL` when `comp` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_aa_composition(aa_composition(pep_short$Sequence, pep_short$Condition))
+#' }
+plot_aa_composition <- function(comp, type = c("bar", "heatmap", "enrichment"),
+                                title = NULL) {
+  type <- match.arg(type)
+  if (is.null(comp) || nrow(comp) == 0 || !"Frequency" %in% names(comp)) return(NULL)
+  df <- comp[!is.na(comp$Frequency), , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+
+  if (type == "enrichment") {
+    # pooled frequency over every group = the internal reference
+    pooled <- stats::aggregate(Count ~ AA, data = df, FUN = sum)
+    pooled$Reference <- pooled$Count / sum(pooled$Count)
+    df$Reference <- pooled$Reference[match(as.character(df$AA),
+                                           as.character(pooled$AA))]
+    df$Log2Enrichment <- log2(df$Frequency / df$Reference)
+    lim <- max(abs(df$Log2Enrichment), na.rm = TRUE)
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = .data[["AA"]], y = .data[["Group"]],
+                                       fill = .data[["Log2Enrichment"]])) +
+        ggplot2::geom_tile(color = "white", linewidth = 0.2) +
+        ggplot2::scale_fill_gradient2(low = "#2166ac", mid = "grey95",
+                                      high = "#b2182b", midpoint = 0,
+                                      limits = c(-lim, lim),
+                                      name = "log2(freq / pooled)") +
+        ggplot2::xlab("Amino acid") + ggplot2::ylab(NULL) +
+        theme_howmahico() +
+        ggplot2::ggtitle(if (is.null(title))
+          "Amino-acid enrichment vs. the pooled composition" else title))
+  }
+
+  if (type == "heatmap")
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = .data[["AA"]], y = .data[["Group"]],
+                                       fill = .data[["Frequency"]])) +
+        ggplot2::geom_tile(color = "white", linewidth = 0.2) +
+        viridis::scale_fill_viridis(name = "Frequency", end = 0.95) +
+        ggplot2::xlab("Amino acid") + ggplot2::ylab(NULL) +
+        theme_howmahico() +
+        ggplot2::ggtitle(if (is.null(title))
+          "Amino-acid composition" else title))
+
+  ggplot2::ggplot(df, ggplot2::aes(x = .data[["AA"]], y = .data[["Frequency"]],
+                                   fill = .data[["Group"]])) +
+    ggplot2::geom_bar(stat = "identity", position = ggplot2::position_dodge(width = 0.9),
+                      alpha = 0.85, color = "black", linewidth = 0.2) +
+    viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab("Amino acid") + ggplot2::ylab("Frequency") +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title)) "Amino-acid composition" else title)
+}
+
+#' Per-position amino-acid frequency heatmap
+#'
+#' Tile map of the [aa_position_frequency()] table: position on the x axis,
+#' residue on the y axis, one facet per group. This is the numeric complement to
+#' the sequence logos in the `01_id_counts` report — a logo scales letters by
+#' information content and so hides which residue a flat position prefers, while
+#' the heatmap keeps every frequency readable and comparable across Conditions.
+#'
+#' @param freq Output of [aa_position_frequency()].
+#' @param ncol Facet columns. Default `3`.
+#' @param title Plot title. `NULL` (default) builds one from the peptide length
+#'   recorded on `freq`.
+#'
+#' @return A ggplot object, or `NULL` when `freq` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_aa_position_heatmap(aa_position_frequency(pep_short$Sequence,
+#'                                                groups = pep_short$Condition))
+#' }
+plot_aa_position_heatmap <- function(freq, ncol = 3, title = NULL) {
+  if (is.null(freq) || nrow(freq) == 0) return(NULL)
+  len <- attr(freq, "length")
+  if (is.null(title))
+    title <- if (is.null(len)) "Per-position amino-acid frequency"
+             else paste0("Per-position amino-acid frequency (", len, "-mers)")
+
+  p <- ggplot2::ggplot(freq, ggplot2::aes(x = .data[["PositionLabel"]],
+                                          y = .data[["AA"]],
+                                          fill = .data[["Frequency"]])) +
+    ggplot2::geom_tile(color = "white", linewidth = 0.2) +
+    viridis::scale_fill_viridis(name = "Frequency", end = 0.95)
+  if (dplyr::n_distinct(freq$Group) > 1)
+    p <- p + ggplot2::facet_wrap(~ Group, ncol = ncol)
+
+  p +
+    ggplot2::xlab("Position") + ggplot2::ylab("Amino acid") +
+    theme_howmahico() +
+    ggplot2::ggtitle(title)
+}
+
+#' Distribution of one peptide descriptor across Conditions
+#'
+#' Per-peptide distribution of a single descriptor, coloured by Condition. This
+#' is the *repertoire* view: every unique sequence of a Condition contributes one
+#' value, so the spread is between-peptide, not between-replicate — read
+#' [plot_property_sample_summary()] alongside it for the replicate view.
+#'
+#' @param props Output of [pepchem_by_sample()].
+#' @param var Name (string) of the descriptor column to draw.
+#' @param type `"density"` (default) or `"violin"`.
+#' @param title Plot title. `NULL` (default) uses `var`.
+#'
+#' @return A ggplot object, or `NULL` when the column is absent or all missing.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_property_distribution(props, "GRAVY")
+#' }
+plot_property_distribution <- function(props, var, type = c("density", "violin"),
+                                       title = NULL) {
+  type <- match.arg(type)
+  if (is.null(props) || !var %in% names(props) || !"Condition" %in% names(props))
+    return(NULL)
+  df <- props[!is.na(props[[var]]), , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+  if (is.null(title)) title <- var
+
+  p <- if (type == "violin") {
+    ggplot2::ggplot(df, ggplot2::aes(x = .data[["Condition"]], y = .data[[var]],
+                                     fill = .data[["Condition"]])) +
+      ggplot2::geom_violin(alpha = 0.8, color = "black", linewidth = 0.2,
+                           scale = "width") +
+      ggplot2::geom_boxplot(width = 0.12, outlier.shape = NA, alpha = 0.9,
+                            linewidth = 0.2) +
+      viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+      ggplot2::xlab(NULL) + ggplot2::ylab(var) +
+      ggpubr::rotate_x_text(70)
+  } else {
+    ggplot2::ggplot(df, ggplot2::aes(x = .data[[var]],
+                                     color = .data[["Condition"]])) +
+      ggplot2::geom_density(linewidth = 0.6) +
+      viridis::scale_color_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+      ggplot2::xlab(var) + ggplot2::ylab("Density")
+  }
+
+  p + ggplot2::scale_y_continuous(n.breaks = 5) + theme_howmahico() +
+    ggplot2::ggtitle(title)
+}
+
+#' Per-Condition mean +/- sd of a descriptor across samples
+#'
+#' Draws the [aggregate_pepchem()] table for one descriptor: each point is a
+#' sample's median, the bar and error bar are the mean +/- sd **across samples**.
+#' This is the replicate-respecting summary — the error bar answers "how
+#' reproducible is this Condition", which a per-peptide distribution cannot.
+#'
+#' @param summ Output of [aggregate_pepchem()].
+#' @param var Descriptor to draw (a value of the `Property` column).
+#' @param points Optional per-sample table from [summarise_pepchem()], overlaid
+#'   as jittered points. Default `NULL`.
+#' @param title Plot title. `NULL` (default) uses `var`.
+#'
+#' @return A ggplot object, or `NULL` when the descriptor is absent.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_property_sample_summary(aggregate_pepchem(sample_summary), "GRAVY")
+#' }
+plot_property_sample_summary <- function(summ, var, points = NULL, title = NULL) {
+  if (is.null(summ) || nrow(summ) == 0) return(NULL)
+  df <- summ[as.character(summ$Property) == var, , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+  if (is.null(title)) title <- var
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[["Condition"]],
+                                        y = .data[["Mean"]],
+                                        fill = .data[["Condition"]])) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.85, color = "black",
+                      linewidth = 0.2) +
+    ggplot2::geom_errorbar(ggplot2::aes(ymin = .data[["Mean"]] - .data[["SD"]],
+                                        ymax = .data[["Mean"]] + .data[["SD"]]),
+                           width = 0.2, linewidth = 0.3)
+
+  if (!is.null(points) && nrow(points) > 0) {
+    pts <- points[as.character(points$Property) == var, , drop = FALSE]
+    if (nrow(pts) > 0)
+      p <- p + ggplot2::geom_jitter(data = pts,
+                                    ggplot2::aes(x = .data[["Condition"]],
+                                                 y = .data[["Median"]]),
+                                    inherit.aes = FALSE, width = 0.12,
+                                    size = 1.2, alpha = 0.8)
+  }
+
+  p +
+    viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab(NULL) + ggplot2::ylab(paste0(var, " (mean +/- sd of sample medians)")) +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle(title)
+}
+
+#' Effect sizes of the between-condition comparison
+#'
+#' Tile map of [cliffs_delta()] per descriptor (or residue) and contrast, outlined
+#' where the BH-adjusted p-value passes `fdr`. Cliff's delta is scale-free, so
+#' descriptors on different units (GRAVY, pI, molecular weight) share one axis and
+#' can be ranked against each other — which a table of median differences cannot
+#' do.
+#'
+#' @param stats Output of [compare_pepchem()] or [compare_aa_frequency()].
+#' @param fdr Significance cut-off; `NULL` uses the value recorded on `stats`.
+#' @param title Plot title. `NULL` (default) picks a generic one.
+#'
+#' @return A ggplot object, or `NULL` when `stats` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_property_effectsize(compare_pepchem(props))
+#' }
+plot_property_effectsize <- function(stats, fdr = NULL, title = NULL) {
+  if (is.null(stats) || nrow(stats) == 0) return(NULL)
+  key <- if ("Property" %in% names(stats)) "Property" else
+         if ("AA" %in% names(stats)) "AA" else names(stats)[1]
+  if (is.null(fdr)) fdr <- attr(stats, "fdr")
+  if (is.null(fdr)) fdr <- 0.05
+
+  df <- stats[!is.na(stats$CliffsDelta), , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+  df$Flag <- ifelse(!is.na(df$p_adj) & df$p_adj < fdr, "yes", "no")
+
+  ggplot2::ggplot(df, ggplot2::aes(x = .data[["Contrast"]], y = .data[[key]],
+                                   fill = .data[["CliffsDelta"]])) +
+    ggplot2::geom_tile(ggplot2::aes(color = .data[["Flag"]]), linewidth = 0.5) +
+    ggplot2::scale_fill_gradient2(low = "#2166ac", mid = "grey95", high = "#b2182b",
+                                  midpoint = 0, limits = c(-1, 1),
+                                  name = "Cliff's delta") +
+    ggplot2::scale_color_manual(values = c(yes = "black", no = "white"),
+                                drop = FALSE, guide = "none") +
+    ggplot2::xlab(NULL) + ggplot2::ylab(NULL) +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle(if (is.null(title))
+      paste0("Effect size per contrast (outlined: BH p < ", fdr, ")") else title)
+}

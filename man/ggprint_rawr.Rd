@@ -7,18 +7,19 @@
 ggprint_rawr(input)
 }
 \arguments{
-\item{input}{The object to print (NSE: its variable name is used to check
-existence, not its value).}
+\item{input}{The object to print. When it is a bare variable name, that name
+is used to check existence rather than the value.}
 }
 \value{
-The printed object (invisibly), or a warning if it does not exist.
+The object, so a knitr chunk prints it; invisible \code{NULL} with a
+warning when it was never generated.
 }
 \description{
-Looks up \code{input} by the name it was called with (via \code{deparse(substitute())})
-and only prints it if an object of that name exists in the calling
-environment — the print-time counterpart to \code{\link[=ggsave_rawr]{ggsave_rawr()}}, so a report
-chunk can unconditionally request a plot's display even when it was
-conditionally skipped upstream.
+The print-time counterpart to \code{\link[=ggsave_rawr]{ggsave_rawr()}}, so a report chunk can
+unconditionally request a plot's display even when it was conditionally
+skipped upstream. A bare symbol is looked up by name in the \strong{calling}
+environment; any other expression (\code{plots[[nm]]}, a computed plot) is
+evaluated and judged by its value, so \code{NULL} counts as "not generated".
 }
 \examples{
 \dontrun{

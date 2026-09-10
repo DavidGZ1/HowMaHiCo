@@ -81,3 +81,35 @@ test_that("annotate_fragpipe requires the minimal annotation columns", {
 
   expect_error(annotate_fragpipe(parsed, bad_annot), "missing from the annotation table")
 })
+
+test_that("test mode keeps every run of a combined export, not just the head of the file", {
+  # A combined FragPipe psm.tsv holds all runs; truncating to the first N lines
+  # (the old n_max = 100) silently dropped every run but the first, which broke
+  # the annotation join and the whole report.
+  combined <- do.call(rbind, lapply(c("run1", "run2", "run3"), function(r) {
+    data.frame(Spectrum = paste0(r, ".", 1:5, ".", 1:5, ".2"),
+               Peptide = paste0("PEP", 1:5), stringsAsFactors = FALSE)
+  }))
+  path <- tempfile(fileext = ".tsv")
+  readr::write_tsv(combined, path)
+
+  full <- read_fragpipe(path, "S1", testmode = FALSE)
+  expect_equal(nrow(full), 15L)
+
+  expect_warning(small <- read_fragpipe(path, "S1", testmode = TRUE), "Test mode ON")
+  runs <- unique(sub("[.].*", "", small$Spectrum))
+  expect_setequal(runs, c("run1", "run2", "run3"))
+  expect_equal(small$Sample_fp[1], "S1")
+})
+
+test_that("subsample_testmode caps rows per run and falls back to the head of the table", {
+  df <- data.frame(Run = rep(c("a", "b"), each = 10), i = 1:20)
+  out <- HowMaHiCo:::subsample_testmode(df, n = 3)
+  expect_equal(nrow(out), 6L)
+  expect_equal(as.integer(table(out$Run)), c(3L, 3L))
+  expect_equal(out$i, sort(out$i))                      # original row order kept
+
+  no_run <- data.frame(x = 1:20)
+  expect_equal(nrow(HowMaHiCo:::subsample_testmode(no_run, n = 4)), 4L)
+  expect_equal(nrow(HowMaHiCo:::subsample_testmode(df[0, ], n = 4)), 0L)
+})

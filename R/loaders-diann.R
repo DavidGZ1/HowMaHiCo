@@ -6,7 +6,8 @@
 #'
 #' @param folder Path to the `report.tsv` file to read.
 #' @param samplename Sample identifier to record in the new `Sample_fp` column.
-#' @param testmode Logical; if `TRUE`, reads only the first ~100 rows.
+#' @param testmode Logical; if `TRUE`, keeps only the first ~100 rows per run
+#'   (the `Run` column), so every run of a combined report survives.
 #'
 #' @return The tsv contents as a data frame, with `Sample_fp` added and
 #'   relocated to the first column.

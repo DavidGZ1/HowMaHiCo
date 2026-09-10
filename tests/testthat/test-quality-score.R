@@ -74,3 +74,61 @@ test_that("qc_metrics_by_sample computes frac_cross_class for an MHC1 sample", {
   m_custom <- qc_metrics_by_sample(pep, shortpep_range = c(7, 20), mhcclass = "custom")
   expect_true(is.na(m_custom$frac_cross_class))
 })
+
+# ---- murine MHC-I (MHCclass = "MHC1_mouse") ---------------------------------
+
+# H-2 ligands are shorter than HLA-I ones (7-11 AAs) and peak at BOTH 8- and
+# 9-mers (H-2Kb favours 8-mers, H-2Db 9-mers), so the canonical-length metric
+# must count two lengths there instead of 9-mers only.
+make_mouse_pep_all <- function(n_8 = 12, n_9 = 8, n_long = 5) {
+  set.seed(42)
+  aa <- c("A", "L", "V", "F", "I", "S", "T", "N", "Q", "Y")
+  seq_of <- function(k) paste(sample(aa, k, replace = TRUE), collapse = "")
+  seqs <- c(vapply(seq_len(n_8), function(i) paste0("S", seq_of(6), "L"), character(1)),
+            vapply(seq_len(n_9), function(i) paste0("A", seq_of(7), "V"), character(1)),
+            vapply(seq_len(n_long), function(i) seq_of(16), character(1)))
+  data.frame(Sample = factor("M1"), Peptide = seqs, Sequence = seqs,
+             Length = nchar(seqs), Accession = "P1",
+             Charge = factor("+ 2", levels = c("+ 1", "+ 2", "+ 3")),
+             Cter = substr(seqs, nchar(seqs), nchar(seqs)),
+             ppm = 1, stringsAsFactors = FALSE)
+}
+
+test_that("qc_metrics_by_sample counts 8- and 9-mers for MHC1_mouse", {
+  pep <- make_mouse_pep_all()
+
+  mouse <- qc_metrics_by_sample(pep, shortpep_range = c(7, 11), mhcclass = "MHC1_mouse")
+  human <- qc_metrics_by_sample(pep, shortpep_range = c(8, 13), mhcclass = "MHC1")
+
+  n_tot <- nrow(pep)
+  expect_equal(mouse$frac_9mer, (12 + 8) / n_tot)   # 8-mers AND 9-mers
+  expect_equal(human$frac_9mer, 8 / n_tot)          # 9-mers only
+  # the anchor metric stays defined for mouse (scored on the modal canonical length)
+  expect_false(is.na(mouse$anchor_information))
+})
+
+test_that("the cross-class window follows the mouse MHC-I window", {
+  expect_equal(HowMaHiCo:::.cross_class_range("MHC1_mouse", c(7, 11)), c(12, 25))
+  expect_equal(HowMaHiCo:::.cross_class_range("MHC1", c(8, 13)), c(14, 25))
+  expect_null(HowMaHiCo:::.cross_class_range("custom", c(9, 11)))
+})
+
+test_that("quality_thresholds_default relabels and raises the mouse canonical-length row", {
+  human <- quality_thresholds_default()
+  mouse <- quality_thresholds_default("MHC1_mouse")
+
+  expect_equal(human$metric, mouse$metric)          # data keys unchanged
+  i <- match("frac_9mer", mouse$metric)
+  expect_equal(mouse$label[i], "8/9-mer fraction")
+  expect_gt(mouse$green[i], human$green[i])
+  expect_gt(mouse$amber[i], human$amber[i])
+})
+
+test_that("score_sample_quality picks up the class-appropriate thresholds", {
+  pep <- make_mouse_pep_all()
+  scores <- score_sample_quality(pep, shortpep_range = c(7, 11), mhcclass = "MHC1_mouse")
+
+  expect_equal(nrow(scores), 1L)
+  expect_true(is.finite(scores$composite_score))
+  expect_true(scores$composite_score >= 0 && scores$composite_score <= 100)
+})

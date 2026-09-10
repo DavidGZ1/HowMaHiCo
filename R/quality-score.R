@@ -47,10 +47,11 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
   sequences <- sequences[nchar(sequences) == len]
   if (length(sequences) < min_n) return(NA_real_)
 
-  aa <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I",
-          "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V")
+  # alphabet + negative-position handling shared with the pepchem engine, so the
+  # two per-position frequency computations cannot drift apart
+  aa <- .aa_alphabet()
   max_bits <- log2(length(aa))
-  resolved <- ifelse(positions < 0, len + positions + 1L, positions)
+  resolved <- .resolve_positions(positions, len)
 
   ic <- vapply(resolved, function(p) {
     if (p < 1 || p > len) return(NA_real_)
@@ -68,23 +69,39 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 
 # Length range of the *other* MHC class that falls outside the current window,
 # used by the cross-class co-enrichment metric and plot. MHC1 ligands are short
-# (8-13), MHC2 long (12-25); contamination by the other class shows up as an
-# excess of peptides in that other window beyond the current one. Returns
-# c(lo, hi) (inclusive) or NULL when the class is not MHC1/MHC2 (no defined
-# "other class", so the metric/plot are undefined).
+# (human 8-13, mouse 7-11), MHC2 long (12-25); contamination by the other class
+# shows up as an excess of peptides in that other window beyond the current one.
+# Returns c(lo, hi) (inclusive) or NULL when the class has no defined "other
+# class" (a custom window), so the metric/plot are undefined. Windows come from
+# mhc_length_window() so a new class is added in one place.
 .cross_class_range <- function(mhcclass, shortpep_range = c(8, 13)) {
-  windows <- list(MHC1 = c(8L, 13L), MHC2 = c(12L, 25L))
-  if (!mhcclass %in% names(windows)) return(NULL)
+  if (!mhcclass %in% mhc_classes()) return(NULL)
   cur <- shortpep_range
-  if (mhcclass == "MHC1") {
-    other_hi <- windows$MHC2[2]
+  if (.is_mhc1(mhcclass)) {
+    other_hi <- mhc_length_window("MHC2")[2]
     rng <- c(cur[2] + 1, other_hi)          # MHC2 contamination: above the MHC1 window
   } else {
-    other_lo <- windows$MHC1[1]
+    other_lo <- mhc_length_window("MHC1")[1]
     rng <- c(other_lo, cur[1] - 1)          # MHC1 contamination: below the MHC2 window
   }
   if (rng[1] > rng[2]) return(NULL)
   rng
+}
+
+# Is this an MHC-I class (human or mouse)? The 9-mer/anchor metrics are defined
+# for both, with mouse scoring 8- AND 9-mers (H-2Kb favours 8-mers, H-2Db 9-mers).
+.is_mhc1 <- function(mhcclass) isTRUE(mhcclass %in% c("MHC1", "MHC1_mouse"))
+
+# Canonical ligand length(s) of an MHC-I class: 9 for human HLA-I, 8 and 9 for
+# murine H-2.
+.canonical_lengths <- function(mhcclass) if (identical(mhcclass, "MHC1_mouse")) c(8L, 9L) else 9L
+
+# The most frequent of `candidates` in `lengths` (first candidate on a tie or
+# when none is present), so anchor scoring always uses one aligned length set.
+.modal_length <- function(lengths, candidates) {
+  if (length(candidates) == 1) return(candidates)
+  counts <- vapply(candidates, function(k) sum(lengths == k, na.rm = TRUE), numeric(1))
+  candidates[which.max(counts)]
 }
 
 #' Raw per-sample immunopeptidomics quality metrics
@@ -100,9 +117,12 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 #' @param shortpep_range Length-2 numeric `c(min, max)`: the biologically
 #'   expected ligand-length window (e.g. `c(8, 13)` for HLA-I, `c(12, 25)` for
 #'   HLA-II).
-#' @param mhcclass `"MHC1"` or `"MHC2"`. For `"MHC2"` the 9-mer and anchor-motif
-#'   metrics are returned as `NA` (no fixed-length anchor model), so they drop
-#'   out of the composite downstream.
+#' @param mhcclass `"MHC1"`, `"MHC1_mouse"` or `"MHC2"`. For `"MHC2"` the
+#'   canonical-length and anchor-motif metrics are returned as `NA` (no
+#'   fixed-length anchor model), so they drop out of the composite downstream.
+#'   For `"MHC1_mouse"`, `frac_9mer` counts 8- **and** 9-mers (both canonical for
+#'   murine H-2) and the anchor motif is scored on whichever of the two the
+#'   sample has more of.
 #'
 #' @return A data frame with one row per `Sample` and columns: `frac_in_window`,
 #'   `frac_9mer`, `frac_cterm_KR`, `frac_cterm_KR_longonly`, `anchor_information`,
@@ -116,7 +136,8 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 #' qc_metrics_by_sample(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1")
 #' }
 qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1") {
-  is_mhc1 <- identical(mhcclass, "MHC1")
+  is_mhc1 <- .is_mhc1(mhcclass)
+  canonical_len <- .canonical_lengths(mhcclass)
   lo <- shortpep_range[1]; hi <- shortpep_range[2]
   cross_rng <- .cross_class_range(mhcclass, shortpep_range)
   has_ppm <- "ppm" %in% names(pep_all)
@@ -154,13 +175,16 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
     data.frame(
       Sample = s,
       frac_in_window = if (n_pep == 0) NA_real_ else mean(in_win),
-      frac_9mer = if (!is_mhc1 || n_pep == 0) NA_real_ else mean(pep$Length == 9),
+      frac_9mer = if (!is_mhc1 || n_pep == 0) NA_real_ else mean(pep$Length %in% canonical_len),
       frac_cterm_KR = if (n_pep == 0) NA_real_ else mean(kr),
       frac_cterm_KR_longonly = if (sum(out_win) == 0) NA_real_ else mean(kr[out_win]),
       frac_cross_class = if (is.null(cross_rng) || n_pep == 0) NA_real_ else
         mean(pep$Length >= cross_rng[1] & pep$Length <= cross_rng[2]),
+      # anchor_information_content() needs equal-length sequences, so for mouse
+      # (two canonical lengths) it is computed on whichever of 8-/9-mers this
+      # sample has more of, instead of silently dropping one of them.
       anchor_information = if (!is_mhc1) NA_real_ else
-        anchor_information_content(pep$Sequence[pep$Length == 9]),
+        anchor_information_content(pep$Sequence[pep$Length == .modal_length(pep$Length, canonical_len)]),
       frac_charge_1_2 = frac_charge_1_2,
       n_unique_pep = n_pep,
       n_unique_pep_in_window = sum(in_win),
@@ -184,6 +208,10 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
 #' metrics) are scored only in QC-relative mode (see
 #' [calibrate_thresholds_from_qc()]).
 #'
+#' @param mhcclass MHC class the thresholds are for. `"MHC1_mouse"` relabels the
+#'   `frac_9mer` row to "8/9-mer fraction" and raises its green/amber cut-offs,
+#'   because that metric counts two canonical lengths for murine H-2.
+#'
 #' @return A data frame with columns `metric`, `label`, `direction`
 #'   (`"higher_better"`/`"lower_better"`), `green`, `amber`, `weight`.
 #'
@@ -191,8 +219,9 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
 #'
 #' @examples
 #' quality_thresholds_default()
-quality_thresholds_default <- function() {
-  data.frame(
+#' quality_thresholds_default("MHC1_mouse")
+quality_thresholds_default <- function(mhcclass = "MHC1") {
+  out <- data.frame(
     metric = c("frac_in_window", "frac_9mer", "frac_cterm_KR_longonly",
                "frac_cterm_KR", "anchor_information", "frac_cross_class",
                "frac_charge_1_2", "n_unique_pep", "n_unique_pep_in_window",
@@ -211,6 +240,18 @@ quality_thresholds_default <- function() {
     weight = c(3, 1.5, 1, 0, 3, 0.5, 1.5, 0.5, 0.5, 0.5, 1),
     stringsAsFactors = FALSE
   )
+
+  # Murine H-2 ligands peak at BOTH 8- and 9-mers, so `frac_9mer` counts two
+  # lengths there (see qc_metrics_by_sample()); relabel it and raise the bar
+  # accordingly - two canonical lengths out of a 5-length window are a higher
+  # expectation than one out of six.
+  if (identical(mhcclass, "MHC1_mouse")) {
+    i <- match("frac_9mer", out$metric)
+    out$label[i] <- "8/9-mer fraction"
+    out$green[i] <- 0.50
+    out$amber[i] <- 0.30
+  }
+  out
 }
 
 #' Map a raw metric value to a 0-100 quality sub-score
@@ -313,15 +354,16 @@ calibrate_thresholds_from_qc <- function(metrics, qc_samples,
 #'
 #' @param pep_all A unified `pep_all` data frame.
 #' @param shortpep_range Length-2 numeric `c(min, max)` ligand-length window.
-#' @param mhcclass `"MHC1"` or `"MHC2"`.
+#' @param mhcclass `"MHC1"`, `"MHC1_mouse"` (7-11 AA window, 8/9-mer canonical
+#'   lengths) or `"MHC2"`; also selects the default threshold table.
 #' @param qc_samples Optional character vector of `Sample` values flagged as QC
 #'   controls (e.g. from an annotation `QC` column). Used to mark samples and,
 #'   when `threshold_mode = "qc_relative"`, to calibrate thresholds.
 #' @param threshold_mode `"default"` (absolute literature thresholds) or
 #'   `"qc_relative"` (thresholds derived from `qc_samples`). `"qc_relative"`
 #'   falls back to defaults if no QC samples are supplied.
-#' @param thresholds Optional scoring table overriding
-#'   [quality_thresholds_default()].
+#' @param thresholds Optional scoring table overriding the class-appropriate
+#'   [quality_thresholds_default()] (which is used when this is `NULL`).
 #' @param weights Optional named numeric vector overriding the `weight` column of
 #'   `thresholds` (names = metric names).
 #'
@@ -340,9 +382,10 @@ calibrate_thresholds_from_qc <- function(metrics, qc_samples,
 score_sample_quality <- function(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1",
                                  qc_samples = NULL,
                                  threshold_mode = c("default", "qc_relative"),
-                                 thresholds = quality_thresholds_default(),
+                                 thresholds = NULL,
                                  weights = NULL) {
   threshold_mode <- match.arg(threshold_mode)
+  if (is.null(thresholds)) thresholds <- quality_thresholds_default(mhcclass)
   if (!is.null(weights)) {
     idx <- match(names(weights), thresholds$metric)
     thresholds$weight[idx[!is.na(idx)]] <- weights[!is.na(idx)]

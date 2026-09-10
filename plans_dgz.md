@@ -8,30 +8,24 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
-* add safeward to get\_annot\_sampleid, warning if nothing was matched
-* fix error comp\_condition <- combn(conditions, 2) when condition =1
-* test mode fragpipe\_dda\_combined, load all and then create minimal dataset instead of only top 10 lines
-* add again safeguard when all area = 0
 
 
 
 ## In standby
-
+* peptide position within the parent protein (the third part of the physicochemical-properties item) — deferred; it is the only part that needs a user-supplied search FASTA, since no loader carries a position column (FragPipe psm.tsv, DIA-NN report.tsv and PEAKS peptide.csv all lack one). Full design recorded in CLAUDE.md under "Deferred designs".
 * implement safeguard when some conditions or replicates give 0 areas, currently throwing error — moved to standby (no repro available; e.g. CHEB\_001 all dda dataset not in repo). The all-NA Area/CV and all-NA correlation cases are already guarded in the report chunks; the partial (some groups 0/NA) failure needs a repro to target.
 * For PTM plots, translate unimod code into modification name — deferred (full implementation design saved in memory/project\_ptm\_translation\_plan.md). Scope chosen: translate BOTH UniMod accessions AND delta masses to names. Key gotcha: only DIA-NN stores UniMod codes (UniMod:NN); FragPipe (default/sim) and PEAKS store delta masses. Plan: new R/ptm.R with ptm\_reference() + translate\_ptm(), wired into plot\_ptm\_heatmap() as a display-time translate=TRUE arg; correct the wrong PTM note in 01\_id\_counts skeleton.
 * InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04\_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot\_heatmap.
-* homogenize sample annotation tables across software
 * Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
-* add other proporties such as GRAVY
-* add data completeness plots
-* for quantitative report: heatmap with and without clustering, dynamic range, volcano plots
 * Total by Condition /BioReplicate / Sample in tabs
-* Add an advanced quantification report using statistics testing to compare between conditions. Use Limma for the normalization and statistical testing. Include  heatmap with and without clustering, volcano plots, summaries of number of peptides with significant changes between conditions
 * more explicit errors, e.g.,  when files are not found
 * autogenerate Sample by concatenating the others
 * bioreplicate as numbers or text, without condition, gets merged afterwards
 * maybe generate a report in long format
 * include whole folder with dia-quant-output when diann
+* check and deal with license discrepancies between howmahico, peptides, limma
+
+* 
 
 ### to be done by DGZ
 
@@ -61,6 +55,8 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 * Ismahico= binding prediction
 * HowConta = summary of common contaminants
 * Another idea: hla allotyping from hla peptides in the ip data
+* include code for nc.
+* add tag for nc. exclusive, shared with up, up exclusive
 
 
 
@@ -147,4 +143,14 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * plot unclustered motifs from 7 to 25: motif length window extended to 7–25 AAs (was capped at 24); section retitled "Peptide motifs (7 to 25 AAs)" in 01\_id\_counts and 00\_mhc\_report (v0.13.0)
 * add subset suffix to all the results: shared setup.Rmd (and the two 00\_\* reports) derive result\_prefix (= Subset, NULL when unset), passed to every write.csv\_rawr()/write\_input\_params() and prepended to seq\_by\_condition.xlsx, so result filenames carry the subset (e.g. dda\_all\_pep\_all.csv); input\_params combines subset + report name to stay collision-free (v0.13.0)
 * bigger font
-
+* mouse MHC1 option (7 to 11 AAs): new MHCclass value `MHC1_mouse`; windows/palettes moved to R/report-helpers.R (mhc\_length\_window / mhc\_class\_palette / mhc\_classes), replacing 3 duplicated lists in the skeletons + the copy inside .cross\_class\_range(); quality score follows (frac\_9mer counts 8+9-mers with the "8/9-mer fraction" label and higher cut-offs, anchor scored on the dominant of the two, cross-class window from the 7-11 window) (v0.15.0)
+* safeguard in get\_annot\_sampleid: warns when nothing matched (showing example Source\_file values from both sides) and when only some rows matched (naming the dropped ones); new keep\_all = TRUE argument left-joins so no annotation row is lost (v0.15.0)
+* fixed combn(conditions, 2) aborting every report with a single Condition: new exported condition\_pairs() (empty list for 1 Condition, self = TRUE for the overlap-matrix diagonal) used by the shared setup + 00\_mhc\_report/00\_mhc\_upsets/02\_overlaps; guarded by an end-to-end single-Condition render test (v0.15.0)
+* test mode for combined exports: files are read in full and reduced to ~100 rows PER RUN (subsample\_testmode() in R/utils-loaders.R, run column auto-detected from Run/Spectrum) instead of the first 100 lines of the file, so every run/Condition/replicate survives; wrong "first 50 lines" warning fixed (v0.15.0)
+* safeguard when all area = 0: get\_mat\_log2area() returns a 0 x n matrix with a warning instead of erroring in select(all\_of()), and the correlation chunks of 04\_quant/00\_mhc\_report test for the empty/all-NA case before calling cor() (which errors with 'x' is empty) and before computing the colour limits (v0.15.0)
+* homogenized sample annotation tables across software: canonical `Sample_folder` column accepted by read\_annot() and mirrored into Sample\_fp (verbatim) / Sample\_peaks (PEAKS-normalized) so the loaders are untouched and legacy CSVs still load; get\_annot\_fragpipe()/get\_annot\_diann() emit Sample\_folder and PEAKS gained get\_annot\_peaks() (v0.15.0)
+* advanced statistics / quantification report: new `06_quant_stats` template + `R/quant-stats.R` engine (build\_quant\_matrix, filter\_quant, normalize\_quant, impute\_quant, test\_differential, test\_detection, combine\_quant\_results, summarise\_significant, permanova\_condition) comparing peptide Area between Conditions with limma moderated t (Welch t fallback; limma in Suggests) + Fisher presence/absence track for condition-exclusive ligands; includes data completeness plots, normalization diagnostics, dynamic range, PCA, heatmaps with and without clustering, volcano/MA/p-value plots and significance summaries, plus an in-report "Methods & justification" section (v0.14.0)
+* data completeness plots: plot\_completeness() (per unit / per feature) + plot\_missing\_heatmap() presence-absence map, in 06\_quant\_stats (v0.14.0)
+* quantitative report heatmap with and without clustering, dynamic range, volcano plots: plot\_quant\_heatmap(cluster = TRUE/FALSE), plot\_dynamic\_range(), plot\_volcano()/plot\_ma(), all in 06\_quant\_stats (v0.14.0)
+* fixed run\_howmahico\_report("05\_quality\_score") being unreachable (template documented but missing from the match.arg choices); 05 and 06 registered + regression guard test that every shipped template dir is offered (v0.14.0)
+* peptide physicochemical properties report: new `07_pepchem` template + `R/pepchem.R` engine (peptide\_properties, pepchem\_properties, aa\_composition, aa\_position\_frequency, pepchem\_by\_sample, summarise\_pepchem, aggregate\_pepchem, cliffs\_delta, compare\_pepchem, compare\_aa\_frequency) comparing amino-acid composition (overall / per sample / enrichment vs. the pooled composition), per-position residue frequency (dominant length + N-/C-terminal profile across all lengths) and per-peptide descriptors (GRAVY, pI, charge, MW, Boman, hydrophobic moment, instability/aliphatic index, AA class fractions) between Conditions. Descriptors are summarised per SAMPLE and then tested across samples (Kruskal-Wallis + pairwise Wilcoxon, BH, MedianDiff + Cliff's delta), with a pooled peptide-level track reported alongside as explicitly descriptive; new plots plot\_aa\_composition / plot\_aa\_position\_heatmap / plot\_property\_distribution / plot\_property\_sample\_summary / plot\_property\_effectsize; new dependency Peptides (CRAN, Rcpp only) in Imports, justified as the canonical GRAVY implementation. Position-within-the-protein moved to standby (v0.16.0)

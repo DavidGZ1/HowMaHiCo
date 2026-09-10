@@ -23,12 +23,12 @@ test_that("ggsave_rawr saves an existing plot and warns (without erroring) when 
   on.exit({ unlink(dir, recursive = TRUE); setwd(old_wd) })
   dir.create(dir)
 
-  # ggsave_rawr's exists(deparse(substitute(input))) check walks lexical scope
-  # from the package namespace -- it can only see a plot bound in .GlobalEnv
-  # (matching how report chunks call it), not a variable local to this block
-  assign("p_test_plot", ggplot2::ggplot(data.frame(x = 1:3, y = 1:3), ggplot2::aes(x, y)) + ggplot2::geom_point(),
-         envir = globalenv())
-  on.exit(rm("p_test_plot", envir = globalenv()), add = TRUE)
+  # The plot is an ordinary local: ggsave_rawr resolves the name in its CALLER's
+  # frame. It used to search from the package namespace outwards instead, which
+  # never reaches a report's knit environment, so PlotsSave = TRUE silently
+  # saved nothing at all.
+  p_test_plot <- ggplot2::ggplot(data.frame(x = 1:3, y = 1:3), ggplot2::aes(x, y)) +
+    ggplot2::geom_point()
 
   ggsave_rawr(p_test_plot, "test_plot", folder = dir, width = 4, height = 4)
   expect_true(file.exists(file.path(dir, "test_plot.png")))
@@ -36,6 +36,32 @@ test_that("ggsave_rawr saves an existing plot and warns (without erroring) when 
   expect_warning(ggsave_rawr(p_does_not_exist, "skipped_plot", folder = dir),
                  "skipped_plot.png was not saved")
   expect_false(file.exists(file.path(dir, "skipped_plot.png")))
+})
+
+test_that("ggsave_rawr saves from a knit-like environment and from a plot list", {
+  dir <- tempfile("ggsave_rawr_env_")
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE))
+
+  # rmarkdown renders in new.env(parent = globalenv()), never in .GlobalEnv
+  knit_env <- new.env(parent = globalenv())
+  knit_env$out_dir <- dir
+  local({
+    p_knit <- ggplot2::ggplot(data.frame(x = 1:3, y = 1:3), ggplot2::aes(x, y)) +
+      ggplot2::geom_point()
+    ggsave_rawr(p_knit, "knit_plot", folder = out_dir, width = 4, height = 4)
+
+    # the export-loop idiom: an indexed element is judged by value, and a NULL
+    # entry (a plot function that could not draw) is skipped, not saved
+    plots <- list(kept = p_knit, dropped = NULL)
+    for (nm in names(plots))
+      suppressWarnings(ggsave_rawr(plots[[nm]], file = nm, folder = out_dir,
+                                   width = 4, height = 4))
+  }, envir = knit_env)
+
+  expect_true(file.exists(file.path(dir, "knit_plot.png")))
+  expect_true(file.exists(file.path(dir, "kept.png")))
+  expect_false(file.exists(file.path(dir, "dropped.png")))
 })
 
 test_that("write_input_params writes a long-format package-version + timestamp + params table", {

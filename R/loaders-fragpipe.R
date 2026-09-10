@@ -1,16 +1,21 @@
 #' Read one FragPipe `psm.tsv` or DIA-NN `report.tsv` file
 #'
-#' Reads a single search-engine tsv with [readr::read_tsv()] (optionally
-#' truncated to the first ~100 rows for fast iteration via `testmode`), and
-#' tags every row with `samplename`. Shared internally by both the FragPipe and
-#' DIA-NN batch readers — the two formats only diverge once the per-sample
-#' frames are parsed into `pep_all` shape.
+#' Reads a single search-engine tsv with [readr::read_tsv()] and tags every row
+#' with `samplename`. Shared internally by both the FragPipe and DIA-NN batch
+#' readers — the two formats only diverge once the per-sample frames are parsed
+#' into `pep_all` shape.
+#'
+#' With `testmode = TRUE` the file is read in full and then reduced to the first
+#' ~100 rows **per run**, so that a combined export (one `psm.tsv` holding every
+#' run) still yields every sample of the experiment. Test mode therefore no
+#' longer saves file-reading time on combined exports; it produces a small,
+#' representative dataset for fast rendering.
 #'
 #' @param folder Path to the tsv file to read.
 #' @param samplename Sample identifier to record in the new `Sample_fp` column
 #'   (derived from the file's parent folder name by the batch reader).
-#' @param testmode Logical; if `TRUE`, reads only the first ~100 rows for fast
-#'   iteration (can break downstream correlation plots on tiny subsets).
+#' @param testmode Logical; if `TRUE`, keeps only the first ~100 rows per run for
+#'   fast iteration (can break downstream correlation plots on tiny subsets).
 #'
 #' @return The tsv contents as a data frame, with `Sample_fp` added and
 #'   relocated to the first column.
@@ -22,12 +27,12 @@
 #' read_fragpipe("2_data/fragpipe_dda_combined/JY/psm.tsv", "JY", testmode = FALSE)
 #' }
 read_fragpipe <- function(folder, samplename, testmode = FALSE){
+  input <- readr::read_tsv(folder, show_col_types = FALSE, progress = FALSE)
   if(testmode){
-    input <- readr::read_tsv(folder, show_col_types = FALSE, progress = FALSE, n_max = 100)
-    warning("Test mode ON: only the first 50 lines were loaded")
-
-  }else{
-    input <- readr::read_tsv(folder, show_col_types = FALSE, progress = FALSE)
+    input <- subsample_testmode(input, n = 100L)
+    warning("Test mode ON: the file was read in full and reduced to the first 100 rows ",
+            "per run (", nrow(input), " rows kept). Every run is still present, but ",
+            "quantitative sections are computed on a tiny subset.")
   }
   input |>
     dplyr::mutate(Sample_fp = samplename) |>
@@ -54,8 +59,8 @@ read_fragpipe <- function(folder, samplename, testmode = FALSE){
 #'   `annotation` are read.
 #' @param files Optional character vector of `psm.tsv` file paths or parent
 #'   folder paths to read directly.
-#' @param testmode Logical; passed through to [read_fragpipe()] (loads only the
-#'   first ~100 rows per file when `TRUE`, for fast iteration).
+#' @param testmode Logical; passed through to [read_fragpipe()] (keeps only the
+#'   first ~100 rows per run when `TRUE`, for fast iteration).
 #'
 #' @return The merged raw PSM data frame across every file found, with
 #'   `Sample_fp` identifying the source subfolder of each row.

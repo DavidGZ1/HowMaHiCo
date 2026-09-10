@@ -1,0 +1,617 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  PepAllSource: "cached" # how to obtain pep_all: "cached" (<Subset>_pep_all.rda), "rda" (PepAllFile), or "build" (parse raw via build_pep_all)
+  PepAllFile: "" # explicit .rda path; used only when PepAllSource = "rda"
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (human, 8-13 AAs), MHC1_mouse (murine H-2, 7-11 AAs) or MHC2 (12-25 AAs); overrides ShortPeptideLengthMin/Max
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  PeptideSet: "selected" # "selected" (pep_short, the MHC length window) or "all" (pep_all)
+  QuantFeature: "Peptide" # matrix rows: Peptide | Sequence | PeptideID | ProteinFirst
+  QuantUnit: "BioReplicate" # matrix columns: BioReplicate (tech reps averaged) | Sample | Condition
+  MinReplicates: 2 # a feature is tested if quantified in >= this many units of >= 1 Condition
+  NormMethod: "median" # median | quantile | cyclicloess | scale | none
+  ImputeMethod: "none" # none | minprob | mindet
+  StatMethod: "limma" # limma (moderated t) | ttest (Welch, no Bioconductor dependency)
+  BlockVar: "" # optional coldata column for limma::duplicateCorrelation (e.g. "BioReplicate" when QuantUnit = "Sample")
+  FdrCutoff: 0.05
+  Log2FcCutoff: 1
+  MinDetectExclusive: 2 # units in which an "exclusive" feature must be detected
+  TopNHeatmap: 500
+  PermutationTest: TRUE # global PERMANOVA-style test of condition separation
+  TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  CsvSave: FALSE
+title: "`r paste0('06_quant_stats | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+Focused **advanced-quantification** report for immunopeptidomics experiments,
+provided by the Immunopeptidomics Platform (IPP). It compares peptide `Area`
+between Conditions: an unsupervised multivariate overview (PCA, clustering,
+permutation test) followed by per-peptide differential abundance with
+[limma](https://bioconductor.org/packages/limma) moderated t-statistics, plus a
+presence/absence track for the condition-exclusive ligands a quantitative test
+cannot rank. The methods and the reasoning behind them are documented in the
+*Methods & justification* section at the end.
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+
+```{r quant-stats-prep, echo=FALSE, message=FALSE, warning=TRUE}
+# ---- inputs -----------------------------------------------------------------
+quant_input <- if (params$PeptideSet == "all") pep_all else pep_short
+peptide_set_label <- if (params$PeptideSet == "all") "all peptides" else
+  paste0("selected peptides (", shortpep_range[1], " to ", shortpep_range[2], " AAs)")
+
+# limma is a Suggests dependency: fall back to the Welch t-test rather than
+# aborting the render when it is not installed.
+stat_method <- params$StatMethod
+if (stat_method == "limma" && !requireNamespace("limma", quietly = TRUE)) {
+  warning("StatMethod = 'limma' but the limma package is not installed ",
+          "(BiocManager::install('limma')); falling back to StatMethod = 'ttest'.")
+  stat_method <- "ttest"
+}
+norm_method <- params$NormMethod
+if (!norm_method %in% c("median", "none") && !requireNamespace("limma", quietly = TRUE)) {
+  warning("NormMethod = '", norm_method, "' needs limma; falling back to 'median'.")
+  norm_method <- "median"
+}
+
+# ---- matrix, filtering, normalization, imputation ---------------------------
+qm       <- build_quant_matrix(quant_input, feature = params$QuantFeature,
+                               unit = params$QuantUnit)
+coldata  <- qm$coldata
+mat_raw  <- qm$mat
+mat_filt <- filter_quant(mat_raw, coldata, min_per_group = params$MinReplicates)
+mat_norm <- normalize_quant(mat_filt, method = norm_method)
+mat_used <- impute_quant(mat_norm, method = params$ImputeMethod)
+
+n_units_per_cond <- table(coldata$Condition)
+# Keep only the pairs the chosen test can actually handle: a Welch t-test needs
+# >= 2 units in both conditions, while limma pools the residual variance across
+# the whole design, so it only needs >= 1 unit per condition plus at least one
+# residual degree of freedom somewhere.
+has_resid_df <- sum(n_units_per_cond) > n_conditions
+testable_pair <- function(p) {
+  n1 <- as.integer(n_units_per_cond[p[1]]); n2 <- as.integer(n_units_per_cond[p[2]])
+  if (stat_method == "ttest") n1 >= 2 && n2 >= 2 else n1 >= 1 && n2 >= 1 && has_resid_df
+}
+contrasts_all <- if (n_conditions >= 2) comp_condition else list()
+contrasts_list <- Filter(testable_pair, contrasts_all)
+if (length(contrasts_all) > length(contrasts_list))
+  warning(length(contrasts_all) - length(contrasts_list), " of ", length(contrasts_all),
+          " condition pairs were skipped: not enough replicated units for the ",
+          stat_method, " test.")
+can_test <- length(contrasts_list) > 0 && nrow(mat_used) > 0
+
+# ---- statistics -------------------------------------------------------------
+diff_res <- quant_stats_results <- quant_stats_summary <- NULL
+if (can_test) {
+  block_var <- if (nzchar(params$BlockVar)) params$BlockVar else NULL
+  diff_res <- test_differential(mat_used, coldata, contrasts = contrasts_list,
+                                method = stat_method, block = block_var,
+                                min_obs = params$MinReplicates)
+  det_res  <- test_detection(mat_used, coldata, contrasts = contrasts_list)
+  quant_stats_results <- combine_quant_results(diff_res, det_res,
+                                               fdr = params$FdrCutoff,
+                                               log2fc = params$Log2FcCutoff,
+                                               min_detect = params$MinDetectExclusive)
+  quant_stats_summary <- summarise_significant(quant_stats_results)
+} else if (n_conditions < 2) {
+  warning("Only one Condition in this subset — no differential comparison is possible.")
+} else {
+  warning("No condition pair could be tested: every Condition would need at least ",
+          "one replicated ", params$QuantUnit, " to estimate a variance.")
+}
+```
+
+**Peptide set:** `r peptide_set_label` &nbsp;|&nbsp; **feature:**
+`r params$QuantFeature` &nbsp;|&nbsp; **unit:** `r params$QuantUnit`
+&nbsp;|&nbsp; **normalization:** `r norm_method` &nbsp;|&nbsp; **imputation:**
+`r params$ImputeMethod` &nbsp;|&nbsp; **test:** `r stat_method`
+
+# Quantitative matrix
+
+`Area` is summed over precursors within a sample, log2-transformed, then averaged
+across the samples of each `r params$QuantUnit`. A feature is kept for testing
+when it is quantified in at least `r params$MinReplicates` units of at least one
+Condition; the features that fail the filter are still shown in the
+presence/absence section.
+
+```{r quant-matrix-table, echo=FALSE}
+data.frame(
+  Step = c("Features in the peptide set", "Quantitative matrix (features x units)",
+           paste0("After filtering (>= ", params$MinReplicates, " units in >= 1 Condition)"),
+           "Missing values in the filtered matrix"),
+  Value = c(dplyr::n_distinct(quant_input[[params$QuantFeature]]),
+            paste0(nrow(mat_raw), " x ", ncol(mat_raw)),
+            paste0(nrow(mat_filt), " x ", ncol(mat_filt),
+                   "  (", attr(mat_filt, "n_dropped"), " features dropped)"),
+            paste0(sum(is.na(mat_filt)), " / ", length(mat_filt), "  (",
+                   round(100 * sum(is.na(mat_filt)) / max(length(mat_filt), 1), 1), "%)"))
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+```{r coldata-table, echo=FALSE}
+coldata |>
+  kable(caption = "Matrix columns and their annotation") |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+# Data completeness {.tabset}
+
+## Per unit
+
+```{r plot-completeness-unit, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_completeness_unit <- plot_completeness(mat_raw, coldata, type = "unit")
+ggprint_rawr(p_completeness_unit)
+```
+
+## Per feature
+
+```{r plot-completeness-feature, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_completeness_feature <- plot_completeness(mat_raw, coldata, type = "feature")
+ggprint_rawr(p_completeness_feature)
+```
+
+## Presence / absence map
+
+```{r plot-missing-heatmap, echo=FALSE, fig.width=8, fig.height=7, warning=FALSE}
+p_missing_heatmap <- plot_missing_heatmap(mat_raw, coldata)
+ggprint_rawr(p_missing_heatmap)
+```
+
+# Normalization {.tabset}
+
+Between-sample normalization removes differences in HLA pulldown yield and
+loading, which would otherwise be indistinguishable from biology. Compare the
+distributions before and after: they should be centred on each other without the
+individual spread being destroyed.
+
+## Before (boxplots)
+
+```{r plot-intensity-before, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_intensity_before <- plot_intensity_dist(mat_filt, coldata, type = "box",
+                                          title = "Before normalization")
+ggprint_rawr(p_intensity_before)
+```
+
+## After (boxplots)
+
+```{r plot-intensity-after, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_intensity_after <- plot_intensity_dist(mat_norm, coldata, type = "box",
+                                         title = paste0("After ", norm_method, " normalization"))
+ggprint_rawr(p_intensity_after)
+```
+
+## After (densities)
+
+```{r plot-intensity-density, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_intensity_density <- plot_intensity_dist(mat_norm, coldata, type = "density",
+                                           title = paste0("After ", norm_method, " normalization"))
+ggprint_rawr(p_intensity_density)
+```
+
+# Dynamic range
+
+```{r plot-dynamic-range, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_dynamic_range <- plot_dynamic_range(mat_norm, coldata)
+if (is.null(p_dynamic_range)) cat("_Not available for this dataset._") else ggprint_rawr(p_dynamic_range)
+```
+
+```{r imputation-section, echo=FALSE, results='asis', fig.width=8, fig.height=5, warning=FALSE}
+p_imputation <- NULL
+if (params$ImputeMethod != "none") {
+  cat("\n# Imputation\n\n")
+  cat("Missing values were replaced using the `", params$ImputeMethod,
+      "` left-censored scheme. The imputed values should sit at the low end of ",
+      "the observed distribution, not inside it.\n\n", sep = "")
+  imp <- attr(mat_used, "imputed")
+  df_imp <- rbind(
+    data.frame(Value = as.vector(mat_used)[!as.vector(imp)], Type = "observed"),
+    data.frame(Value = as.vector(mat_used)[as.vector(imp)], Type = "imputed"))
+  df_imp <- df_imp[!is.na(df_imp$Value), , drop = FALSE]
+  p_imputation <- ggplot2::ggplot(df_imp, ggplot2::aes(x = Value, fill = Type)) +
+    ggplot2::geom_density(alpha = 0.5) +
+    ggplot2::scale_fill_manual(values = c(observed = "#440154", imputed = "#fde725")) +
+    ggplot2::xlab("log2(Area)") + ggplot2::ylab("Density") +
+    theme_howmahico() +
+    ggplot2::ggtitle(paste0("Imputed vs observed values (", sum(imp), " cells imputed)"))
+  print(p_imputation)
+  cat("\n\n")
+}
+```
+
+# Unsupervised overview
+
+Before any per-peptide claim, does the quantitative data separate the conditions
+at all? The PCA and the clustering below use only features quantified in every
+unit (or all features when imputation is enabled).
+
+## PCA {.tabset}
+
+### Scores
+
+```{r plot-pca-scores, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
+p_pca_scores <- plot_pca(mat_used, coldata, type = "scores")
+if (is.null(p_pca_scores)) cat("_Not enough complete features or units for a PCA._") else ggprint_rawr(p_pca_scores)
+```
+
+### Scree
+
+```{r plot-pca-scree, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_pca_scree <- plot_pca(mat_used, coldata, type = "scree")
+if (is.null(p_pca_scree)) cat("_Not available._") else ggprint_rawr(p_pca_scree)
+```
+
+### Loadings
+
+```{r plot-pca-loadings, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
+p_pca_loadings <- plot_pca(mat_used, coldata, type = "loadings")
+if (is.null(p_pca_loadings)) cat("_Not available._") else ggprint_rawr(p_pca_loadings)
+```
+
+## Heatmaps {.tabset}
+
+The same `r params$TopNHeatmap` most variable features, drawn with and without
+clustering: clustering shows whether the data group by condition on their own,
+the unclustered view shows the conditions side by side in the annotated order.
+
+### Clustered
+
+```{r plot-heatmap-clustered, echo=FALSE, fig.width=8, fig.height=8, warning=FALSE}
+p_heatmap_clustered <- plot_quant_heatmap(mat_used, coldata, cluster = TRUE,
+                                          top_n = params$TopNHeatmap)
+if (is.null(p_heatmap_clustered)) cat("_Not available._") else ggprint_rawr(p_heatmap_clustered)
+```
+
+### Unclustered
+
+```{r plot-heatmap-unclustered, echo=FALSE, fig.width=8, fig.height=8, warning=FALSE}
+p_heatmap_unclustered <- plot_quant_heatmap(mat_used, coldata, cluster = FALSE,
+                                            top_n = params$TopNHeatmap)
+if (is.null(p_heatmap_unclustered)) cat("_Not available._") else ggprint_rawr(p_heatmap_unclustered)
+```
+
+## Global condition separation (PERMANOVA)
+
+```{r permanova, echo=FALSE, warning=TRUE}
+permanova_res <- NULL
+if (isTRUE(params$PermutationTest) && n_conditions >= 2)
+  permanova_res <- permanova_condition(mat_used, coldata)
+
+if (is.null(permanova_res)) {
+  cat("_Permutation test not run for this dataset._")
+} else {
+  data.frame(
+    Statistic = c("pseudo-F", "p-value (permutation)", "permutations",
+                  "complete features used", "groups"),
+    Value = c(round(permanova_res$F, 3), signif(permanova_res$p_value, 3),
+              permanova_res$n_perm, permanova_res$n_features, permanova_res$n_groups)
+  ) |>
+    kable() |>
+    kable_paper("hover", full_width = FALSE)
+}
+```
+
+# Differential abundance
+
+```{r diff-design, echo=FALSE, warning=FALSE}
+if (!can_test) {
+  cat("_Differential testing skipped for this dataset (see the warnings above)._")
+} else {
+  data.frame(
+    Contrast = vapply(contrasts_list, function(p) paste0(p[2], "_vs_", p[1]), character(1)),
+    Reference = vapply(contrasts_list, function(p) p[1], character(1)),
+    Test = vapply(contrasts_list, function(p) p[2], character(1)),
+    `Units reference` = vapply(contrasts_list, function(p) as.integer(n_units_per_cond[p[1]]), integer(1)),
+    `Units test` = vapply(contrasts_list, function(p) as.integer(n_units_per_cond[p[2]]), integer(1)),
+    check.names = FALSE
+  ) |>
+    kable(caption = paste0("Contrasts tested (", stat_method,
+                           "); logFC > 0 means higher in the test condition")) |>
+    kable_paper("hover", full_width = FALSE)
+}
+```
+
+```{r plot-meanvariance, echo=FALSE, fig.width=7, fig.height=5, warning=FALSE}
+# limma's mean-variance (SA) diagnostic: the trend that eBayes(trend = TRUE) fits
+if (can_test && stat_method == "limma" && !is.null(attr(diff_res, "fit"))) {
+  limma::plotSA(attr(diff_res, "fit"),
+                main = "Mean-variance trend (limma SA plot)")
+} else if (can_test) {
+  cat("_Mean-variance diagnostic is limma-specific._")
+}
+```
+
+```{r plot-contrasts, results='asis', echo=FALSE, fig.width=8, fig.height=6, warning=FALSE, message=FALSE}
+volcano_plots <- ma_plots <- pval_plots <- list()
+if (can_test) {
+  for (ctr in unique(quant_stats_results$Contrast)) {
+    res_ctr <- quant_stats_results[quant_stats_results$Contrast == ctr, , drop = FALSE]
+    cat("\n## ", ctr, " {.tabset}\n")
+
+    cat("\n### Volcano\n")
+    p_v <- plot_volcano(res_ctr, fdr = params$FdrCutoff, log2fc = params$Log2FcCutoff)
+    print(p_v); volcano_plots[[ctr]] <- p_v
+    cat("\n\n")
+
+    cat("\n### MA plot\n")
+    p_m <- plot_ma(res_ctr, log2fc = params$Log2FcCutoff)
+    print(p_m); ma_plots[[ctr]] <- p_m
+    cat("\n\n")
+
+    cat("\n### p-value histogram\n")
+    p_p <- plot_pvalue_hist(res_ctr)
+    print(p_p); pval_plots[[ctr]] <- p_p
+    cat("\n\n")
+
+    cat("\n### Top features\n")
+    top <- res_ctr |>
+      dplyr::filter(Status != "ns") |>
+      dplyr::arrange(adj.P.Val, adj.P.Val_det) |>
+      dplyr::transmute(Feature, Status, logFC = round(logFC, 2),
+                       AveExpr = round(AveExpr, 2),
+                       adj.P.Val = signif(adj.P.Val, 3),
+                       n_det_ref, n_tot_ref, n_det_test, n_tot_test,
+                       adj.P.Val_det = signif(adj.P.Val_det, 3))
+    if (nrow(top) == 0) {
+      cat("_No feature passed the significance cut-offs._\n\n")
+    } else {
+      # kable, not DT: an htmlwidget printed from inside a results='asis' loop
+      # needs an explicit tagList/knit_print dance to have its dependencies
+      # attached, and silently renders empty when that is missed
+      cat(utils::head(top, 50) |>
+            kable(format = "html",
+                  caption = paste0(nrow(top), " features with Status != ns (top 50 shown)")) |>
+            kable_paper("hover", full_width = FALSE))
+      cat("\n\n")
+    }
+  }
+}
+```
+
+# Presence / absence
+
+Features detected in one Condition and absent from the other. Their fold change
+is undefined, so they are flagged by a detection rule (detected in at least
+`r params$MinDetectExclusive` units of the Condition where they are present) and
+the Fisher exact p-value is reported as supporting evidence — with few
+replicates it cannot reach a small value even for a perfectly exclusive feature.
+
+```{r exclusive-table, echo=FALSE, warning=FALSE}
+if (!can_test) {
+  cat("_Not available for this dataset._")
+} else {
+  excl <- quant_stats_results |>
+    dplyr::filter(Status %in% c("exclusive_up", "exclusive_down")) |>
+    dplyr::arrange(Contrast, P.Value_det) |>
+    dplyr::transmute(Contrast, Feature, `Present in` = Exclusive_in,
+                     n_det_ref, n_tot_ref, n_det_test, n_tot_test,
+                     P.Value_det = signif(P.Value_det, 3),
+                     adj.P.Val_det = signif(adj.P.Val_det, 3))
+  if (nrow(excl) == 0) {
+    cat("_No condition-exclusive feature passed the detection rule._")
+  } else {
+    DT::datatable(excl, rownames = FALSE,
+                  options = list(pageLength = 10, scrollX = TRUE))
+  }
+}
+```
+
+# Significance summary
+
+```{r plot-sig-summary, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
+p_sig_summary <- NULL
+if (can_test) {
+  p_sig_summary <- plot_sig_summary(quant_stats_summary)
+  ggprint_rawr(p_sig_summary)
+} else {
+  cat("_Not available for this dataset._")
+}
+```
+
+```{r sig-summary-table, echo=FALSE}
+if (can_test) {
+  quant_stats_summary |>
+    kable(caption = paste0("Features per status at FDR <= ", params$FdrCutoff,
+                           " and |log2FC| >= ", params$Log2FcCutoff)) |>
+    kable_paper("hover", full_width = FALSE)
+}
+```
+
+# Methods & justification
+
+**Feature and unit.** The analyte in immunopeptidomics is the peptide itself —
+HLA ligands are not tryptic peptides of an inferred protein, so no protein
+rollup is applied. `Area` is summed on the linear scale across the precursors
+(charge states, source files) of a feature within a sample, because charge states
+are the same molecule, and only then log2-transformed. Values are averaged across
+the samples of one `r params$QuantUnit`: with `BioReplicate` as the unit,
+technical replicates collapse into their biological replicate instead of being
+counted as independent observations, which would inflate the residual degrees of
+freedom and make every p-value anti-conservative.
+
+**log2 transform.** MS intensities are right-skewed and heteroscedastic; log2
+turns multiplicative error into additive error, which is what a linear model
+assumes. `Area == 0` is already mapped to `NA` by the loaders, so no zero becomes
+`-Inf`.
+
+**Normalization (`r norm_method`).** HLA pulldown yield varies by orders of
+magnitude between samples, so without between-sample normalization a loading
+difference is indistinguishable from biology. `median` removes only a per-sample
+offset — the minimal assumption, and the default. `quantile`/`cyclicloess`
+(via `limma::normalizeBetweenArrays`) additionally force the distribution shapes
+to agree; that assumes most features do not change, which is a strong assumption
+in an on/off ligand landscape, so it is offered but not the default. The
+before/after plots above make the choice auditable.
+
+**Filtering.** A feature is tested only when quantified in at least
+`r params$MinReplicates` units of at least one Condition: a variance cannot be
+estimated from a single value, and single observations in DDA are dominated by
+stochastic precursor sampling. Requiring the minimum in *one* group rather than
+all deliberately keeps condition-exclusive ligands, which the presence/absence
+track handles.
+
+**Differential abundance (`r stat_method`).** With `limma`, the model is
+`~ 0 + Condition` with pairwise contrasts and empirical-Bayes moderation
+(`eBayes(trend = TRUE, robust = TRUE)`). With the 3-5 replicates typical of an
+immunopeptidomics experiment the per-peptide variance estimate is very noisy;
+shrinking it towards a mean-variance trend fitted across all peptides increases
+power and controls the FDR better than per-peptide t-tests (Smyth 2004; Kammers
+et al. 2015). `trend = TRUE` accounts for the intensity-dependent variance of
+label-free MS, `robust = TRUE` prevents a few wildly variable peptides from
+inflating the prior variance (Phipson et al. 2016). limma fits each feature on
+its observed values, so the matrix may contain `NA`s. `ttest` is an ordinary
+Welch t-test per feature with BH adjustment — a Bioconductor-free fallback and a
+sanity check against the moderated result. A blocking variable
+(`limma::duplicateCorrelation`) can be set with `BlockVar` for paired designs or
+when individual runs are used as columns.
+
+**Missing values (`r params$ImputeMethod`).** MS missingness mixes MNAR values
+(below the limit of detection) with MAR/stochastic ones (Lazar et al. 2016), and
+in immunopeptidomics a large share is neither but genuine biology. Two tracks are
+therefore reported: the quantitative test above, optionally after left-censored
+imputation (`minprob`: per-sample down-shifted normal, mean - 1.8 sd, width
+0.3 sd, the Perseus convention; `mindet`: deterministic low quantile), and a
+Fisher exact test on detection counts for the exclusive features, whose fold
+change would otherwise be an artefact of the imputation width.
+
+**Multiplicity.** Benjamini-Hochberg adjustment within each contrast,
+independently for the quantitative and the detection track. The p-value
+histograms are the calibration diagnostic: a uniform histogram with a spike near
+zero indicates a well-behaved test, while a hump towards 1 or a wave signals a
+violated assumption and an untrustworthy FDR.
+
+**Unsupervised overview.** PCA on the complete features, clustered and
+unclustered heatmaps of the most variable features, and a distance-based
+permutation test (pseudo-F on Euclidean distances between units, condition
+labels shuffled `999` times; Anderson 2001) that answers whether the conditions
+separate at all before any per-peptide claim is made. Note that the permutation
+p-value is bounded below by the number of distinct label assignments — a 3-vs-3
+comparison admits only 10 of them, so its smallest attainable p-value is about
+0.1 no matter how clean the separation; read the pseudo-F alongside it.
+
+*References.* Smyth GK (2004) *Stat Appl Genet Mol Biol* 3:1. Ritchie ME et al.
+(2015) *Nucleic Acids Res* 43:e47. Phipson B et al. (2016) *Ann Appl Stat*
+10:946. Kammers K et al. (2015) *EuPA Open Proteom* 7:11. Lazar C et al. (2016)
+*J Proteome Res* 15:1116. Anderson MJ (2001) *Austral Ecol* 26:32.
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+# Always-written exports: render parameters + the statistical results
+write_input_params(params, folder = FolderResults,
+                   prefix = paste(c(result_prefix, "06_quant_stats"), collapse = "_"))
+if (can_test) {
+  write.csv_rawr(quant_stats_results, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(quant_stats_summary, folder = FolderResults, prefix = result_prefix)
+}
+
+if (params$CsvSave) {
+  quant_matrix_raw <- data.frame(Feature = rownames(mat_raw), mat_raw,
+                                 check.names = FALSE)
+  quant_matrix_norm <- data.frame(Feature = rownames(mat_norm), mat_norm,
+                                  check.names = FALSE)
+  write.csv_rawr(quant_matrix_raw, folder = FolderResults, prefix = result_prefix)
+  write.csv_rawr(quant_matrix_norm, folder = FolderResults, prefix = result_prefix)
+}
+
+if (params$PlotsSave) {
+  static_plots <- list(p_completeness_unit = p_completeness_unit,
+                       p_completeness_feature = p_completeness_feature,
+                       p_missing_heatmap = p_missing_heatmap,
+                       p_intensity_before = p_intensity_before,
+                       p_intensity_after = p_intensity_after,
+                       p_intensity_density = p_intensity_density,
+                       p_dynamic_range = p_dynamic_range,
+                       p_imputation = p_imputation,
+                       p_pca_scores = p_pca_scores,
+                       p_pca_scree = p_pca_scree,
+                       p_pca_loadings = p_pca_loadings,
+                       p_heatmap_clustered = p_heatmap_clustered,
+                       p_heatmap_unclustered = p_heatmap_unclustered,
+                       p_sig_summary = p_sig_summary)
+  for (nm in names(static_plots)) {
+    if (!is.null(static_plots[[nm]]))
+      ggsave_rawr(static_plots[[nm]], file = nm, folder = FolderFigures,
+                  width = 20, height = 14)
+  }
+  for (ctr in names(volcano_plots)) {
+    ggsave_rawr(volcano_plots[[ctr]], file = paste0("p_volcano_", ctr),
+                folder = FolderFigures, width = 18, height = 14)
+    ggsave_rawr(ma_plots[[ctr]], file = paste0("p_ma_", ctr),
+                folder = FolderFigures, width = 18, height = 14)
+    ggsave_rawr(pval_plots[[ctr]], file = paste0("p_pvalues_", ctr),
+                folder = FolderFigures, width = 18, height = 14)
+  }
+}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>
