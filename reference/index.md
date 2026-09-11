@@ -415,6 +415,47 @@ Conditions.
 - [`plot_property_effectsize()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_effectsize.md)
   : Effect sizes of the between-condition comparison
 
+## Protein-level analysis
+
+Condenses the peptide table to source-protein level (the `prot_all`
+table behind the 08_prot_all report), including the protein-level values
+the search engine itself reported.
+
+- [`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md)
+  :
+
+  Condense `pep_all` to one row per protein and sample
+
+- [`summarise_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_prot_all.md)
+  : Condense the protein table across samples
+
+- [`top_source_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/top_source_proteins.md)
+  : Rank the most prolific source proteins
+
+- [`expand_mapped_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/expand_mapped_proteins.md)
+  : Expand peptides onto every protein they map to
+
+- [`prot_engine_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/prot_engine_columns.md)
+  : Protein-level columns the search engine reported
+
+- [`diann_protein_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/diann_protein_columns.md)
+  : Engine-reported protein-level column names
+
+- [`plot_proteins_per_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_proteins_per_sample.md)
+  : Source proteins identified per sample
+
+- [`plot_peptides_per_protein()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_peptides_per_protein.md)
+  : Distribution of ligands per source protein
+
+- [`plot_top_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_top_proteins.md)
+  : Ranked bar chart of the most prolific source proteins
+
+- [`plot_protein_detection()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_protein_detection.md)
+  : How widely each source protein is detected
+
+- [`plot_ligand_vs_protein_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ligand_vs_protein_quant.md)
+  : Summed ligand intensity against the search engine's protein quantity
+
 ## Export & I/O helpers
 
 Write report outputs (plots, csvs, render parameters) to disk

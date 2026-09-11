@@ -8,13 +8,48 @@ search-engine output (FragPipe, DIA-NN, PEAKS), normalizes it into one
 unified long-format table (`pep_all`), and renders self-contained
 interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.17.0** — Phases 1–6 of the package conversion are
-complete. v0.17.0 is a **distributability pass**: the report header
-attribution is no longer hardcoded. Every skeleton branded its output to
-one platform (“provided by the Immunopeptidomics Platform (IPP)”, plus a
-personal `@dkfz.de` address and a `**Code author:** DGZ` line in the two
-`00_*` reports); all nine templates now declare an optional
-**`Provider`** param and render the line through the new exported
+**Current version: 0.18.0** — Phases 1–6 of the package conversion are
+complete. v0.18.0 added the **protein-level table and report**
+(`R/prot-all.R` + `08_prot_all`):
+[`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md)
+condenses `pep_all` to one row per (protein, `Sample`) — ligands
+contributed, summed `Area` (linear-scale sum then log2, as
+[`build_quant_matrix()`](https://davidgz1.github.io/HowMaHiCo/reference/build_quant_matrix.md)
+does, **not** the `Log2Area` average that
+[`get_mat_log2area()`](https://davidgz1.github.io/HowMaHiCo/reference/get_mat_log2area.md)
+uses), unique-peptide counts from the previously unused
+`Is_Unique`/`Proteotypic` flags, and the protein annotation. The protein
+key is a param (`ProteinFeature`: `ProteinFirst` default \| `GeneFirst`
+\| `Accession`) because `Accession` is a protein *group* only for DIA-NN
+and PEAKS; and `MultiMapping` (`leading` default \| `all`) chooses how a
+ligand that maps to several proteins is counted, with
+[`expand_mapped_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/expand_mapped_proteins.md)
+resolving the engine-specific mapped-protein column via `Found_By`.
+**Engine-reported protein-level values are carried through**:
+[`prot_engine_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/prot_engine_columns.md)
+finds DIA-NN’s `PG.*`/`Genes.*` quantities and q-values (already in
+`pep_all`, previously unused) and
+[`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md)
+carries them by a unique-within-group rule that returns `NA` rather than
+averaging when a value genuinely varies;
+[`plot_ligand_vs_protein_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ligand_vs_protein_quant.md)
+compares them against the summed ligand intensity.
+[`parse_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_diann.md)’s
+protein-column selection moved to
+`dplyr::any_of(diann_protein_columns())` so a report using either DIA-NN
+naming generation (`PG.Quantity` vs `PG.Abundance`) keeps its quantities
+instead of having them silently dropped — or aborting the parse.
+Descriptive only: no differential testing (use `06_quant_stats` with
+`QuantFeature = "ProteinFirst"`) and no length normalisation, which
+needs the FASTA (see *Deferred designs*). **Note the protein count here
+need not match `01_id_counts`**, which counts `n_distinct(Accession)`;
+the report says so explicitly. v0.17.0 is a **distributability pass**:
+the report header attribution is no longer hardcoded. Every skeleton
+branded its output to one platform (“provided by the Immunopeptidomics
+Platform (IPP)”, plus a personal `@dkfz.de` address and a
+`**Code author:** DGZ` line in the two `00_*` reports); all nine
+templates now declare an optional **`Provider`** param and render the
+line through the new exported
 [`provider_line()`](https://davidgz1.github.io/HowMaHiCo/reference/provider_line.md)
 (`R/report-helpers.R`), which falls back to a generic sentence naming no
 organisation when `Provider` is empty. Called namespaced
@@ -402,7 +437,7 @@ anywhere: CI/Docker/installs).
 | Folder | Contents |
 |----|----|
 | `R/` | Package source: all exported functions (100+) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/`, `08_prot_all/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
 | `inst/scripts/` | `howmahico_pipeline.R` — the guided, runnable walkthrough handed out by [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md) |
 | `vignettes/` | `howmahico.Rmd` — the narrated walkthrough ([`vignette("howmahico")`](https://davidgz1.github.io/HowMaHiCo/articles/howmahico.md)) |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
@@ -552,6 +587,26 @@ first); see the v0.6.0 framework note above.
   [`plot_property_distribution()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_distribution.md),
   [`plot_property_sample_summary()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_sample_summary.md),
   [`plot_property_effectsize()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_effectsize.md))
+  live in `R/plots.R`
+- **`R/prot-all.R`** — the protein-level engine behind `08_prot_all`:
+  [`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md)
+  (one row per protein x Sample),
+  [`summarise_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_prot_all.md),
+  [`top_source_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/top_source_proteins.md),
+  [`expand_mapped_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/expand_mapped_proteins.md)
+  (engine-specific mapped-protein column, dispatched on `Found_By`),
+  [`prot_engine_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/prot_engine_columns.md)
+  and
+  [`diann_protein_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/diann_protein_columns.md)
+  (the shared registry
+  [`parse_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_diann.md)’s
+  `any_of()` also uses), plus internals `.mapped_protein_column()`,
+  `.unique_peptide_flag()` and `.unique_or_na()`. Its plots
+  ([`plot_proteins_per_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_proteins_per_sample.md),
+  [`plot_peptides_per_protein()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_peptides_per_protein.md),
+  [`plot_top_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_top_proteins.md),
+  [`plot_protein_detection()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_protein_detection.md),
+  [`plot_ligand_vs_protein_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ligand_vs_protein_quant.md))
   live in `R/plots.R`
 - **`R/report-helpers.R`** — the settings the templates derive from
   their params:
@@ -717,6 +772,7 @@ hardcoded `1_documentation/`):
 | `PeptideSet` / `QuantFeature` / `QuantUnit` / `MinReplicates` / `NormMethod` / `ImputeMethod` / `StatMethod` / `BlockVar` / `FdrCutoff` / `Log2FcCutoff` / `MinDetectExclusive` / `TopNHeatmap` / `PermutationTest` | **`06_quant_stats` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the matrix rows (`Peptide` default \| `Sequence` \| `PeptideID` \| `ProteinFirst`) and columns (`BioReplicate` default \| `Sample` \| `Condition`), the filtering cut-off (default 2 units in ≥1 Condition), normalization (`median` default \| `quantile` \| `cyclicloess` \| `scale` \| `none`), imputation (`none` default \| `minprob` \| `mindet`), test (`limma` default \| `ttest`), an optional [`limma::duplicateCorrelation`](https://rdrr.io/pkg/limma/man/dupcor.html) blocking column, the significance cut-offs, the detection-count rule for condition-exclusive features, the heatmap feature count, and whether to run the PERMANOVA permutation test. |
 | `PeptideSet` / `PropertySet` / `MotifLength` / `TerminalPositions` / `ChargePh` / `MinPeptidesSample` / `FdrCutoff` | **`07_pepchem` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the descriptor set (`core` = Length/GRAVY/pI/Charge \| `extended` adds MW, Boman, hydrophobic moment, instability + aliphatic index and the `frac_*` class fractions — see [`pepchem_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_properties.md)), the peptide length used for the per-position frequency map (`"auto"` = modal length, or an integer), the comma-separated positions profiled across all lengths (negative counts from the C-terminus), the pH of the net-charge descriptor, the unique-sequence count below which a sample is flagged as noisy, and the BH significance cut-off. |
 | `Provider` | Organisation/person that produced the report, printed in the header via [`provider_line()`](https://davidgz1.github.io/HowMaHiCo/reference/provider_line.md). Default `""` prints a generic attribution naming no organisation. Declared by all nine templates. |
+| `PeptideSet` / `ProteinFeature` / `MultiMapping` / `TopNProteins` / `MinPeptidesProtein` | **`08_prot_all` only**: which peptides to condense, the protein grouping column (`ProteinFirst` default \| `GeneFirst` \| `Accession`), how a multi-mapping ligand is counted (`leading` default \| `all`), and the size/threshold of the source-protein ranking. |
 | `QCColumn` / `ThresholdMode` | **`05_quality_score` only**: `QCColumn` is the annotation column flagging QC controls (default `"QC"`; empty disables QC tagging); `ThresholdMode` is `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples). |
 | `PepAllFile` | Explicit `.rda` path, used only when `PepAllSource = "rda"` |
 | `Instrument` | `tims_tof` \| `faims_orbi` \| `orbi` — controls ion-mobility (1/k0) handling |

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,43 @@
       <small>Source: <a href="https://github.com/DavidGZ1/HowMaHiCo/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.18.0" id="howmahico-0180">HowMaHiCo 0.18.0<a class="anchor" aria-label="anchor" href="#howmahico-0180"></a></h2>
+<div class="section level3">
+<h3 id="protein-level-table-and-report-0-18-0">Protein-level table and report<a class="anchor" aria-label="anchor" href="#protein-level-table-and-report-0-18-0"></a></h3>
+<ul><li>
+<strong>New <code>08_prot_all</code> report and <code>R/prot-all.R</code> engine.</strong> Every other report is peptide-centric; protein information existed only as <code>n_Proteins</code> columns inside the ID-count tables and two protein x sample log2 matrices written under <code>CsvSave</code>. <code><a href="../reference/build_prot_all.html">build_prot_all()</a></code> now condenses <code>pep_all</code> to <strong>one row per (protein, <code>Sample</code>)</strong>: ligands contributed, summed intensity, unique-peptide counts, and the protein annotation. It is written to <code>&lt;Subset&gt;_prot_all.csv</code> on every run.</li>
+<li>
+<code>Area</code> is summed on the <strong>linear</strong> scale within a sample and log2’d afterwards, as <code><a href="../reference/build_quant_matrix.html">build_quant_matrix()</a></code> does. Note the older protein matrices in <code>00_mhc_report</code>/<code>04_quant</code> take a different route — <code><a href="../reference/get_mat_log2area.html">get_mat_log2area()</a></code> <em>averages</em> <code>Log2Area</code> — so those numbers are not comparable with these.</li>
+<li>
+<strong>The protein key is a parameter</strong>, because <code>Accession</code> is a protein <em>group</em> only for DIA-NN (a <code>;</code>-list) and PEAKS (a <code>:</code>-list) — FragPipe puts a single <code>sp|ID|ENTRY</code> string there. <code>ProteinFeature</code> accepts <code>ProteinFirst</code> (default), <code>GeneFirst</code> or <code>Accession</code>.</li>
+<li>
+<strong><code>MultiMapping</code> chooses how a shared ligand is counted.</strong> A short non-tryptic HLA peptide often maps to several proteins and neither convention is right: <code>"leading"</code> (default) counts it once so per-protein counts still reconcile with the peptide count, <code>"all"</code> counts it for every candidate. <code><a href="../reference/expand_mapped_proteins.html">expand_mapped_proteins()</a></code> resolves the engine-specific mapped-protein column (FragPipe <code>Mapped_Proteins</code>, DIA-NN/PEAKS <code>Accession</code>, each with its own separator) by dispatching on <code>Found_By</code>, and warns and falls back to leading when the table carries no such list.</li>
+<li>
+<code>n_Peptides_unique</code> finally uses <code>Is_Unique</code> (FragPipe) and <code>Proteotypic</code> (DIA-NN) — both have been carried into <code>pep_all</code> since the loaders were written and were never read.</li>
+<li>New exports: <code><a href="../reference/build_prot_all.html">build_prot_all()</a></code>, <code><a href="../reference/summarise_prot_all.html">summarise_prot_all()</a></code>, <code><a href="../reference/top_source_proteins.html">top_source_proteins()</a></code>, <code><a href="../reference/expand_mapped_proteins.html">expand_mapped_proteins()</a></code>, <code><a href="../reference/prot_engine_columns.html">prot_engine_columns()</a></code>, <code><a href="../reference/diann_protein_columns.html">diann_protein_columns()</a></code>, plus <code><a href="../reference/plot_proteins_per_sample.html">plot_proteins_per_sample()</a></code>, <code><a href="../reference/plot_peptides_per_protein.html">plot_peptides_per_protein()</a></code>, <code><a href="../reference/plot_top_proteins.html">plot_top_proteins()</a></code>, <code><a href="../reference/plot_protein_detection.html">plot_protein_detection()</a></code> and <code><a href="../reference/plot_ligand_vs_protein_quant.html">plot_ligand_vs_protein_quant()</a></code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="protein-data-the-search-engine-already-reported-0-18-0">Protein data the search engine already reported<a class="anchor" aria-label="anchor" href="#protein-data-the-search-engine-already-reported-0-18-0"></a></h3>
+<ul><li>
+<strong>DIA-NN’s protein-group quantities and q-values are now carried through</strong> rather than only recomputed from peptides. <code>PG.MaxLFQ</code>, <code>PG.Quantity</code>, <code>Genes.MaxLFQ</code>, <code>PG.Q.Value</code> and relatives have been sitting in <code>pep_all</code> unused; <code><a href="../reference/prot_engine_columns.html">prot_engine_columns()</a></code> finds whichever are present and <code><a href="../reference/build_prot_all.html">build_prot_all()</a></code> carries them by a <strong>unique-within-group rule</strong> — a value that genuinely varies within a group (which happens legitimately when grouping by <code>GeneFirst</code>) becomes <code>NA</code> and is counted in an attribute, never averaged or silently first-picked.</li>
+<li>
+<code><a href="../reference/plot_ligand_vs_protein_quant.html">plot_ligand_vs_protein_quant()</a></code> plots summed ligand <code>Area</code> against the engine’s own protein quantity with a Spearman correlation. A weak correlation is the expected result: HLA presentation is shaped by processing and binding, so the plot <em>shows</em> the report’s central caveat instead of only asserting it.</li>
+<li>
+<strong>Fixed: <code><a href="../reference/parse_diann.html">parse_diann()</a></code> could drop protein quantities, or refuse to parse at all.</strong> Its <code>select()</code> was a bare-name whitelist of ~45 columns, so a report missing any one of them errored, and newer DIA-NN releases — which renamed these fields (<code>PG.Quantity</code> to <code>PG.Abundance</code>, <code>PG.Normalised</code> to <code>PG.NormalisedAbundance</code>) — had their protein quantities silently discarded before reaching <code>pep_all</code>. The protein/gene-level names now go through <code>dplyr::any_of(diann_protein_columns())</code>, so either naming generation survives.</li>
+<li>FragPipe’s <code>psm.tsv</code> reports no protein quantity (it lives in <code>protein.tsv</code>, which this package does not read) and PEAKS’ peptide export reports none, so the report’s search-engine section degrades to a note naming what does report it.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="scope-and-caveats-0-18-0">Scope and caveats<a class="anchor" aria-label="anchor" href="#scope-and-caveats-0-18-0"></a></h3>
+<p>The report is deliberately <strong>descriptive</strong> — no differential testing, since <code>06_quant_stats</code> already accepts <code>QuantFeature = "ProteinFirst"</code> — and carries a Methods section stating that summed ligand intensity is not protein abundance, that there is no length normalisation (which needs the search FASTA, still deferred), that protein inference is weak for short non-tryptic peptides, and that <strong>its protein count need not match <code>01_id_counts</code></strong>, which counts <code>n_distinct(Accession)</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="also-0-18-0">Also<a class="anchor" aria-label="anchor" href="#also-0-18-0"></a></h3>
+<ul><li>Fixed: <code>docs/</code> was missing from <code>.Rbuildignore</code>, so <code>R CMD check</code> raised a “non-standard file/directory found at top level” note for anyone who had built the pkgdown site locally.</li>
+<li>
+<code>tests/testthat/test-prot-all.R</code> covers the aggregation rules on hand-built fixtures — the shipped simulated dataset has a blank <code>Mapped Proteins</code> column in every row and the <code>make_diann_report_raw()</code> helper sets every <code>PG.*</code> column to <code>NA</code>, so neither multi-mapping nor the engine passthrough can be exercised against them. Two render tests cover <code>08_prot_all</code> end to end, including that <code>MultiMapping = "all"</code> degrades cleanly when nothing is mapped.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.17.0" id="howmahico-0170">HowMaHiCo 0.17.0<a class="anchor" aria-label="anchor" href="#howmahico-0170"></a></h2>
 <div class="section level3">

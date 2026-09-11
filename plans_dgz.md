@@ -459,3 +459,27 @@ create_dir = create_dir)
   missing everywhere, “mid-conversion on dev”, “~40 functions” vs 118
   exports, the numbered project folders shown as repo contents, RStudio
   listed as a requirement instead of pandoc) (v0.17.0)
+
+- export a prot_all report with information condensed at the protein
+  level: new `R/prot-all.R` engine (build_prot_all -\> one row per
+  protein x Sample with ligand counts, unique-peptide counts from the
+  previously unused Is_Unique/Proteotypic flags, and Area summed on the
+  LINEAR scale; summarise_prot_all, top_source_proteins,
+  expand_mapped_proteins, prot_engine_columns, diann_protein_columns) +
+  the `08_prot_all` report (source proteins per sample,
+  ligands-per-protein distribution, top source proteins, detection
+  breadth, protein-level intensity) with 5 new plots. Protein key is a
+  param (ProteinFeature: ProteinFirst default / GeneFirst / Accession)
+  and MultiMapping (leading default / all) chooses how a ligand mapping
+  to several proteins is counted. **Engine-reported protein data is
+  carried through when available** (DIA-NN PG.*/Genes.* quantities +
+  q-values, already in pep_all but unused), by a unique-within-group
+  rule that returns NA rather than averaging;
+  plot_ligand_vs_protein_quant compares it against summed ligand Area.
+  parse_diann’s protein-column select moved to
+  any_of(diann_protein_columns()) so either DIA-NN naming generation
+  (PG.Quantity vs PG.Abundance) survives instead of being dropped or
+  aborting the parse. Descriptive only; no length normalisation (needs
+  the FASTA, in standby). Also fixed: docs/ was missing from
+  .Rbuildignore (R CMD check note after building the pkgdown site
+  locally) (v0.18.0)

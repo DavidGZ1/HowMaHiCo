@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -932,6 +932,92 @@
 
         </dt>
         <dd>Effect sizes of the between-condition comparison</dd>
+      </dl></div><div class="section level2">
+      <h2 id="protein-level-analysis">Protein-level analysis<a class="anchor" aria-label="anchor" href="#protein-level-analysis"></a></h2>
+
+      <div class="section-desc"><p>Condenses the peptide table to source-protein level (the <code>prot_all</code> table behind the 08_prot_all report), including the protein-level values the search engine itself reported.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="build_prot_all.html">build_prot_all()</a></code>
+
+        </dt>
+        <dd>Condense <code>pep_all</code> to one row per protein and sample</dd>
+
+        <dt>
+
+          <code><a href="summarise_prot_all.html">summarise_prot_all()</a></code>
+
+        </dt>
+        <dd>Condense the protein table across samples</dd>
+
+        <dt>
+
+          <code><a href="top_source_proteins.html">top_source_proteins()</a></code>
+
+        </dt>
+        <dd>Rank the most prolific source proteins</dd>
+
+        <dt>
+
+          <code><a href="expand_mapped_proteins.html">expand_mapped_proteins()</a></code>
+
+        </dt>
+        <dd>Expand peptides onto every protein they map to</dd>
+
+        <dt>
+
+          <code><a href="prot_engine_columns.html">prot_engine_columns()</a></code>
+
+        </dt>
+        <dd>Protein-level columns the search engine reported</dd>
+
+        <dt>
+
+          <code><a href="diann_protein_columns.html">diann_protein_columns()</a></code>
+
+        </dt>
+        <dd>Engine-reported protein-level column names</dd>
+
+        <dt>
+
+          <code><a href="plot_proteins_per_sample.html">plot_proteins_per_sample()</a></code>
+
+        </dt>
+        <dd>Source proteins identified per sample</dd>
+
+        <dt>
+
+          <code><a href="plot_peptides_per_protein.html">plot_peptides_per_protein()</a></code>
+
+        </dt>
+        <dd>Distribution of ligands per source protein</dd>
+
+        <dt>
+
+          <code><a href="plot_top_proteins.html">plot_top_proteins()</a></code>
+
+        </dt>
+        <dd>Ranked bar chart of the most prolific source proteins</dd>
+
+        <dt>
+
+          <code><a href="plot_protein_detection.html">plot_protein_detection()</a></code>
+
+        </dt>
+        <dd>How widely each source protein is detected</dd>
+
+        <dt>
+
+          <code><a href="plot_ligand_vs_protein_quant.html">plot_ligand_vs_protein_quant()</a></code>
+
+        </dt>
+        <dd>Summed ligand intensity against the search engine's protein quantity</dd>
       </dl></div><div class="section level2">
       <h2 id="export-i-o-helpers">Export &amp; I/O helpers<a class="anchor" aria-label="anchor" href="#export-i-o-helpers"></a></h2>
 

@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.17.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,7 +103,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </tr>
 <tr>
 <td><code>inst/rmarkdown/templates/</code></td>
-<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the focused <code>01_id_counts</code>/<code>02_overlaps</code>/<code>03_lcms_qc</code>/<code>04_quant</code>/<code>05_quality_score</code>/<code>06_quant_stats</code>/<code>07_pepchem</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
+<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the focused <code>01_id_counts</code>/<code>02_overlaps</code>/<code>03_lcms_qc</code>/<code>04_quant</code>/<code>05_quality_score</code>/<code>06_quant_stats</code>/<code>07_pepchem</code>/<code>08_prot_all</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
 </td>
 </tr>
 <tr>
@@ -245,7 +245,8 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span>               <span class="st">"04_quant"</span>,         <span class="co"># log2(Area) correlation, Area %CV</span></span>
 <span>               <span class="st">"05_quality_score"</span>, <span class="co"># per-sample immunopeptidomics quality score</span></span>
 <span>               <span class="st">"06_quant_stats"</span>,   <span class="co"># differential abundance between Conditions</span></span>
-<span>               <span class="st">"07_pepchem"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>    <span class="co"># amino-acid composition, motifs, GRAVY &amp; co.</span></span>
+<span>               <span class="st">"07_pepchem"</span>,       <span class="co"># amino-acid composition, motifs, GRAVY &amp; co.</span></span>
+<span>               <span class="st">"08_prot_all"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>   <span class="co"># source proteins, ligands per protein</span></span>
 <span>  <span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="va">tmpl</span>,</span>
 <span>                       params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SampleSet <span class="op">=</span> <span class="st">"project_id"</span>, Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span>
 <span>                                     FolderData <span class="op">=</span> <span class="st">"2_data"</span>, FolderResults <span class="op">=</span> <span class="st">"3_results"</span>,</span>
@@ -317,6 +318,11 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <tr>
 <td><code>07_pepchem</code></td>
 <td>Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions</td>
+<td>cache</td>
+</tr>
+<tr>
+<td><code>08_prot_all</code></td>
+<td>Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported</td>
 <td>cache</td>
 </tr>
 </tbody>

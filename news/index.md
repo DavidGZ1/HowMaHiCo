@@ -1,5 +1,115 @@
 # Changelog
 
+## HowMaHiCo 0.18.0
+
+### Protein-level table and report
+
+- **New `08_prot_all` report and `R/prot-all.R` engine.** Every other
+  report is peptide-centric; protein information existed only as
+  `n_Proteins` columns inside the ID-count tables and two protein x
+  sample log2 matrices written under `CsvSave`.
+  [`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md)
+  now condenses `pep_all` to **one row per (protein, `Sample`)**:
+  ligands contributed, summed intensity, unique-peptide counts, and the
+  protein annotation. It is written to `<Subset>_prot_all.csv` on every
+  run.
+- `Area` is summed on the **linear** scale within a sample and log2’d
+  afterwards, as
+  [`build_quant_matrix()`](https://davidgz1.github.io/HowMaHiCo/reference/build_quant_matrix.md)
+  does. Note the older protein matrices in `00_mhc_report`/`04_quant`
+  take a different route —
+  [`get_mat_log2area()`](https://davidgz1.github.io/HowMaHiCo/reference/get_mat_log2area.md)
+  *averages* `Log2Area` — so those numbers are not comparable with
+  these.
+- **The protein key is a parameter**, because `Accession` is a protein
+  *group* only for DIA-NN (a `;`-list) and PEAKS (a `:`-list) — FragPipe
+  puts a single `sp|ID|ENTRY` string there. `ProteinFeature` accepts
+  `ProteinFirst` (default), `GeneFirst` or `Accession`.
+- **`MultiMapping` chooses how a shared ligand is counted.** A short
+  non-tryptic HLA peptide often maps to several proteins and neither
+  convention is right: `"leading"` (default) counts it once so
+  per-protein counts still reconcile with the peptide count, `"all"`
+  counts it for every candidate.
+  [`expand_mapped_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/expand_mapped_proteins.md)
+  resolves the engine-specific mapped-protein column (FragPipe
+  `Mapped_Proteins`, DIA-NN/PEAKS `Accession`, each with its own
+  separator) by dispatching on `Found_By`, and warns and falls back to
+  leading when the table carries no such list.
+- `n_Peptides_unique` finally uses `Is_Unique` (FragPipe) and
+  `Proteotypic` (DIA-NN) — both have been carried into `pep_all` since
+  the loaders were written and were never read.
+- New exports:
+  [`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md),
+  [`summarise_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_prot_all.md),
+  [`top_source_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/top_source_proteins.md),
+  [`expand_mapped_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/expand_mapped_proteins.md),
+  [`prot_engine_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/prot_engine_columns.md),
+  [`diann_protein_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/diann_protein_columns.md),
+  plus
+  [`plot_proteins_per_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_proteins_per_sample.md),
+  [`plot_peptides_per_protein()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_peptides_per_protein.md),
+  [`plot_top_proteins()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_top_proteins.md),
+  [`plot_protein_detection()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_protein_detection.md)
+  and
+  [`plot_ligand_vs_protein_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ligand_vs_protein_quant.md).
+
+### Protein data the search engine already reported
+
+- **DIA-NN’s protein-group quantities and q-values are now carried
+  through** rather than only recomputed from peptides. `PG.MaxLFQ`,
+  `PG.Quantity`, `Genes.MaxLFQ`, `PG.Q.Value` and relatives have been
+  sitting in `pep_all` unused;
+  [`prot_engine_columns()`](https://davidgz1.github.io/HowMaHiCo/reference/prot_engine_columns.md)
+  finds whichever are present and
+  [`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md)
+  carries them by a **unique-within-group rule** — a value that
+  genuinely varies within a group (which happens legitimately when
+  grouping by `GeneFirst`) becomes `NA` and is counted in an attribute,
+  never averaged or silently first-picked.
+- [`plot_ligand_vs_protein_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ligand_vs_protein_quant.md)
+  plots summed ligand `Area` against the engine’s own protein quantity
+  with a Spearman correlation. A weak correlation is the expected
+  result: HLA presentation is shaped by processing and binding, so the
+  plot *shows* the report’s central caveat instead of only asserting it.
+- **Fixed:
+  [`parse_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_diann.md)
+  could drop protein quantities, or refuse to parse at all.** Its
+  `select()` was a bare-name whitelist of ~45 columns, so a report
+  missing any one of them errored, and newer DIA-NN releases — which
+  renamed these fields (`PG.Quantity` to `PG.Abundance`, `PG.Normalised`
+  to `PG.NormalisedAbundance`) — had their protein quantities silently
+  discarded before reaching `pep_all`. The protein/gene-level names now
+  go through `dplyr::any_of(diann_protein_columns())`, so either naming
+  generation survives.
+- FragPipe’s `psm.tsv` reports no protein quantity (it lives in
+  `protein.tsv`, which this package does not read) and PEAKS’ peptide
+  export reports none, so the report’s search-engine section degrades to
+  a note naming what does report it.
+
+### Scope and caveats
+
+The report is deliberately **descriptive** — no differential testing,
+since `06_quant_stats` already accepts `QuantFeature = "ProteinFirst"` —
+and carries a Methods section stating that summed ligand intensity is
+not protein abundance, that there is no length normalisation (which
+needs the search FASTA, still deferred), that protein inference is weak
+for short non-tryptic peptides, and that **its protein count need not
+match `01_id_counts`**, which counts `n_distinct(Accession)`.
+
+### Also
+
+- Fixed: `docs/` was missing from `.Rbuildignore`, so `R CMD check`
+  raised a “non-standard file/directory found at top level” note for
+  anyone who had built the pkgdown site locally.
+- `tests/testthat/test-prot-all.R` covers the aggregation rules on
+  hand-built fixtures — the shipped simulated dataset has a blank
+  `Mapped Proteins` column in every row and the
+  `make_diann_report_raw()` helper sets every `PG.*` column to `NA`, so
+  neither multi-mapping nor the engine passthrough can be exercised
+  against them. Two render tests cover `08_prot_all` end to end,
+  including that `MultiMapping = "all"` degrades cleanly when nothing is
+  mapped.
+
 ## HowMaHiCo 0.17.0
 
 ### Reports are no longer branded to one platform
