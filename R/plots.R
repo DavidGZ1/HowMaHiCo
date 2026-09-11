@@ -2092,3 +2092,274 @@ plot_property_effectsize <- function(stats, fdr = NULL, title = NULL) {
     ggplot2::ggtitle(if (is.null(title))
       paste0("Effect size per contrast (outlined: BH p < ", fdr, ")") else title)
 }
+
+# ---- protein-level plots (08_prot_all) --------------------------------------
+
+#' Source proteins identified per sample
+#'
+#' How many distinct source proteins each sample contributes, grouped by
+#' Condition. The protein counterpart of the identification counts in
+#' `01_id_counts`, and the first thing to check before reading anything else at
+#' protein level: a sample with far fewer source proteins is usually a depth
+#' problem, not a biological one.
+#'
+#' @param prot_all Output of [build_prot_all()].
+#' @param title Plot title. `NULL` (default) uses a generic one.
+#'
+#' @return A ggplot object, or `NULL` when `prot_all` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_proteins_per_sample(build_prot_all(pep_short))
+#' }
+plot_proteins_per_sample <- function(prot_all, title = NULL) {
+  if (is.null(prot_all) || nrow(prot_all) == 0) return(NULL)
+
+  df <- prot_all |>
+    dplyr::group_by(dplyr::across(dplyr::any_of(c("Sample", "Condition")))) |>
+    dplyr::summarise(n_Proteins = dplyr::n_distinct(.data$Protein), .groups = "drop")
+  if (nrow(df) == 0) return(NULL)
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[["Sample"]],
+                                        y = .data[["n_Proteins"]]))
+  p <- if ("Condition" %in% names(df))
+    p + ggplot2::geom_bar(ggplot2::aes(fill = .data[["Condition"]]),
+                          stat = "identity", alpha = 0.85, color = "black",
+                          linewidth = 0.2) +
+      viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL)
+  else
+    p + ggplot2::geom_bar(stat = "identity", alpha = 0.85, color = "black",
+                          linewidth = 0.2, fill = "#440154")
+
+  p +
+    ggplot2::geom_text(ggplot2::aes(label = .data[["n_Proteins"]]),
+                       vjust = -0.4, size = 2.5) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab(NULL) + ggplot2::ylab("Source proteins") +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::ggtitle(if (is.null(title)) "Source proteins per sample" else title)
+}
+
+#' Distribution of ligands per source protein
+#'
+#' How many peptides each source protein contributes. In an immunopeptidome this
+#' distribution is strongly skewed — most proteins yield a single ligand and a
+#' small number yield many — so it is the shape, not the mean, that carries the
+#' information.
+#'
+#' @param prot_all Output of [build_prot_all()].
+#' @param type `"histogram"` (default) or `"violin"`.
+#' @param title Plot title. `NULL` (default) uses a generic one.
+#'
+#' @return A ggplot object, or `NULL` when `prot_all` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_peptides_per_protein(build_prot_all(pep_short))
+#' }
+plot_peptides_per_protein <- function(prot_all, type = c("histogram", "violin"),
+                                      title = NULL) {
+  type <- match.arg(type)
+  if (is.null(prot_all) || nrow(prot_all) == 0) return(NULL)
+
+  group_cols <- intersect(c("Protein", "Condition"), names(prot_all))
+  df <- prot_all |>
+    dplyr::group_by(dplyr::across(dplyr::all_of(group_cols))) |>
+    dplyr::summarise(n_Peptides = sum(.data$n_Peptides, na.rm = TRUE),
+                     .groups = "drop") |>
+    dplyr::filter(.data$n_Peptides > 0)
+  if (nrow(df) == 0) return(NULL)
+  if (is.null(title)) title <- "Ligands per source protein"
+
+  has_cond <- "Condition" %in% names(df)
+
+  if (type == "violin") {
+    if (!has_cond) return(NULL)
+    return(
+      ggplot2::ggplot(df, ggplot2::aes(x = .data[["Condition"]],
+                                       y = .data[["n_Peptides"]],
+                                       fill = .data[["Condition"]])) +
+        ggplot2::geom_violin(alpha = 0.8, color = "black", linewidth = 0.2,
+                             scale = "width") +
+        ggplot2::geom_boxplot(width = 0.12, outlier.shape = NA, alpha = 0.9,
+                              linewidth = 0.2) +
+        viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+        ggplot2::scale_y_continuous(n.breaks = 5) +
+        ggplot2::xlab(NULL) + ggplot2::ylab("Ligands per protein") +
+        theme_howmahico() + ggpubr::rotate_x_text(70) +
+        ggplot2::ggtitle(title))
+  }
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[["n_Peptides"]])) +
+    ggplot2::geom_histogram(binwidth = 1, alpha = 0.85, color = "black",
+                            linewidth = 0.2, fill = "#440154")
+  if (has_cond && dplyr::n_distinct(df$Condition) > 1)
+    p <- p + ggplot2::facet_wrap(~ Condition)
+
+  p +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab("Ligands per protein") + ggplot2::ylab("Source proteins") +
+    theme_howmahico() +
+    ggplot2::ggtitle(title)
+}
+
+#' Ranked bar chart of the most prolific source proteins
+#'
+#' Draws the [top_source_proteins()] table: which proteins contribute the most
+#' ligands (or the most intensity) across the dataset.
+#'
+#' @param top_tbl Output of [top_source_proteins()].
+#' @param by Column to plot: `"n_Peptides"` (default) or `"Area"`.
+#' @param title Plot title. `NULL` (default) uses a generic one.
+#'
+#' @return A ggplot object, or `NULL` when `top_tbl` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_top_proteins(top_source_proteins(prot_all, n = 25))
+#' }
+plot_top_proteins <- function(top_tbl, by = c("n_Peptides", "Area"),
+                              title = NULL) {
+  by <- match.arg(by)
+  if (is.null(top_tbl) || nrow(top_tbl) == 0 || !by %in% names(top_tbl))
+    return(NULL)
+  df <- top_tbl[!is.na(top_tbl[[by]]), , drop = FALSE]
+  if (nrow(df) == 0) return(NULL)
+
+  df$Protein <- factor(as.character(df$Protein),
+                       levels = as.character(df$Protein)[order(df[[by]])])
+  ylab <- if (by == "n_Peptides") "Ligands" else "Summed ligand Area"
+
+  ggplot2::ggplot(df, ggplot2::aes(x = .data[["Protein"]], y = .data[[by]])) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.85, color = "black",
+                      linewidth = 0.2, fill = "#21918c") +
+    ggplot2::coord_flip() +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab(NULL) + ggplot2::ylab(ylab) +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title))
+      paste0("Top source proteins by ", ylab) else title)
+}
+
+#' How widely each source protein is detected
+#'
+#' Counts source proteins by the number of samples — and, when available,
+#' Conditions — they were identified in. The left-hand end of this distribution
+#' is the one-sample-only tail, which at protein level is usually driven by
+#' single-ligand identifications rather than by biology.
+#'
+#' @param prot_all Output of [build_prot_all()].
+#' @param by `"Sample"` (default) or `"Condition"`.
+#' @param title Plot title. `NULL` (default) uses a generic one.
+#'
+#' @return A ggplot object, or `NULL` when `prot_all` has no rows.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_protein_detection(build_prot_all(pep_short))
+#' }
+plot_protein_detection <- function(prot_all, by = c("Sample", "Condition"),
+                                   title = NULL) {
+  by <- match.arg(by)
+  if (is.null(prot_all) || nrow(prot_all) == 0 || !by %in% names(prot_all))
+    return(NULL)
+
+  df <- prot_all |>
+    dplyr::group_by(.data$Protein) |>
+    dplyr::summarise(n_Detected = dplyr::n_distinct(.data[[by]]), .groups = "drop") |>
+    dplyr::count(.data$n_Detected, name = "n_Proteins")
+  if (nrow(df) == 0) return(NULL)
+
+  ggplot2::ggplot(df, ggplot2::aes(x = factor(.data[["n_Detected"]]),
+                                   y = .data[["n_Proteins"]])) +
+    ggplot2::geom_bar(stat = "identity", alpha = 0.85, color = "black",
+                      linewidth = 0.2, fill = "#fde725") +
+    ggplot2::geom_text(ggplot2::aes(label = .data[["n_Proteins"]]),
+                       vjust = -0.4, size = 2.5) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab(paste0(by, "s the protein was detected in")) +
+    ggplot2::ylab("Source proteins") +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title))
+      paste0("Source-protein detection across ", tolower(by), "s") else title)
+}
+
+#' Summed ligand intensity against the search engine's protein quantity
+#'
+#' Compares the ligand intensity HowMaHiCo sums per source protein with the
+#' protein quantity the search engine computed itself (DIA-NN's `PG.MaxLFQ` and
+#' relatives), on log2 axes, with a Spearman correlation.
+#'
+#' The point of the plot is the *disagreement*. Summed HLA-ligand intensity is
+#' not a measure of source-protein abundance — presentation depends on
+#' proteasomal processing, transport and binding affinity — so the two need not
+#' track each other, and seeing how far they diverge is more informative than
+#' being told they differ. Returns `NULL` when the search engine reported no
+#' protein quantity, which is the case for FragPipe's `psm.tsv`, PEAKS and the
+#' custom-dictionary path.
+#'
+#' @param prot_all Output of [build_prot_all()].
+#' @param quant_col Engine quantity column to plot. `NULL` (default) picks the
+#'   first one present, preferring MaxLFQ.
+#' @param title Plot title. `NULL` (default) names the column used.
+#'
+#' @return A ggplot object, or `NULL` when no engine quantity is available.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' plot_ligand_vs_protein_quant(build_prot_all(pep_all))
+#' }
+plot_ligand_vs_protein_quant <- function(prot_all, quant_col = NULL,
+                                         title = NULL) {
+  if (is.null(prot_all) || nrow(prot_all) == 0) return(NULL)
+
+  if (is.null(quant_col)) {
+    preferred <- c("PG.MaxLFQ", "PG.Abundance", "PG.NormalisedAbundance",
+                   "PG.NormalizedAbundance", "PG.Normalised", "PG.Quantity",
+                   "Genes.MaxLFQ", "Genes.Quantity")
+    available <- intersect(preferred, names(prot_all))
+    if (length(available) == 0) return(NULL)
+    quant_col <- available[1]
+  }
+  if (!quant_col %in% names(prot_all)) return(NULL)
+
+  df <- prot_all[!is.na(prot_all$Area) & prot_all$Area > 0 &
+                   !is.na(prot_all[[quant_col]]) & prot_all[[quant_col]] > 0,
+                 , drop = FALSE]
+  if (nrow(df) < 3) return(NULL)
+
+  df$Ligand_log2 <- log2(df$Area)
+  df$Engine_log2 <- log2(as.numeric(df[[quant_col]]))
+  rho <- suppressWarnings(stats::cor(df$Ligand_log2, df$Engine_log2,
+                                     method = "spearman", use = "complete.obs"))
+
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data[["Engine_log2"]],
+                                        y = .data[["Ligand_log2"]]))
+  p <- if ("Condition" %in% names(df))
+    p + ggplot2::geom_point(ggplot2::aes(color = .data[["Condition"]]),
+                            alpha = 0.6, size = 1.2) +
+      viridis::scale_color_viridis(discrete = TRUE, end = 0.9, name = NULL)
+  else
+    p + ggplot2::geom_point(alpha = 0.6, size = 1.2, color = "#440154")
+
+  p +
+    ggplot2::scale_x_continuous(n.breaks = 5) +
+    ggplot2::scale_y_continuous(n.breaks = 5) +
+    ggplot2::xlab(paste0("log2(", quant_col, ") - reported by the search engine")) +
+    ggplot2::ylab("log2(summed ligand Area)") +
+    ggplot2::labs(caption = paste0("Spearman rho = ", round(rho, 3),
+                                   "   n = ", nrow(df), " protein-sample pairs")) +
+    theme_howmahico() +
+    ggplot2::ggtitle(if (is.null(title))
+      paste0("Ligand intensity vs. ", quant_col) else title)
+}

@@ -50,7 +50,7 @@ conditions and replicates.
 | Folder | Contents |
 |---|---|
 | `R/` | Package source — 100+ exported functions (loaders, annotation, counting, statistics, plotting, export) plus the `run_howmahico_report()`/`derive_filtered_annotation()` entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats`/`07_pepchem` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats`/`07_pepchem`/`08_prot_all` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `inst/scripts/` | The guided pipeline script handed out by `get_pipeline_script()` |
 | `vignettes/` | `vignette("howmahico")` — the narrated walkthrough |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
@@ -214,7 +214,8 @@ for (tmpl in c("01_id_counts",     # ID counts, size distributions, motifs, PTM
                "04_quant",         # log2(Area) correlation, Area %CV
                "05_quality_score", # per-sample immunopeptidomics quality score
                "06_quant_stats",   # differential abundance between Conditions
-               "07_pepchem")) {    # amino-acid composition, motifs, GRAVY & co.
+               "07_pepchem",       # amino-acid composition, motifs, GRAVY & co.
+               "08_prot_all")) {   # source proteins, ligands per protein
   run_howmahico_report(tmpl,
                        params = list(SampleSet = "project_id", Subset = "dda_all",
                                      FolderData = "2_data", FolderResults = "3_results",
@@ -259,6 +260,7 @@ under `<FolderResults>/<subset>/` and `<FolderFigures>/<subset>/`.
 | `05_quality_score` | Per-sample immunopeptidomics quality score (0–100) with a traffic-light overview and per-metric breakdown | cache |
 | `06_quant_stats` | Differential abundance between Conditions: normalization, completeness, PCA, heatmaps, volcano/MA, plus a presence/absence track for condition-exclusive ligands | cache; limma optional |
 | `07_pepchem` | Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions | cache |
+| `08_prot_all` | Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported | cache |
 
 The seven focused reports each render one slice of the analysis and are
 independent — render only the ones you need. `00_mhc_report` covers most of

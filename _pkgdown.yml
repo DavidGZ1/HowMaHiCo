@@ -180,6 +180,24 @@ reference:
   - plot_property_sample_summary
   - plot_property_effectsize
 
+- title: Protein-level analysis
+  desc: >
+    Condenses the peptide table to source-protein level (the `prot_all` table
+    behind the 08_prot_all report), including the protein-level values the
+    search engine itself reported.
+  contents:
+  - build_prot_all
+  - summarise_prot_all
+  - top_source_proteins
+  - expand_mapped_proteins
+  - prot_engine_columns
+  - diann_protein_columns
+  - plot_proteins_per_sample
+  - plot_peptides_per_protein
+  - plot_top_proteins
+  - plot_protein_detection
+  - plot_ligand_vs_protein_quant
+
 - title: Export & I/O helpers
   desc: Write report outputs (plots, csvs, render parameters) to disk
   contents:

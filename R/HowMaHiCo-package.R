@@ -71,6 +71,9 @@ utils::globalVariables(c(
   # pepchem engine and its plots (R/pepchem.R, plot_* in R/plots.R)
   "AA", "CliffsDelta", "Flag", "Frequency", "Group", "Log2Enrichment",
   "Log2Ratio", "Property", "p_adj",
+  # prot-all engine and its plots (R/prot-all.R, plot_* in R/plots.R)
+  "Protein", "Protein_", "Protein_shared", "Peptide_unique_", "n_Detected",
+  "n_Peptides_total", "n_Proteins",
   # pre-existing NSE names that R CMD check still listed as undefined
   "invk0", "invk0_bin", "perc_num"
 ))
