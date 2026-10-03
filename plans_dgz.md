@@ -78,9 +78,10 @@ either by implementing or by re-wording the abstract.
   dropped from the score), so "identification QC such as score and mass error"
   is hollow for the DIA audience. Derivable from `Precursor.Mz` vs the
   theoretical m/z of sequence + PTM if it is worth making real.
-* PTM profiles are unreadable as shipped: UniMod codes for DIA-NN, bare delta
-  masses for FragPipe/PEAKS. The `translate_ptm()` design is already in standby —
-  promote it if the abstract keeps "PTM profiles".
+* **DONE (v0.19.0)** — PTM profiles are unreadable as shipped: UniMod codes for
+  DIA-NN, bare delta masses for FragPipe/PEAKS. `R/ptm.R` (`ptm_reference()` +
+  `translate_ptm()`) now translates both forms, wired into
+  `plot_ptm_heatmap(translate = TRUE)`.
 * verify PEAKS Xpro before it appears in print: "check/add functionality for
   peaks Xpro" is still open on the DGZ list, and PEAKS is the only engine with
   no shipped example dataset (fixtures only).
@@ -88,16 +89,16 @@ either by implementing or by re-wording the abstract.
   Background, but the workflow needs R, a hand-edited annotation CSV and a render
   call; `get_pipeline_script()` + demo mode soften it, and Docker/Shiny are
   correctly labelled "planned". Low risk — re-read it once the Shiny tier exists.
-* finish the glossaries, which the abstract's reproducibility framing leans on:
-  the in-report one (`00_mhc_report` L120 "Glosary", on the DGZ list as
-  incomplete) and the README glossary of the `pep_all` column headers (already a
-  standby item below).
+* **DONE (v0.19.0)** — finish the glossaries, which the abstract's
+  reproducibility framing leans on: `pep_all_glossary()` +
+  `inst/rmarkdown/shared/glossary.Rmd` now generate both the in-report glossary
+  (in all ten templates) and the README table from one function. Still open for
+  DGZ: read the 30 descriptions and correct anything that is wrong.
 
 
 ## In standby
 * peptide position within the parent protein (the third part of the physicochemical-properties item) — deferred; it is the only part that needs a user-supplied search FASTA, since no loader carries a position column (FragPipe psm.tsv, DIA-NN report.tsv and PEAKS peptide.csv all lack one). Full design recorded in CLAUDE.md under "Deferred designs".
 * implement safeguard when some conditions or replicates give 0 areas, currently throwing error — moved to standby (no repro available; e.g. CHEB\_001 all dda dataset not in repo). The all-NA Area/CV and all-NA correlation cases are already guarded in the report chunks; the partial (some groups 0/NA) failure needs a repro to target.
-* For PTM plots, translate unimod code into modification name — deferred (full implementation design saved in memory/project\_ptm\_translation\_plan.md). Scope chosen: translate BOTH UniMod accessions AND delta masses to names. Key gotcha: only DIA-NN stores UniMod codes (UniMod:NN); FragPipe (default/sim) and PEAKS store delta masses. Plan: new R/ptm.R with ptm\_reference() + translate\_ptm(), wired into plot\_ptm\_heatmap() as a display-time translate=TRUE arg; correct the wrong PTM note in 01\_id\_counts skeleton.
 * InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04\_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot\_heatmap.
 * Calculate an fdr for length distribution. What’s the probability of detecting the length distribution vs. the background proteome?
 * Total by Condition /BioReplicate / Sample in tabs
@@ -107,7 +108,6 @@ either by implementing or by re-wording the abstract.
 * maybe generate a report in long format
 * include whole folder with dia-quant-output when diann
 * check and deal with license discrepancies between howmahico, peptides, limma
-* readme: add a glossary of the column headers in pep_all
 
 
 
@@ -240,3 +240,5 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * runnable R code as a guide through: new inst/scripts/howmahico\_pipeline.R + exported get\_pipeline\_script() (sibling of get\_report\_template()/get\_dictionary\_template()), a commented walkthrough from raw search output to rendered reports that renders via run\_howmahico\_report() rather than opening a template; starts in demo mode (RUN\_DEMO = TRUE) running end-to-end against the shipped sim\_fragpipe\_dda dataset with no user data — verified: 7 focused reports in ~1 min. Plus the package's first vignette (vignettes/howmahico.Rmd, VignetteBuilder: knitr), which gives the pkgdown site an Articles tab (v0.17.0)
 * more detailed instructions in the readme: FIXED the headline run\_howmahico\_report() example, which passed a Title param no template declares — rmarkdown errors on undeclared params, so it failed on copy-paste; added a Quickstart, a table of what each of the 9 reports produces, a full parameter reference (common + focused-only + the 05/06/07 sets), an output section (always-written vs CsvSave/PlotsSave tiers) and a troubleshooting table; corrected stale claims (07\_pepchem missing everywhere, "mid-conversion on dev", "~40 functions" vs 118 exports, the numbered project folders shown as repo contents, RStudio listed as a requirement instead of pandoc) (v0.17.0)
 * export a prot_all report with information condensed at the protein level: new `R/prot-all.R` engine (build\_prot\_all -> one row per protein x Sample with ligand counts, unique-peptide counts from the previously unused Is\_Unique/Proteotypic flags, and Area summed on the LINEAR scale; summarise\_prot\_all, top\_source\_proteins, expand\_mapped\_proteins, prot\_engine\_columns, diann\_protein\_columns) + the `08_prot_all` report (source proteins per sample, ligands-per-protein distribution, top source proteins, detection breadth, protein-level intensity) with 5 new plots. Protein key is a param (ProteinFeature: ProteinFirst default / GeneFirst / Accession) and MultiMapping (leading default / all) chooses how a ligand mapping to several proteins is counted. **Engine-reported protein data is carried through when available** (DIA-NN PG.*/Genes.* quantities + q-values, already in pep\_all but unused), by a unique-within-group rule that returns NA rather than averaging; plot\_ligand\_vs\_protein\_quant compares it against summed ligand Area. parse\_diann's protein-column select moved to any\_of(diann\_protein\_columns()) so either DIA-NN naming generation (PG.Quantity vs PG.Abundance) survives instead of being dropped or aborting the parse. Descriptive only; no length normalisation (needs the FASTA, in standby). Also fixed: docs/ was missing from .Rbuildignore (R CMD check note after building the pkgdown site locally) (v0.18.0)
+* for PTM plots, translate unimod code into modification name: new R/ptm.R with ptm\_reference() (curated UniMod accession / name / monoisotopic delta-mass table, ordered by commonness so the first match within tolerance wins on mass-degenerate pairs like Glu->pyro-Glu / Dehydrated) + translate\_ptm() (vectorised over the unique tokens; payload read from inside ()/[], dispatched on UniMod-accession vs signed decimal, unmatched tokens returned UNCHANGED rather than NA), wired into plot\_ptm\_heatmap() as translate = TRUE (+ reference pass-through) applied where the tokens are already split so both the count and proportion branches inherit it. Both dialects are handled because a UniMod-only translation would be a silent no-op on the default FragPipe data. Display-time only — pep\_all$PTM stays raw. Also fixed the wrong note in 00\_mhc\_report/01\_id\_counts ("Fragpipe and DIA-NN ... UniMode PTM codes"; it is FragPipe and PEAKS that write delta masses). New test-ptm.R covers all three dialects, the Acetyl/Trimethyl tolerance boundary, PEAKS' 2-decimal rounding, pass-through of unknown/NA/"" and the reference-order rule (v0.19.0)
+* readme: add a glossary of the column headers in pep\_all + finish the in-report glossary: new pep\_all\_glossary() (R/report-helpers.R, 30 rows, including the misreadable parts — DIA-NN dummy ppm, computed-not-observed Mass, Accession-as-protein-group, engine-specific Score) feeding both the new shared child inst/rmarkdown/shared/glossary.Rmd (included by all ten templates before their Session & provenance footer; counting units explained with the length window interpolated from shortpep\_range) and the README's new Glossary section. Replaces 00\_mhc\_report's hardcoded prose, which claimed a 12-20 AA MHC-II window (the real one is 12-25) and named 3\_results/4\_figures regardless of the run's params. Guarded by two tests: every validate\_pep\_all() required column is documented, and so is every column the reports consume from a real build\_pep\_all() run on the sim data (v0.19.0)

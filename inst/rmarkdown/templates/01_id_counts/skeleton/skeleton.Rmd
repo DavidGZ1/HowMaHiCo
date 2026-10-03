@@ -506,9 +506,16 @@ for (i in 1:length(motifs_pepshort)) {
 
 # PTM profile {.tabset}
 
-Note that numbers mean different things in function of the software
-- in PEAKS the numbers between [] are the delta mass
-- in Fragpipe and DIA-NN the numbers between () corrrespond to UniMode PTM codes
+The modification tokens are translated to readable names (`translate_ptm()`),
+because each search engine writes them differently:
+
+- **FragPipe** and **PEAKS** report the monoisotopic **delta mass** --
+  `2M(15.9949)` and `[+15.99]` respectively
+- **DIA-NN** reports the **UniMod accession** -- `(UniMod:35)`
+
+All three of those are the same modification (Oxidation), and all three are
+shown as `Oxidation` below. A token that matches no known modification is left
+exactly as the search engine wrote it. `pep_all$PTM` itself keeps the raw token.
 
 ## All peptides {.tabset}
 
@@ -591,6 +598,11 @@ if (params$PlotsSave) {
            width = 14, height = 12, units = "cm", device = "png")
   }
 }
+```
+
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
 ```
 
 # Session & provenance

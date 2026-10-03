@@ -7,7 +7,29 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.18.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.19.0** — Phases 1–6 of the package conversion are complete.
+v0.19.0 is the first stage of the **Tier C** worklist in `plans_dgz.md` (the
+gap list between the code and `example/abstract_eupa2026_v3.md`): **readable PTM
+names + one generated glossary**, display/docs only. New `R/ptm.R` exports
+`ptm_reference()` and `translate_ptm()`, which map all three engine dialects of
+the `PTM` column onto one name — DIA-NN's UniMod accessions (`(UniMod:35)`),
+FragPipe's position-prefixed delta mass (`2M(15.9949)`) and PEAKS' 2-decimal
+bracketed delta mass (`[+15.99]`) all become `Oxidation`. **A UniMod-only
+translation would have been a silent no-op on the project's default FragPipe
+data**, which is why both forms are handled. `plot_ptm_heatmap()` gained
+`translate = TRUE` (+ a `reference` pass-through), applied after the existing
+token-splitting line so both the count and proportion branches inherit it;
+unmatched tokens pass through **unchanged** rather than becoming `NA`, and
+`ptm_reference()` is ordered by commonness because a few modifications are
+mass-degenerate (`Glu->pyro-Glu`/`Dehydrated`) and the first row within
+tolerance wins. The wrong note in `00_mhc_report`/`01_id_counts` ("Fragpipe and
+DIA-NN … UniMode PTM codes") is corrected. Also new: **`pep_all_glossary()`**
+(`R/report-helpers.R`), 30 rows documenting the core schema *with* its
+misreadable parts (DIA-NN dummy `ppm`, computed-not-observed `Mass`,
+`Accession`-as-group, engine-specific `Score`), rendered by the new shared child
+**`inst/rmarkdown/shared/glossary.Rmd`** in all ten templates and reproduced in
+the README — replacing `00_mhc_report`'s hardcoded prose, which had gone stale
+(it claimed a 12–20 AA MHC-II window; the real window is 12–25).
 v0.18.0 added the **protein-level table and report** (`R/prot-all.R` +
 `08_prot_all`): `build_prot_all()` condenses `pep_all` to one row per (protein,
 `Sample`) — ligands contributed, summed `Area` (linear-scale sum then log2, as
@@ -301,7 +323,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (100+) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/`, `08_prot_all/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/`, `08_prot_all/` skeleton Rmds (+ the shared children `inst/rmarkdown/shared/setup.Rmd` and `glossary.Rmd`) |
 | `inst/scripts/` | `howmahico_pipeline.R` — the guided, runnable walkthrough handed out by `get_pipeline_script()` |
 | `vignettes/` | `howmahico.Rmd` — the narrated walkthrough (`vignette("howmahico")`) |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
@@ -414,12 +436,20 @@ note above.
   (`plot_proteins_per_sample()`, `plot_peptides_per_protein()`,
   `plot_top_proteins()`, `plot_protein_detection()`,
   `plot_ligand_vs_protein_quant()`) live in `R/plots.R`
+- **`R/ptm.R`** — `ptm_reference()` (curated UniMod accession / name /
+  monoisotopic delta-mass table, ordered by commonness so the first match within
+  tolerance wins on mass-degenerate pairs) + `translate_ptm()` (vectorised over
+  the unique tokens; reads the payload inside `()`/`[]`, dispatches on
+  UniMod-accession vs signed-decimal, returns unmatched tokens unchanged).
+  Consumed by `plot_ptm_heatmap(translate = TRUE)`; `pep_all$PTM` stays raw
 - **`R/report-helpers.R`** — the settings the templates derive from their params:
   `mhc_length_window()` (MHC1 8–13 / MHC1_mouse 7–11 / MHC2 12–25, else the
   `ShortPeptideLength*` params), `mhc_class_palette()`, `mhc_classes()` and
   `condition_pairs()` (all pairwise Condition comparisons; empty list for a single
   Condition, `self = TRUE` adds the diagonal). Single source of truth — the
-  skeletons and `R/quality-score.R`/`R/quant-stats.R` all call these
+  skeletons and `R/quality-score.R`/`R/quant-stats.R` all call these. Also
+  `pep_all_glossary()`, the single source of the schema documentation rendered by
+  `inst/rmarkdown/shared/glossary.Rmd` and copied into the README
 - **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
   export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
   `deltaProtR`, now native)

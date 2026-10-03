@@ -390,6 +390,11 @@ for(j in 1:length(conditions)){
 }
 ```
 
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
+```
+
 # Session & provenance
 
 The parameters used for this run (also written to `input_params.csv` in the

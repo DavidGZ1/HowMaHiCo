@@ -91,3 +91,39 @@ test_that("provider_line always returns a single string", {
     expect_length(out, 1L)
   }
 })
+
+# pep_all_glossary() is the single source of truth for the schema documentation
+# rendered by inst/rmarkdown/shared/glossary.Rmd and reproduced in the README,
+# so a loader gaining or renaming a core column must show up here too.
+
+test_that("pep_all_glossary documents every column validate_pep_all requires", {
+  g <- pep_all_glossary()
+  expect_named(g, c("Column", "Meaning", "Notes"))
+  expect_false(any(duplicated(g$Column)))
+  expect_true(all(nzchar(g$Column)))
+  expect_true(all(nzchar(g$Meaning)))
+
+  required <- c("Peptide", "Sequence", "Length", "Area", "Log2Area",
+                "Length_range", "Found_By", "PeptideID")
+  expect_equal(setdiff(required, g$Column), character(0))
+})
+
+test_that("pep_all_glossary covers the columns the shipped sim data really has", {
+  sim_dir   <- system.file("extdata", "sim_fragpipe_dda", package = "HowMaHiCo")
+  sim_annot <- system.file("extdata", "sim_fragpipe_dda_annotation.csv",
+                           package = "HowMaHiCo")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+
+  pep_all <- suppressWarnings(suppressMessages(
+    build_pep_all("fragpipe_dda_individual", folder_data = sim_dir,
+                  annotation = read_annot(sim_annot), shortpep_range = c(8, 13))))
+
+  # the engine-specific extra columns are deliberately not all documented, but
+  # every column the reports actually consume must be
+  core <- c("Condition", "BioReplicate", "TechReplicate", "Sample", "Accession",
+            "ProteinFirst", "Peptide", "Sequence", "Length", "Length_range",
+            "Score", "Area", "Log2Area", "PTM", "Charge", "Nter", "Cter",
+            "Found_By", "PeptideID")
+  expect_equal(setdiff(intersect(core, names(pep_all)), pep_all_glossary()$Column),
+               character(0))
+})

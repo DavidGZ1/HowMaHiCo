@@ -1,3 +1,58 @@
+# HowMaHiCo 0.19.0
+
+## Readable PTM names
+
+* **New `R/ptm.R`: `ptm_reference()` + `translate_ptm()`.** The `PTM` column is
+  written differently by every search engine -- DIA-NN stores UniMod accessions
+  (`(UniMod:35)`), FragPipe a delta mass behind a position+residue prefix
+  (`2M(15.9949)`), PEAKS a signed delta mass rounded to two decimals
+  (`[+15.99]`) -- so the PTM heatmaps showed three unrelated-looking labels for
+  what is one modification, and a UniMod-only translation would have been a
+  silent no-op on the project's default FragPipe data. `translate_ptm()` handles
+  all three dialects in one pass and returns `Oxidation` for each.
+* `plot_ptm_heatmap()` gained `translate = TRUE` (and a `reference` pass-through),
+  applied where the multi-PTM strings are already split into one token per row so
+  both the count and the proportion branch inherit it. `translate = FALSE`
+  restores the raw engine tokens. Display-time only: `pep_all$PTM` keeps the raw
+  value, as with the v0.12.0 "data keys unchanged" renames.
+* Unmatched tokens are returned **unchanged** rather than becoming `NA`, so an
+  unknown modification stays visible on the heatmap. `ptm_reference()` is ordered
+  by how commonly each modification occurs, because a few are mass-degenerate
+  (`Glu->pyro-Glu`/`Dehydrated`, `Gln->pyro-Glu`/`Ammonia-loss`) and the first
+  row within tolerance wins; pass a reordered copy to change that preference.
+* **Fixed a factually wrong note** in `00_mhc_report` and `01_id_counts`, which
+  told the reader that "Fragpipe and DIA-NN" numbers are UniMod codes. FragPipe
+  and PEAKS report delta masses; only DIA-NN reports UniMod.
+
+## One glossary, generated from one function
+
+* **New `pep_all_glossary()`** (`R/report-helpers.R`) documents all 30 core
+  `pep_all` columns, including the caveats that are easy to misread: DIA-NN's
+  `ppm` is a hardcoded dummy, its `Mass` is computed rather than observed,
+  `Accession` is a protein *group* only for DIA-NN and PEAKS, and `Score` is not
+  comparable across engines.
+* **New shared child `inst/rmarkdown/shared/glossary.Rmd`**, included by all ten
+  templates ahead of their "Session & provenance" footer. It explains the
+  counting units (peptides vs sequences vs parent proteins vs selected) with the
+  length window interpolated from `shortpep_range`, then renders
+  `pep_all_glossary()` as a table.
+* This replaces the hardcoded glossary prose in `00_mhc_report`, which had gone
+  stale -- it stated a 12-20 AA MHC-II window (the actual window is 12-25) and
+  named `3_results`/`4_figures` regardless of the run's actual path params. The
+  README gained the same table under a new "Glossary" heading, closing the
+  standby item for it.
+
+## Tests
+
+* New `tests/testthat/test-ptm.R`: all three token dialects, the tolerance that
+  still separates Acetyl (42.010565) from Trimethyl (42.046950), PEAKS'
+  2-decimal rounding, pass-through of unknown tokens/`NA`/`""`, the
+  reference-order rule for mass-degenerate modifications, and a
+  `plot_ptm_heatmap(translate = TRUE/FALSE)` assertion on the plot data.
+* `test-report-helpers.R` gained two glossary guards: every column
+  `validate_pep_all()` requires must be documented, and so must every column the
+  reports consume from a real `build_pep_all()` run on the shipped sim data.
+
 # HowMaHiCo 0.18.0
 
 ## Protein-level table and report

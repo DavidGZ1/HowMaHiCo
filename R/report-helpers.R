@@ -148,3 +148,76 @@ condition_pairs <- function(conditions, self = FALSE) {
   names(pairs) <- vapply(pairs, function(x) paste0(x, collapse = "_vs_"), character(1))
   pairs
 }
+
+#' Glossary of the `pep_all` columns
+#'
+#' Reference table describing every core column of the unified `pep_all` schema,
+#' plus the engine-specific caveats that are easy to misread (DIA-NN's dummy
+#' `ppm`, its computed rather than observed `Mass`, `Accession` being a protein
+#' *group* for some engines only). Rendered by the reports' Glossary section and
+#' reproduced in the README, so the three places that document the schema cannot
+#' drift apart.
+#'
+#' @return A data frame with columns `Column`, `Meaning` and `Notes`, in schema
+#'   order (sample identity, protein, peptide, scores/quantities, modifications,
+#'   physicochemical, provenance).
+#'
+#' @export
+#'
+#' @examples
+#' pep_all_glossary()
+#' subset(pep_all_glossary(), Column %in% c("Peptide", "Sequence"))
+pep_all_glossary <- function() {
+  g <- function(column, meaning, notes = "") c(column, meaning, notes)
+  rows <- list(
+    g("Condition", "Experimental group the sample belongs to",
+      "From the annotation table; factor order = annotation row order"),
+    g("BioReplicate", "Biological replicate within a Condition",
+      "From the annotation table"),
+    g("TechReplicate", "Technical/injection replicate within a BioReplicate",
+      "From the annotation table"),
+    g("Sample", "The analysed sample - the unit most plots are drawn per",
+      "From the annotation table"),
+    g("Sample_ID", "Free-text human-readable sample identifier",
+      "Optional; get_annot_sampleid() can fill it from a HyStar sample list"),
+    g("Accession", "Protein accession(s) the peptide was assigned to",
+      "A protein GROUP for DIA-NN (';'-list) and PEAKS (':'-list); a single sp|ID|ENTRY string for FragPipe"),
+    g("ProteinFirst", "Leading protein of the group", "Default protein key of build_prot_all()"),
+    g("GeneFirst", "Leading gene name of the group", "Empty when the engine reports no gene"),
+    g("OrganismFirst", "Organism suffix parsed from the leading accession", ""),
+    g("Peptide", "Peptide as reported, modifications included",
+      "Two peptidoforms of one sequence are two different peptides"),
+    g("Sequence", "Stripped amino-acid sequence, no modifications",
+      "The 'sequences' counted in Venn/UpSet plots"),
+    g("Length", "Number of amino acids in Sequence", ""),
+    g("Length_range", "Whether Length falls in the expected ligand window",
+      "Window from MHCclass (or ShortPeptideLengthMin/Max); defines pep_short"),
+    g("Score", "Search-engine confidence score",
+      "Engine-specific and NOT comparable across engines: FragPipe hyperscore, DIA-NN Q.Value (lower is better), PEAKS -10lgP"),
+    g("Area", "Precursor peak area (linear scale)",
+      "NA when the engine reported zero - see compute_log2area()"),
+    g("Log2Area", "log2 of Area", "NA for zero/absent Area in every loader"),
+    g("PTM", "Modification token(s) as the engine wrote them",
+      "UniMod accessions for DIA-NN, delta masses for FragPipe/PEAKS; translate_ptm() maps both to names at plot time"),
+    g("Charge", "Precursor charge state, formatted '+ n'", ""),
+    g("Nter", "First residue of Sequence", ""),
+    g("Cter", "Last residue of Sequence",
+      "C-terminal K/R fraction is a tryptic-background diagnostic in the quality score"),
+    g("RT", "Retention time", "Minutes, as reported by the engine"),
+    g("invk0", "Ion mobility, 1/k0", "timsTOF only; FAIMS compensation voltage is substituted for faims_orbi"),
+    g("Mass", "Precursor mass",
+      "Observed/calibrated for FragPipe and PEAKS; COMPUTED from Precursor.Mz and charge for DIA-NN"),
+    g("ppm", "Mass error in parts per million",
+      "A hardcoded dummy 0 for DIA-NN, which reports no observed precursor m/z; dropped from the quality score there"),
+    g("m_z", "Precursor mass-to-charge ratio", "The library value for DIA-NN"),
+    g("Source_file", "Raw file / run the observation came from", "Extracted by extract_run_name()"),
+    g("Source_File_ID", "Engine's own run identifier", ""),
+    g("Precursor_Id", "Engine's precursor identifier", "DIA-NN"),
+    g("Found_By", "Search engine that produced the row",
+      "'FragPipe', 'DIA-NN', 'PEAKS', or the dictionary's value for custom input"),
+    g("PeptideID", "Composite peptide identifier used for joins and counting", "")
+  )
+  out <- as.data.frame(do.call(rbind, rows), stringsAsFactors = FALSE)
+  names(out) <- c("Column", "Meaning", "Notes")
+  out
+}
