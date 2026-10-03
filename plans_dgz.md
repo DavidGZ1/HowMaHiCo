@@ -117,8 +117,50 @@ either by implementing or by re-wording the abstract.
 
 ### to be done by DGZ
 
-* Check and complete glosary
-* check/add functionality for peaks Xpro
+* Check and complete glosary - NOW GENERATED: the 30 column descriptions live in
+  pep\_all\_glossary() (R/report-helpers.R) and feed both the in-report glossary
+  (inst/rmarkdown/shared/glossary.Rmd, in all ten templates) and the README
+  table. They were written by Claude from the loaders + CLAUDE.md, so read them
+  once and correct anything wrong; the tests only check that every required
+  column IS documented, never that the text is right (v0.19.0)
+* check/add functionality for peaks Xpro - the two blocking bugs are fixed and
+  covered by a simulated export (v0.22.0), but **run it on a real PEAKS 11/Xpro
+  export**: a simulated peptide.csv cannot prove column-name parity (-10lgP,
+  "1/k0 Range", Area#<sample>, PTM spelling) with what PEAKS actually writes,
+  and nothing has ever been read from a genuine Xpro export. Check in particular
+  whether one export folder really holds all samples (the layout the fix now
+  assumes) or whether your exports are one folder per sample
+* **review the provisional class-2 quality-score thresholds** (v0.20.0):
+  frac\_nested\_core is scored green >= 0.50 / amber >= 0.30 at weight 3 for
+  MHCclass = "MHC2" (quality\_thresholds\_default() in R/quality-score.R). Those
+  numbers are a judgement call, not literature values - no published nested-core
+  fraction was used. Either calibrate them on a real HLA-II dataset (the JY hla2
+  data in advanced plans) or tell users to run ThresholdMode = "qc\_relative",
+  which the report already recommends. Also sanity-check the biology: is "shares
+  a 9-mer with another ligand of the same sample" the nesting signal you would
+  use, or would a longer/shorter k, or a per-family size, be better?
+* **review the DIA calibration thresholds** (v0.20.0): median\_abs\_rt\_error
+  green 0.5 / amber 1.5 min and median\_abs\_im\_error green 0.010 / amber 0.030
+  1/k0, both weight 0.5. These are instrument- and gradient-dependent, so the
+  defaults are only placeholders - set them from your own timsTOF runs, or leave
+  them to qc\_relative mode. Also confirm Predicted.RT is in minutes on the same
+  scale as RT in your DIA-NN version (the metric is a plain absolute difference)
+* **read the in-report Methods/Glossary prose added in v0.19.0-v0.22.0**: the
+  new nested-core and RT/IM paragraphs in 05\_quality\_score, the corrected PTM
+  note in 00\_mhc\_report/01\_id\_counts, and the counting-units section of
+  glossary.Rmd. All written by Claude; they state biology and should be read by
+  you before the abstract is submitted
+* **check the v0.22.0 abstract edits** in example/abstract\_eupa2026\_v3.md: the
+  motif-clarity sentence now reads "anchor-position information content for
+  class 1, nested binding cores for class 2" and the identification-QC sentence
+  now distinguishes DDA mass error from DIA RT/ion-mobility calibration error.
+  Both are accurate as to what the code does, but they are longer - trim to the
+  word limit as you see fit
+* **decide on the InteractivePlots default** (v0.21.0): it is FALSE, so reports
+  look exactly as before unless asked. If interactivity is the selling point of
+  the abstract, consider flipping the default to TRUE - but check the file sizes
+  first (each plotly widget embeds its own JSON; the existing all-in-one reports
+  are already 8-10 MB)
 * 2do by me, check Overlap intra-Condition seems to be showing peptides in sequences, and sequences+proteins in proteins - corrected in the individual reports, but not in the legacy main report
 * reorder plots in a way that makes more sense
 * manual checking and re-writing text by me
