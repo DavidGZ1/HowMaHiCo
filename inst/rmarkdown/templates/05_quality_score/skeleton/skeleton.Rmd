@@ -104,8 +104,10 @@ thresholds_used <- if (threshold_mode == "qc_relative")
 
 Composite quality score (0-100) and traffic-light category per sample. The
 composite is a weighted mean of the available sub-scores; dimensions that are
-undefined for this dataset (e.g. anchor motifs for MHC-II, mass error for DIA-NN)
-drop out instead of penalising the sample.
+undefined for this dataset drop out instead of penalising the sample, and the
+dimensions that replace them take over: nested-core families stand in for anchor
+motifs under `MHCclass = "MHC2"`, and RT/ion-mobility calibration error stands in
+for mass error with DIA-NN.
 
 ```{r overview-table, echo=FALSE}
 overview <- scores |>
@@ -184,7 +186,19 @@ thresholds_used |>
   green/amber thresholds are raised accordingly.
 - **Anchor motif clarity** — Shannon information (bits) at the P2 and PΩ anchor
   positions of 9-mers; sharp anchors indicate genuine allele-restricted ligands.
-  Computed from the data only (no binding predictor or HLA typing).
+  Computed from the data only (no binding predictor or HLA typing). Defined for
+  MHC-I only: class-II ligands have no fixed-length anchor register, so this is
+  `NA` for `MHCclass = "MHC2"`.
+- **Nested-core families** — the class-II motif dimension, and the substitute for
+  anchor clarity there. Fraction of in-window ligands sharing a 9-mer (the length
+  of the MHC-II binding core) with another ligand of the same sample. Class-II
+  peptides are trimmed into ragged, length-variable families around one core, so a
+  genuine HLA-II immunopeptidome is dominated by nested sets while a background or
+  contaminant set is not. No alignment, register guess or binding predictor is
+  involved. It carries the anchor metric's weight for `MHCclass = "MHC2"` and is a
+  weight-0 diagnostic for MHC-I, where some nesting is normal but not the primary
+  signal. Its class-II thresholds are **provisional** — prefer
+  `ThresholdMode = "qc_relative"` when the experiment carries QC controls.
 - **Tryptic background (long peptides)** — fraction of peptides *outside* the
   length window ending in K/R. Because some HLA-I alleles legitimately use K/R as a
   C-terminal anchor, the overall C-terminal K/R fraction is reported only as a
@@ -199,7 +213,16 @@ thresholds_used |>
   in `qc_relative` mode (absolute yield is not comparable without per-input
   normalisation).
 - **Median |ppm|** — mass accuracy; `NA` (dropped) for DIA-NN, which reports a
-  dummy `ppm = 0`.
+  dummy `ppm = 0`. Mass error is an MS2-level DDA metric: DIA-NN's `Precursor.Mz`
+  is the *library* value and the report carries no observed precursor m/z, so a
+  real ppm cannot be recovered from it.
+- **Median |RT − predicted RT| and |1/k0 − predicted 1/k0|** — the DIA analogue of
+  mass accuracy. DIA-NN reports a predicted retention time and ion mobility per
+  precursor, and the deviation from them measures how well the run matches the
+  library/model. Both are `NA` (dropped) for FragPipe and PEAKS, which carry no
+  prediction — the mirror image of `ppm` being dropped for DIA-NN. The cut-offs
+  are **instrument- and gradient-dependent**, so `qc_relative` mode is the
+  meaningful way to use them.
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written export: render parameters + the per-sample score table

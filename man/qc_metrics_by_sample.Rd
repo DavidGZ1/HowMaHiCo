@@ -18,7 +18,9 @@ HLA-II).}
 
 \item{mhcclass}{\code{"MHC1"}, \code{"MHC1_mouse"} or \code{"MHC2"}. For \code{"MHC2"} the
 canonical-length and anchor-motif metrics are returned as \code{NA} (no
-fixed-length anchor model), so they drop out of the composite downstream.
+fixed-length anchor model), so they drop out of the composite downstream —
+\code{frac_nested_core} is the class-II motif dimension instead, and
+\code{\link[=quality_thresholds_default]{quality_thresholds_default()}} gives it the anchor metric's weight there.
 For \code{"MHC1_mouse"}, \code{frac_9mer} counts 8- \strong{and} 9-mers (both canonical for
 murine H-2) and the anchor motif is scored on whichever of the two the
 sample has more of.}
@@ -26,6 +28,7 @@ sample has more of.}
 \value{
 A data frame with one row per \code{Sample} and columns: \code{frac_in_window},
 \code{frac_9mer}, \code{frac_cterm_KR}, \code{frac_cterm_KR_longonly}, \code{anchor_information},
+\code{frac_nested_core}, \code{median_abs_rt_error}, \code{median_abs_im_error},
 \code{frac_cross_class}, \code{frac_charge_1_2}, \code{n_unique_pep},
 \code{n_unique_pep_in_window}, \code{n_source_proteins}, \code{median_abs_ppm}.
 }

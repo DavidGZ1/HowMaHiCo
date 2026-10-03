@@ -1,3 +1,52 @@
+# HowMaHiCo 0.20.0
+
+## A motif dimension for MHC class II
+
+* **New metric `frac_nested_core`** in `qc_metrics_by_sample()`, with the
+  internal `.nested_core_fraction()`. For `MHCclass = "MHC2"` both `frac_9mer`
+  and `anchor_information` are `NA` -- class-II ligands have no fixed-length
+  anchor register -- so the quality score had no motif dimension at all for the
+  class the package's title claims to support. Class-II peptides are trimmed into
+  ragged, length-variable families around one ~9-residue binding core, so this
+  measures the fraction of in-window ligands sharing a 9-mer with another ligand
+  of the same sample. No alignment, register guess, binding predictor or external
+  data is involved.
+* `quality_thresholds_default("MHC2")` promotes it to the anchor metric's weight
+  (3) and relabels it "Nested-core families"; for `MHC1`/`MHC1_mouse` it stays a
+  **weight-0 diagnostic**, since some nesting is normal there but is not the
+  primary signal. Metric *keys* are identical across classes, as with the mouse
+  `frac_9mer` rewrite. The class-II cut-offs are provisional -- prefer
+  `ThresholdMode = "qc_relative"`.
+* It is computed on the **in-window** ligands only, so a long tryptic tail cannot
+  manufacture nesting, and a sequence can never count as nested with itself (one
+  (k-mer, sequence) pair at most, so internal repeats do not register).
+
+## Identification QC that works for DIA
+
+* **New metrics `median_abs_rt_error` and `median_abs_im_error`.** Mass error is
+  an MS2-level DDA metric: DIA-NN's `Precursor.Mz` is the *library* value and
+  `report.tsv` carries no observed precursor m/z, so no real ppm can be recovered
+  from it (`ppm` is a hardcoded dummy, dropped from the score). DIA-NN does report
+  a predicted RT and ion mobility per precursor, and the deviation from them is
+  the DIA analogue -- both columns were already carried into `pep_all` by
+  `parse_diann()` and unused until now.
+* Both are `NA` for FragPipe and PEAKS, which carry no prediction, so they drop
+  out of the composite exactly as `ppm` drops out for DIA-NN. The internal
+  `.median_abs_delta()` also returns `NA` when every difference is 0, so a
+  placeholder column cannot score as perfect accuracy. Their cut-offs are
+  instrument- and gradient-dependent, which the report states.
+* `05_quality_score`'s **Methods** section documents both substitutions, and its
+  overview text now names them instead of only listing what drops out.
+
+## Tests
+
+* `test-quality-score.R` gained the nested-core maths (shared cores, the
+  internal-repeat trap, the `NA` cases), the per-class threshold promotion, the
+  `.median_abs_delta()` guards, calibration metrics with and without predictions,
+  and a guard that **every scored threshold row exists in the metrics table** for
+  every MHC class -- a mismatch there would abort the whole report inside
+  `score_sample_quality()`'s composite step.
+
 # HowMaHiCo 0.19.0
 
 ## Readable PTM names

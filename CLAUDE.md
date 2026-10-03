@@ -7,7 +7,28 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.19.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.20.0** — Phases 1–6 of the package conversion are complete.
+v0.20.0 is **Tier C stage 2**: the two holes the quality score had in the
+abstract's headline claims. (a) **MHC class II had no motif dimension at all** —
+`frac_9mer` and `anchor_information` are both `NA` there (no fixed-length anchor
+register) — so the new metric **`frac_nested_core`** (internal
+`.nested_core_fraction()`) measures the fraction of in-window ligands sharing a
+**9-mer** (the MHC-II binding-core length) with another ligand of the same
+sample: class-II peptides come as ragged, length-variable families around one
+core, which no alignment, register guess or predictor is needed to see.
+`quality_thresholds_default("MHC2")` gives it the anchor metric's weight (3) and
+the label "Nested-core families"; for MHC-I it is a **weight-0 diagnostic**.
+Metric keys stay identical across classes. (b) **Mass error cannot exist for
+DIA-NN** — `Precursor.Mz` is the *library* value and `report.tsv` carries no
+observed precursor m/z, so the dummy `ppm` cannot be repaired; instead
+**`median_abs_rt_error`** and **`median_abs_im_error`** (|`RT` −
+`Predicted.RT`|, |`invk0` − `Predicted.IM`|, via the internal
+`.median_abs_delta()`) score DIA calibration accuracy from columns
+`parse_diann()` already carried into `pep_all` and nothing used. They are `NA`
+for FragPipe/PEAKS, dropping out of the composite exactly as `ppm` does for
+DIA-NN, and an all-zero difference returns `NA` so a placeholder column cannot
+score as perfect. Both substitutions are documented in `05_quality_score`'s
+Methods section.
 v0.19.0 is the first stage of the **Tier C** worklist in `plans_dgz.md` (the
 gap list between the code and `example/abstract_eupa2026_v3.md`): **readable PTM
 names + one generated glossary**, display/docs only. New `R/ptm.R` exports
@@ -397,8 +418,11 @@ note above.
 - **`R/quality-score.R`** — the immunopeptidomics quality-score engine:
   `qc_metrics_by_sample()`, `anchor_information_content()`, `score_curve()`,
   `quality_thresholds_default()`, `calibrate_thresholds_from_qc()`,
-  `score_sample_quality()` plus the internal `.cross_class_range()`
-  (MHC1↔MHC2 cross-class window) feeding the `frac_cross_class` metric
+  `score_sample_quality()` plus the internals `.cross_class_range()`
+  (MHC1↔MHC2 cross-class window) feeding the `frac_cross_class` metric,
+  `.nested_core_fraction()` (the class-II motif dimension behind
+  `frac_nested_core`) and `.median_abs_delta()` (the DIA RT/IM calibration
+  metrics)
   (consumed by the `05_quality_score` report;
   `plot_quality_heatmap()`/`plot_quality_composite()`/`plot_cross_class_length()`
   live in `R/plots.R`)
