@@ -44,8 +44,9 @@ A data frame with one row per \code{Sample}: the raw metrics, a
 \description{
 Computes a per-sample composite quality score (and a traffic-light category)
 from \code{pep_all}, combining several interpretable dimensions: length-window
-fidelity, 9-mer dominance, anchor-motif clarity, non-tryptic specificity,
-charge plausibility, depth, and mass accuracy. Each raw metric
+fidelity, 9-mer dominance, anchor-motif clarity (nested-core families for
+class II), non-tryptic specificity, charge plausibility, depth, and
+mass/RT/ion-mobility accuracy. Each raw metric
 (\code{\link[=qc_metrics_by_sample]{qc_metrics_by_sample()}}) is mapped to a 0-100 sub-score (\code{\link[=score_curve]{score_curve()}})
 against either built-in defaults (\code{\link[=quality_thresholds_default]{quality_thresholds_default()}}) or
 thresholds calibrated from tagged QC samples (\code{\link[=calibrate_thresholds_from_qc]{calibrate_thresholds_from_qc()}}).

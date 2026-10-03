@@ -7,7 +7,94 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.18.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.22.0** — Phases 1–6 of the package conversion are complete.
+v0.22.0 closes **Tier C stage 4** and, in doing so, found that **the documented
+PEAKS entry point could not work at all**. `read_peaks_batch()` filtered the
+export *folders* by `annotation$Sample_peaks`, which is the **per-sample** key:
+a PEAKS export folder normally holds several samples as `Area#<sample>` columns,
+and `read_peaks()` turns those suffixes into `Sample_peaks`, which is what
+`annotate_peaks()` joins on. So an annotation that could be joined matched no
+folder (empty read → `object 'Accession' not found` from `parse_peaks()`), and one
+naming the folder gave a silent 0-row join. Folder selection now uses
+**`Sample_folder`** (falling back to `Sample_peaks` for one-folder-per-sample
+layouts) and both halves of the trap error out naming the two keys. Second bug:
+`read_peaks_batch()` called `read_peaks(filedir = getwd(), ...)` on an already
+indexed path, so an **absolute `FolderData`** — what the reports document, and
+what `system.file()` returns — was pasted behind the working directory and could
+not be opened; it now splits the path with `dirname()`/`basename()`. Both were
+invisible because PEAKS was the only engine without an end-to-end fixture, so
+v0.22.0 also ships **`inst/extdata/sim_peaks_xpro/`** (+ its annotation): the 462
+simulated peptides over 6 samples in real PEAKS shape (one export folder,
+`-10lgP`, a `1/k0 Range` string, `Area#<sample>` columns, PEAKS-style oxidation).
+Also corrected: v0.19.0's claim that PEAKS writes a bracketed delta mass in
+`PTM` — it writes the modification **name** (`Oxidation (M)`) and keeps the delta
+mass in the peptide string; `translate_ptm()` always passed such tokens through
+unchanged, and a test now pins that. And `example/abstract_eupa2026_v3.md` was
+updated to name anchor information content (class 1) vs nested binding cores
+(class 2) for motif clarity, and DDA mass error vs DIA RT/IM calibration error.
+v0.21.0 is **Tier C stage 3**: the **`InteractivePlots`** param, declared by all
+ten templates. `ggprint_rawr()` gained an `interactive` argument that returns
+`plotly::ggplotly(input)` — keeping its caller-frame name resolution and its
+not-generated guard — and the shared setup (plus the two `00_*` templates, which
+have their own) derives `interactive_plots <- isTRUE(params$InteractivePlots)`,
+passed at the **34 call sites that print from ordinary chunks**. Plots inside
+`results='asis'` tabset loops are deliberately untouched: an htmlwidget printed
+from such a loop needs an explicit `tagList`/`knit_print` dance and otherwise
+renders **empty with no error** (the same reason those loops use `kable` instead
+of `DT`), and a test now guards that boundary. Unconvertible classes
+(`.ggplotly_incompatible`: ggpubr composites, seqlogos, objects already widgets)
+are returned unchanged rather than erroring, so asking for interactivity can
+never break a report. The three bare plot prints in `05_quality_score` and the
+four `ggplotly()` calls on the correlation matrices now route through the same
+helper — the latter with `interactive = TRUE` hardcoded, preserving their
+always-interactive behaviour. Verified by rendering: a new test in
+`test-sim-fragpipe.R` renders `05_quality_score` with the toggle on and off and
+asserts the widget containers *and* the embedded plotly library are present in
+one and absent in the other — the only way to catch the silent-empty-widget
+failure.
+v0.20.0 is **Tier C stage 2**: the two holes the quality score had in the
+abstract's headline claims. (a) **MHC class II had no motif dimension at all** —
+`frac_9mer` and `anchor_information` are both `NA` there (no fixed-length anchor
+register) — so the new metric **`frac_nested_core`** (internal
+`.nested_core_fraction()`) measures the fraction of in-window ligands sharing a
+**9-mer** (the MHC-II binding-core length) with another ligand of the same
+sample: class-II peptides come as ragged, length-variable families around one
+core, which no alignment, register guess or predictor is needed to see.
+`quality_thresholds_default("MHC2")` gives it the anchor metric's weight (3) and
+the label "Nested-core families"; for MHC-I it is a **weight-0 diagnostic**.
+Metric keys stay identical across classes. (b) **Mass error cannot exist for
+DIA-NN** — `Precursor.Mz` is the *library* value and `report.tsv` carries no
+observed precursor m/z, so the dummy `ppm` cannot be repaired; instead
+**`median_abs_rt_error`** and **`median_abs_im_error`** (|`RT` −
+`Predicted.RT`|, |`invk0` − `Predicted.IM`|, via the internal
+`.median_abs_delta()`) score DIA calibration accuracy from columns
+`parse_diann()` already carried into `pep_all` and nothing used. They are `NA`
+for FragPipe/PEAKS, dropping out of the composite exactly as `ppm` does for
+DIA-NN, and an all-zero difference returns `NA` so a placeholder column cannot
+score as perfect. Both substitutions are documented in `05_quality_score`'s
+Methods section.
+v0.19.0 is the first stage of the **Tier C** worklist in `plans_dgz.md` (the
+gap list between the code and `example/abstract_eupa2026_v3.md`): **readable PTM
+names + one generated glossary**, display/docs only. New `R/ptm.R` exports
+`ptm_reference()` and `translate_ptm()`, which map all three engine dialects of
+the `PTM` column onto one name — DIA-NN's UniMod accessions (`(UniMod:35)`),
+FragPipe's position-prefixed delta mass (`2M(15.9949)`) and PEAKS' 2-decimal
+bracketed delta mass (`[+15.99]`) all become `Oxidation`. **A UniMod-only
+translation would have been a silent no-op on the project's default FragPipe
+data**, which is why both forms are handled. `plot_ptm_heatmap()` gained
+`translate = TRUE` (+ a `reference` pass-through), applied after the existing
+token-splitting line so both the count and proportion branches inherit it;
+unmatched tokens pass through **unchanged** rather than becoming `NA`, and
+`ptm_reference()` is ordered by commonness because a few modifications are
+mass-degenerate (`Glu->pyro-Glu`/`Dehydrated`) and the first row within
+tolerance wins. The wrong note in `00_mhc_report`/`01_id_counts` ("Fragpipe and
+DIA-NN … UniMode PTM codes") is corrected. Also new: **`pep_all_glossary()`**
+(`R/report-helpers.R`), 30 rows documenting the core schema *with* its
+misreadable parts (DIA-NN dummy `ppm`, computed-not-observed `Mass`,
+`Accession`-as-group, engine-specific `Score`), rendered by the new shared child
+**`inst/rmarkdown/shared/glossary.Rmd`** in all ten templates and reproduced in
+the README — replacing `00_mhc_report`'s hardcoded prose, which had gone stale
+(it claimed a 12–20 AA MHC-II window; the real window is 12–25).
 v0.18.0 added the **protein-level table and report** (`R/prot-all.R` +
 `08_prot_all`): `build_prot_all()` condenses `pep_all` to one row per (protein,
 `Sample`) — ligands contributed, summed `Area` (linear-scale sum then log2, as
@@ -301,9 +388,10 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (100+) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/`, `08_prot_all/` skeleton Rmds (+ shared `inst/rmarkdown/shared/setup.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/`, `08_prot_all/` skeleton Rmds (+ the shared children `inst/rmarkdown/shared/setup.Rmd` and `glossary.Rmd`) |
 | `inst/scripts/` | `howmahico_pipeline.R` — the guided, runnable walkthrough handed out by `get_pipeline_script()` |
 | `vignettes/` | `howmahico.Rmd` — the narrated walkthrough (`vignette("howmahico")`) |
+| `inst/extdata/sim_fragpipe_dda/`, `inst/extdata/sim_peaks_xpro/` | Simulated search output (+ their annotation CSVs) used by the end-to-end tests and by `get_pipeline_script()`'s demo mode |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
@@ -343,7 +431,11 @@ note above.
   software-specific loader families converging on the `pep_all` schema:
   - `read_fragpipe_batch` / `parse_fragpipe` / `annotate_fragpipe` — FragPipe `psm.tsv`
   - `read_diann_batch` / `parse_diann` / `annotate_diann` — DIA-NN `report.tsv`
-  - `read_peaks_batch` / `read_peaks` — PEAKS `peptide.csv`
+  - `read_peaks_batch` / `read_peaks` / `parse_peaks` / `annotate_peaks` — PEAKS
+    `peptide.csv`. **Two keys, do not confuse them**: `Sample_folder` picks the
+    export folder (`read_peaks_batch`), `Sample_peaks` must match the
+    `Area#<sample>` column names inside its `peptide.csv` and is what
+    `annotate_peaks()` joins on. One export folder normally holds several samples
   - Batch readers accept `annotation = annot` to read only files listed in the
     annotation table (3-way dispatch: explicit files > annotation table > scan folder)
 - **`R/annotation.R`** — `read_annot`, `print_annot`, `get_annot_fragpipe`,
@@ -375,8 +467,11 @@ note above.
 - **`R/quality-score.R`** — the immunopeptidomics quality-score engine:
   `qc_metrics_by_sample()`, `anchor_information_content()`, `score_curve()`,
   `quality_thresholds_default()`, `calibrate_thresholds_from_qc()`,
-  `score_sample_quality()` plus the internal `.cross_class_range()`
-  (MHC1↔MHC2 cross-class window) feeding the `frac_cross_class` metric
+  `score_sample_quality()` plus the internals `.cross_class_range()`
+  (MHC1↔MHC2 cross-class window) feeding the `frac_cross_class` metric,
+  `.nested_core_fraction()` (the class-II motif dimension behind
+  `frac_nested_core`) and `.median_abs_delta()` (the DIA RT/IM calibration
+  metrics)
   (consumed by the `05_quality_score` report;
   `plot_quality_heatmap()`/`plot_quality_composite()`/`plot_cross_class_length()`
   live in `R/plots.R`)
@@ -414,12 +509,20 @@ note above.
   (`plot_proteins_per_sample()`, `plot_peptides_per_protein()`,
   `plot_top_proteins()`, `plot_protein_detection()`,
   `plot_ligand_vs_protein_quant()`) live in `R/plots.R`
+- **`R/ptm.R`** — `ptm_reference()` (curated UniMod accession / name /
+  monoisotopic delta-mass table, ordered by commonness so the first match within
+  tolerance wins on mass-degenerate pairs) + `translate_ptm()` (vectorised over
+  the unique tokens; reads the payload inside `()`/`[]`, dispatches on
+  UniMod-accession vs signed-decimal, returns unmatched tokens unchanged).
+  Consumed by `plot_ptm_heatmap(translate = TRUE)`; `pep_all$PTM` stays raw
 - **`R/report-helpers.R`** — the settings the templates derive from their params:
   `mhc_length_window()` (MHC1 8–13 / MHC1_mouse 7–11 / MHC2 12–25, else the
   `ShortPeptideLength*` params), `mhc_class_palette()`, `mhc_classes()` and
   `condition_pairs()` (all pairwise Condition comparisons; empty list for a single
   Condition, `self = TRUE` adds the diagonal). Single source of truth — the
-  skeletons and `R/quality-score.R`/`R/quant-stats.R` all call these
+  skeletons and `R/quality-score.R`/`R/quant-stats.R` all call these. Also
+  `pep_all_glossary()`, the single source of the schema documentation rendered by
+  `inst/rmarkdown/shared/glossary.Rmd` and copied into the README
 - **`R/loaders-peaks-dirs.R`** — `get_dirs_index_peaks()`, the internal PEAKS
   export-subfolder indexer used by `read_peaks_batch()` (originally adapted from
   `deltaProtR`, now native)
@@ -551,6 +654,7 @@ didn't need (they hardcoded `1_documentation/`):
 | `ResultsOverwrite` | FALSE makes `check_output_exists`/`check_file_exists` abort if outputs already exist |
 | `TestMode` | TRUE = keep only the first ~100 rows **per run** (fast iteration on a representative subset — every run/Condition/replicate survives, unlike a head-of-file truncation of a combined export; can still break correlation plots) |
 | `CsvSave` / `PlotsSave` | TRUE = also export intermediary csvs / png plots |
+| `InteractivePlots` | TRUE = the plots printed from **ordinary chunks** become plotly widgets via `ggprint_rawr(interactive = ...)`; plots inside `results='asis'` tabset loops stay static (a widget printed from such a loop silently renders empty), as do the unconvertible classes in `.ggplotly_incompatible` (ggpubr composites, seqlogos, `plot_heatmap()`'s base graphics). The two log2(Area) correlation matrices pass `interactive = TRUE` unconditionally - they have been widgets since v0.1 |
 
 `run_howmahico_report()` always writes `input_params.csv` (package version + render
 timestamp + every param, long-format, via `write_input_params()`/`write.csv_rawr()`)

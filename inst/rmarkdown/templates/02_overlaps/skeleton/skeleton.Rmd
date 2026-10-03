@@ -30,6 +30,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('02_overlaps | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -339,6 +340,11 @@ if (params$PlotsSave) {
   ggsave_rawr(hm_overlap_matrix_count, file = "hm_overlap_matrix_count", folder = FolderFigures, width = n_conditions + 5, height = 12)
   ggsave_rawr(hm_overlap_matrix_prop, file = "hm_overlap_matrix_prop", folder = FolderFigures, width = n_conditions + 5, height = 12)
 }
+```
+
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
 ```
 
 # Session & provenance

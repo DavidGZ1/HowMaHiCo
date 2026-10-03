@@ -54,7 +54,8 @@ common_params <- c("SampleSet", "Provider", "DataAnalysisNames",
                    "FolderData", "FolderResults", "FolderFigures", "ProjectDir",
                    "Instrument", "Software", "MHCclass",
                    "ShortPeptideLengthMin", "ShortPeptideLengthMax",
-                   "TestMode", "ResultsOverwrite", "PlotsSave", "CsvSave")
+                   "TestMode", "ResultsOverwrite", "PlotsSave", "CsvSave",
+                   "InteractivePlots")
 
 template_params <- function(dir_templates, tpl) {
   rmd <- file.path(dir_templates, tpl, "skeleton", "skeleton.Rmd")
@@ -98,5 +99,65 @@ test_that("no shipped template hardcodes a provider or author into its header", 
     # ... and every template renders the attribution from the param instead
     expect_true(any(grepl("provider_line(params$Provider)", lines, fixed = TRUE)),
                 info = paste0("Template '", tpl, "' never calls provider_line()."))
+  }
+})
+
+# Interactivity boundary (v0.21.0): ggprint_rawr(interactive = TRUE) returns a
+# plotly htmlwidget, and a widget printed from inside a results='asis' loop needs
+# an explicit tagList/knit_print dance to get its dependencies attached -- without
+# it the tab renders EMPTY, with no error. So the toggle is wired only into
+# ordinary chunks, and this guards that boundary.
+
+test_that("no results='asis' chunk prints an interactive plot", {
+  dir_templates <- system.file("rmarkdown", "templates", package = "HowMaHiCo")
+  skip_if(dir_templates == "", "report templates not installed")
+
+  shipped <- list.dirs(dir_templates, full.names = FALSE, recursive = FALSE)
+  shipped <- shipped[nzchar(shipped)]
+
+  chunk_begin <- "^[\t >]*```+\\s*\\{[rR][ ,}]"
+  chunk_end   <- "^[\t >]*```+\\s*$"
+
+  for (tpl in shipped) {
+    lines <- readLines(file.path(dir_templates, tpl, "skeleton", "skeleton.Rmd"),
+                       warn = FALSE)
+    in_chunk <- FALSE; asis <- FALSE; offenders <- character(0)
+    for (ln in lines) {
+      if (!in_chunk && grepl(chunk_begin, ln)) {
+        in_chunk <- TRUE; asis <- grepl("asis", ln, fixed = TRUE); next
+      }
+      if (in_chunk && grepl(chunk_end, ln)) { in_chunk <- FALSE; next }
+      if (in_chunk && asis && grepl("interactive = ", ln, fixed = TRUE))
+        offenders <- c(offenders, trimws(ln))
+    }
+    expect_equal(offenders, character(0),
+                 info = paste0("Template '", tpl, "' asks for an interactive plot ",
+                               "inside a results='asis' chunk: ",
+                               paste(offenders, collapse = " | ")))
+  }
+})
+
+test_that("every template that prints plots derives interactive_plots from the param", {
+  dir_templates <- system.file("rmarkdown", "templates", package = "HowMaHiCo")
+  skip_if(dir_templates == "", "report templates not installed")
+  shared_setup <- readLines(system.file("rmarkdown", "shared", "setup.Rmd",
+                                        package = "HowMaHiCo"), warn = FALSE)
+
+  shipped <- list.dirs(dir_templates, full.names = FALSE, recursive = FALSE)
+  shipped <- shipped[nzchar(shipped)]
+
+  for (tpl in shipped) {
+    lines <- readLines(file.path(dir_templates, tpl, "skeleton", "skeleton.Rmd"),
+                       warn = FALSE)
+    uses <- any(grepl("interactive = interactive_plots", lines, fixed = TRUE))
+    if (!uses) next
+    # either the template derives it itself (the two 00_* reports) or it pulls in
+    # the shared setup child, which does
+    derives <- any(grepl("interactive_plots <- isTRUE(params$InteractivePlots)",
+                         c(lines, if (any(grepl("shared", lines, fixed = TRUE))) shared_setup),
+                         fixed = TRUE))
+    expect_true(derives,
+                info = paste0("Template '", tpl, "' uses interactive_plots but ",
+                              "never derives it."))
   }
 })

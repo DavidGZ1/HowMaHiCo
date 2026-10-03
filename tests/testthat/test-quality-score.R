@@ -132,3 +132,91 @@ test_that("score_sample_quality picks up the class-appropriate thresholds", {
   expect_true(is.finite(scores$composite_score))
   expect_true(scores$composite_score >= 0 && scores$composite_score <= 100)
 })
+
+# frac_nested_core (v0.20.0) is the class-II substitute for anchor-motif clarity:
+# MHC-II ligands are trimmed into ragged families around one ~9-mer core, so the
+# share of ligands sharing a 9-mer with another ligand separates a real HLA-II
+# immunopeptidome from a background set -- with no alignment or register guess.
+
+test_that(".nested_core_fraction finds shared cores and ignores internal repeats", {
+  nested <- c("AAKFVGITKLVTRPL", "KFVGITKLVTRPLSE", "GITKLVTRPLSEDPP")
+  expect_equal(HowMaHiCo:::.nested_core_fraction(nested), 1)
+
+  # same residue repeated: plenty of identical k-mers WITHIN each sequence, none
+  # shared BETWEEN them, so a sequence must not count as nested with itself
+  disjoint <- c("AAAAAAAAAAAA", "CCCCCCCCCCCC", "DDDDDDDDDDDD")
+  expect_equal(HowMaHiCo:::.nested_core_fraction(disjoint), 0)
+
+  expect_equal(HowMaHiCo:::.nested_core_fraction(c(nested, disjoint)), 0.5)
+})
+
+test_that(".nested_core_fraction is NA when there is nothing to compare", {
+  expect_true(is.na(HowMaHiCo:::.nested_core_fraction(character(0))))
+  expect_true(is.na(HowMaHiCo:::.nested_core_fraction("SLFIGLKEV")))        # one sequence
+  expect_true(is.na(HowMaHiCo:::.nested_core_fraction(c("SHORT", "ALSO"))))  # all < k
+  # duplicates are one sequence
+  expect_true(is.na(HowMaHiCo:::.nested_core_fraction(c("AAKFVGITKLV", "AAKFVGITKLV"))))
+})
+
+test_that("MHC2 promotes frac_nested_core to the motif dimension", {
+  human <- quality_thresholds_default("MHC1")
+  mouse <- quality_thresholds_default("MHC1_mouse")
+  cls2  <- quality_thresholds_default("MHC2")
+
+  # data keys unchanged across classes (only labels/cut-offs/weights move)
+  expect_equal(human$metric, cls2$metric)
+  expect_equal(human$metric, mouse$metric)
+
+  i <- match("frac_nested_core", cls2$metric)
+  expect_equal(human$weight[i], 0)                      # MHC-I: diagnostic only
+  expect_equal(mouse$weight[i], 0)
+  expect_equal(cls2$weight[i],                           # MHC-II: the anchor's weight
+               cls2$weight[match("anchor_information", cls2$metric)])
+  expect_equal(cls2$label[i], "Nested-core families")
+  expect_gt(cls2$green[i], cls2$amber[i])                # higher_better
+})
+
+# DIA calibration accuracy (v0.20.0): DIA-NN reports no observed precursor m/z,
+# so its ppm is a dummy and no real mass error can be derived from report.tsv.
+# Its predicted RT/IM are the analogue, and they are absent for FragPipe/PEAKS.
+
+test_that(".median_abs_delta guards absent and placeholder columns", {
+  expect_equal(HowMaHiCo:::.median_abs_delta(c(10, 12), c(10.4, 12.2)), 0.3)
+  expect_true(is.na(HowMaHiCo:::.median_abs_delta(c(1, 2), NULL)))
+  expect_true(is.na(HowMaHiCo:::.median_abs_delta(NULL, c(1, 2))))
+  # an all-zero difference is a placeholder, not perfect accuracy
+  expect_true(is.na(HowMaHiCo:::.median_abs_delta(c(1, 2), c(1, 2))))
+  expect_true(is.na(HowMaHiCo:::.median_abs_delta(c(NA, NA), c(1, 2))))
+  expect_equal(HowMaHiCo:::.median_abs_delta(c(1, NA, 5), c(1.5, 2, 4)), 0.75)
+})
+
+test_that("calibration metrics are NA without predictions and populated with them", {
+  pep <- make_mouse_pep_all()
+  m_dda <- qc_metrics_by_sample(pep, shortpep_range = c(7, 11), mhcclass = "MHC1_mouse")
+  expect_true(is.na(m_dda$median_abs_rt_error))
+  expect_true(is.na(m_dda$median_abs_im_error))
+
+  pep_dia <- pep
+  pep_dia$RT <- seq_len(nrow(pep)) / 10
+  pep_dia$Predicted.RT <- pep_dia$RT + 0.2
+  pep_dia$invk0 <- 0.9
+  pep_dia$Predicted.IM <- 0.91
+  m_dia <- qc_metrics_by_sample(pep_dia, shortpep_range = c(7, 11), mhcclass = "MHC1_mouse")
+  expect_equal(m_dia$median_abs_rt_error, 0.2, tolerance = 1e-8)
+  expect_equal(m_dia$median_abs_im_error, 0.01, tolerance = 1e-8)
+})
+
+test_that("every scored metric exists in the metrics table (composite would error otherwise)", {
+  # score_sample_quality() subsets scores[, paste0("score_", scored_metrics)],
+  # so a threshold row whose metric never reaches qc_metrics_by_sample() would
+  # abort the whole report
+  pep <- make_mouse_pep_all()
+  for (cls in mhc_classes()) {
+    win <- mhc_length_window(cls)
+    m <- qc_metrics_by_sample(pep, shortpep_range = win, mhcclass = cls)
+    th <- quality_thresholds_default(cls)
+    expect_equal(setdiff(th$metric, names(m)), character(0), info = cls)
+    expect_silent(s <- score_sample_quality(pep, shortpep_range = win, mhcclass = cls))
+    expect_true(is.na(s$composite_score) || (s$composite_score >= 0 && s$composite_score <= 100))
+  }
+})

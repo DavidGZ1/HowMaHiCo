@@ -33,3 +33,42 @@ test_that("ggprint_rawr returns the plot from a knit-like environment and from a
   expect_s3_class(res$indexed, "ggplot")
   expect_null(res$dropped)
 })
+
+# ggprint_rawr(interactive = TRUE) is what the InteractivePlots param flips
+# (v0.21.0). It must keep the not-generated guard, and must hand back the static
+# plot rather than erroring for the object classes ggplotly() cannot convert.
+
+test_that("ggprint_rawr(interactive = TRUE) converts a plain ggplot to a widget", {
+  skip_if_not_installed("plotly")
+  p_simple <- ggplot2::ggplot(data.frame(x = 1:3, y = 1:3), ggplot2::aes(x, y)) +
+    ggplot2::geom_point()
+
+  expect_s3_class(ggprint_rawr(p_simple, interactive = TRUE), "plotly")
+  expect_s3_class(ggprint_rawr(p_simple, interactive = TRUE), "htmlwidget")
+  # the default is unchanged, so every existing call site still prints a ggplot
+  expect_s3_class(ggprint_rawr(p_simple), "ggplot")
+  expect_false(inherits(ggprint_rawr(p_simple), "plotly"))
+})
+
+test_that("interactive = TRUE keeps the not-generated guard", {
+  expect_warning(res <- ggprint_rawr(p_never_built_at_all, interactive = TRUE),
+                 "p_never_built_at_all was not generated")
+  expect_null(res)
+})
+
+test_that("unconvertible plot objects are returned unchanged instead of erroring", {
+  skip_if_not_installed("plotly")
+  # ggpubr composites (plot_peplength_dens, plot_pepmass, ...) are the real case:
+  # ggplotly() cannot take them apart
+  p1 <- ggplot2::ggplot(data.frame(x = 1:3, y = 1:3), ggplot2::aes(x, y)) +
+    ggplot2::geom_point()
+  p_composite <- ggpubr::ggarrange(p1, p1, nrow = 2)
+  expect_false(HowMaHiCo:::.is_ggplotly_safe(p_composite))
+  expect_identical(ggprint_rawr(p_composite, interactive = TRUE), p_composite)
+
+  # a non-plot, and something that is already a widget
+  expect_false(HowMaHiCo:::.is_ggplotly_safe(data.frame(x = 1)))
+  already <- plotly::ggplotly(p1)
+  expect_false(HowMaHiCo:::.is_ggplotly_safe(already))
+  expect_identical(ggprint_rawr(already, interactive = TRUE), already)
+})

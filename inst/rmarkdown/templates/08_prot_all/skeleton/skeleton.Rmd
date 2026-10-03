@@ -35,6 +35,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('08_prot_all | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -127,7 +128,7 @@ protein's annotation.
 p_proteins_per_sample <- plot_proteins_per_sample(prot_all)
 if (is.null(p_proteins_per_sample))
   cat("_No source protein could be assigned in this subset._") else
-  ggprint_rawr(p_proteins_per_sample)
+  ggprint_rawr(p_proteins_per_sample, interactive = interactive_plots)
 ```
 
 ```{r proteins-per-condition-table, echo=FALSE}
@@ -149,7 +150,7 @@ prot_all |>
 p_peptides_per_protein <- plot_peptides_per_protein(prot_all, type = "histogram")
 if (is.null(p_peptides_per_protein))
   cat("_Not available for this subset._") else
-  ggprint_rawr(p_peptides_per_protein)
+  ggprint_rawr(p_peptides_per_protein, interactive = interactive_plots)
 ```
 
 ## By Condition
@@ -158,7 +159,7 @@ if (is.null(p_peptides_per_protein))
 p_peptides_per_protein_violin <- plot_peptides_per_protein(prot_all, type = "violin")
 if (is.null(p_peptides_per_protein_violin))
   cat("_Needs at least one Condition column to split on._") else
-  ggprint_rawr(p_peptides_per_protein_violin)
+  ggprint_rawr(p_peptides_per_protein_violin, interactive = interactive_plots)
 ```
 
 ## Top source proteins
@@ -167,7 +168,7 @@ if (is.null(p_peptides_per_protein_violin))
 p_top_proteins <- plot_top_proteins(top_proteins)
 if (is.null(p_top_proteins))
   cat("_No protein passed MinPeptidesProtein._") else
-  ggprint_rawr(p_top_proteins)
+  ggprint_rawr(p_top_proteins, interactive = interactive_plots)
 ```
 
 ## Table
@@ -192,7 +193,7 @@ if (nrow(top_proteins) == 0) {
 p_protein_detection_sample <- plot_protein_detection(prot_all, by = "Sample")
 if (is.null(p_protein_detection_sample))
   cat("_Not available for this subset._") else
-  ggprint_rawr(p_protein_detection_sample)
+  ggprint_rawr(p_protein_detection_sample, interactive = interactive_plots)
 ```
 
 ## Across Conditions
@@ -201,7 +202,7 @@ if (is.null(p_protein_detection_sample))
 p_protein_detection_condition <- plot_protein_detection(prot_all, by = "Condition")
 if (is.null(p_protein_detection_condition))
   cat("_Not available for this subset._") else
-  ggprint_rawr(p_protein_detection_condition)
+  ggprint_rawr(p_protein_detection_condition, interactive = interactive_plots)
 ```
 
 # Protein-level intensity
@@ -215,7 +216,7 @@ this protein's ligands carry", **not** as the protein's abundance — see
 p_top_proteins_area <- plot_top_proteins(top_proteins_area, by = "Area")
 if (is.null(p_top_proteins_area))
   cat("_No usable `Area` in this subset._") else
-  ggprint_rawr(p_top_proteins_area)
+  ggprint_rawr(p_top_proteins_area, interactive = interactive_plots)
 ```
 
 ```{r prot-summary-table, echo=FALSE}
@@ -341,6 +342,11 @@ if (params$PlotsSave) {
                   width = 20, height = 14)
   }
 }
+```
+
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
 ```
 
 # Session & provenance

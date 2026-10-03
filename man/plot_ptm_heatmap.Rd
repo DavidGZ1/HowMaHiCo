@@ -7,7 +7,9 @@
 plot_ptm_heatmap(
   pep_short,
   type = c("count", "proportion"),
-  shortpep_range = c(8, 13)
+  shortpep_range = c(8, 13),
+  translate = TRUE,
+  reference = ptm_reference()
 )
 }
 \arguments{
@@ -20,6 +22,15 @@ plot_ptm_heatmap(
 \item{shortpep_range}{Length-2 numeric vector \code{c(min, max)} — used only for
 the \code{"proportion"} subtitle (the denominator is computed directly from
 \code{pep_short}).}
+
+\item{translate}{Translate the PTM tokens to readable modification names via
+\code{\link[=translate_ptm]{translate_ptm()}} (default \code{TRUE}). The raw tokens are engine-specific —
+UniMod accessions for DIA-NN, delta masses for FragPipe and PEAKS — so
+without this the same modification reads differently per engine. Set
+\code{FALSE} to plot the tokens as the search engine wrote them.}
+
+\item{reference}{Modification lookup table passed to \code{\link[=translate_ptm]{translate_ptm()}};
+defaults to \code{\link[=ptm_reference]{ptm_reference()}}. Ignored when \code{translate = FALSE}.}
 }
 \value{
 A ggplot2 tile heatmap.
@@ -34,5 +45,6 @@ per Condition. All data preparation is handled internally — only \code{pep_sho
 \dontrun{
 plot_ptm_heatmap(pep_short, type = "count")
 plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = c(8, 13))
+plot_ptm_heatmap(pep_short, translate = FALSE)   # raw engine tokens
 }
 }

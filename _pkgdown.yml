@@ -35,6 +35,7 @@ reference:
   - mhc_classes
   - condition_pairs
   - provider_line
+  - pep_all_glossary
 
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema
@@ -197,6 +198,15 @@ reference:
   - plot_top_proteins
   - plot_protein_detection
   - plot_ligand_vs_protein_quant
+
+- title: Modifications (PTMs)
+  desc: >
+    Translate the engine-specific PTM tokens carried in `pep_all$PTM` -- UniMod
+    accessions from DIA-NN, monoisotopic delta masses from FragPipe and PEAKS --
+    into readable modification names at plot time
+  contents:
+  - ptm_reference
+  - translate_ptm
 
 - title: Export & I/O helpers
   desc: Write report outputs (plots, csvs, render parameters) to disk

@@ -1,0 +1,41 @@
+<!--
+Shared glossary section for every HowMaHiCo report template. Each skeleton pulls
+it in with a knitr child chunk whose only option is
+child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo").
+(Do not paste that as a fenced r-chunk example in this comment: knitr parses
+chunk headers even inside HTML comments, so an example fence would re-include
+this file and duplicate its chunk labels.)
+
+It explains the counting units, then renders pep_all_glossary() as a table, so
+the schema is documented in one place (the function) rather than in nine
+hand-maintained prose blocks. This is a document fragment: it has no YAML header
+and runs in the parent's environment, where it expects `shortpep_range` -- which
+every skeleton derives from MHCclass via mhc_length_window() in its setup chunk.
+-->
+
+## What is counted
+
+* **Peptides** (e.g. in the barplots) include distinct peptidoforms, so one
+  sequence carrying two different modifications counts twice -- although most
+  peptides are detected in a single peptidoform.
+* **Sequences** (e.g. in the Venn and UpSet plots) are stripped sequences,
+  counted once regardless of their modifications.
+* **Parent proteins** are the proteins the peptides were assigned to. For DIA-NN
+  and PEAKS the accession is a protein *group*, so this is a count of groups.
+* **Selected peptides / sequences** are those whose length falls inside the
+  expected ligand window for this run,
+  `r paste0(shortpep_range[1], " to ", shortpep_range[2], " amino acids")`
+  (set by `MHCclass`, or by `ShortPeptideLengthMin`/`Max` for a custom window).
+  Everything else is reported as "others".
+
+## Columns of the results table
+
+The long-format table behind every section of this report (`pep_all`, exported
+as `pep_all.csv`) carries one row per peptide-sample observation:
+
+```{r glossary-pep-all-table, echo=FALSE, message=FALSE, warning=FALSE}
+pep_all_glossary() |>
+  kable(format = "html", caption = "pep_all columns") |>
+  kable_paper("hover", full_width = FALSE) |>
+  kableExtra::column_spec(1, bold = TRUE)
+```

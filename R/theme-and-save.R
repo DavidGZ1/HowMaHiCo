@@ -81,6 +81,18 @@ theme_howmahico <- function(base_size = 8) {
     )
 }
 
+# Plot classes ggplotly() cannot convert: ggpubr composites (plot_peplength_dens,
+# plot_pepmass, ...), sequence logos, and anything already an htmlwidget. Checked
+# so an interactive = TRUE report degrades to the static plot instead of erroring
+# or rendering an empty widget.
+.ggplotly_incompatible <- c("ggarrange", "ggseqlogo", "patchwork", "gtable",
+                            "htmlwidget", "plotly")
+
+# Can this object be handed to plotly::ggplotly()?
+.is_ggplotly_safe <- function(x) {
+  inherits(x, "ggplot") && !inherits(x, .ggplotly_incompatible, which = FALSE)
+}
+
 #' Print a plot, skipping ones that were never built
 #'
 #' The print-time counterpart to [ggsave_rawr()], so a report chunk can
@@ -91,8 +103,19 @@ theme_howmahico <- function(base_size = 8) {
 #'
 #' @param input The object to print. When it is a bare variable name, that name
 #'   is used to check existence rather than the value.
+#' @param interactive Return the plot as an interactive plotly widget
+#'   ([plotly::ggplotly()]) instead of a static ggplot. The report templates pass
+#'   their `InteractivePlots` param here. Objects `ggplotly()` cannot convert
+#'   (ggpubr composites, sequence logos, base-graphics heatmaps, objects that are
+#'   already widgets) are returned unchanged, so a report never breaks for
+#'   requesting interactivity.
 #'
-#' @return The object, so a knitr chunk prints it; invisible `NULL` with a
+#'   Only use this from an ordinary chunk: an htmlwidget printed from inside a
+#'   `results='asis'` loop needs an explicit `tagList`/`knit_print` dance to get
+#'   its dependencies attached, and silently renders empty without it.
+#'
+#' @return The object, so a knitr chunk prints it; a plotly widget when
+#'   `interactive = TRUE` and the plot can be converted; invisible `NULL` with a
 #'   warning when it was never generated.
 #'
 #' @export
@@ -100,11 +123,14 @@ theme_howmahico <- function(base_size = 8) {
 #' @examples
 #' \dontrun{
 #' ggprint_rawr(p_corr_log2area_all)
+#' ggprint_rawr(p_pca_scores, interactive = TRUE)
 #' }
-ggprint_rawr <- function(input) {
+ggprint_rawr <- function(input, interactive = FALSE) {
   if (!.plot_was_built(substitute(input), parent.frame())) {
     warning(paste0(deparse(substitute(input)), " was not generated"))
     return(invisible(NULL))
   }
+  if (isTRUE(interactive) && .is_ggplotly_safe(input))
+    return(plotly::ggplotly(input))
   input
 }

@@ -292,6 +292,7 @@ records how it was produced.
 | `TestMode` | `TRUE` keeps ~100 rows **per run** — a fast dry run that preserves every run/Condition/replicate |
 | `ResultsOverwrite` | `FALSE` aborts rather than overwriting results from an earlier run |
 | `CsvSave` / `PlotsSave` | Also write the intermediate csv tables / every figure as png |
+| `InteractivePlots` | `TRUE` renders the convertible plots as interactive plotly widgets (hover, zoom, pan) instead of static images. Applies to the plots printed from ordinary chunks; plots inside tabset loops, the sequence logos, the UpSet plots and the ggpubr composites stay static, and the log2(Area) correlation matrices are interactive either way |
 
 Folder paths are absolute, or relative to the working directory you render from
 — the templates live inside the installed package and can be rendered from
@@ -357,6 +358,50 @@ The HTML report itself goes to `output_file`.
 
 `build_pep_all()` also writes the `<Subset>_pep_all.rda` cache into
 `FolderData`, which is what the focused reports read.
+
+## Glossary
+
+The reports distinguish **peptides** (distinct peptidoforms - one sequence with
+two modifications counts twice) from **sequences** (stripped, counted once) and
+**parent proteins** (protein *groups* for DIA-NN and PEAKS). *Selected* peptides
+are those inside the expected ligand length window for the run (`MHCclass`).
+
+Columns of `pep_all` / `pep_all.csv`, one row per peptide-sample observation.
+The same table is printed in every report, both generated from
+`pep_all_glossary()`:
+
+| Column | Meaning | Notes |
+|---|---|---|
+| `Condition` | Experimental group the sample belongs to | From the annotation table; factor order = annotation row order |
+| `BioReplicate` | Biological replicate within a Condition | From the annotation table |
+| `TechReplicate` | Technical/injection replicate within a BioReplicate | From the annotation table |
+| `Sample` | The analysed sample - the unit most plots are drawn per | From the annotation table |
+| `Sample_ID` | Free-text human-readable sample identifier | Optional; get_annot_sampleid() can fill it from a HyStar sample list |
+| `Accession` | Protein accession(s) the peptide was assigned to | A protein GROUP for DIA-NN (';'-list) and PEAKS (':'-list); a single `sp\|ID\|ENTRY` string for FragPipe |
+| `ProteinFirst` | Leading protein of the group | Default protein key of build_prot_all() |
+| `GeneFirst` | Leading gene name of the group | Empty when the engine reports no gene |
+| `OrganismFirst` | Organism suffix parsed from the leading accession |  |
+| `Peptide` | Peptide as reported, modifications included | Two peptidoforms of one sequence are two different peptides |
+| `Sequence` | Stripped amino-acid sequence, no modifications | The 'sequences' counted in Venn/UpSet plots |
+| `Length` | Number of amino acids in Sequence |  |
+| `Length_range` | Whether Length falls in the expected ligand window | Window from MHCclass (or ShortPeptideLengthMin/Max); defines pep_short |
+| `Score` | Search-engine confidence score | Engine-specific and NOT comparable across engines: FragPipe hyperscore, DIA-NN Q.Value (lower is better), PEAKS -10lgP |
+| `Area` | Precursor peak area (linear scale) | NA when the engine reported zero - see compute_log2area() |
+| `Log2Area` | log2 of Area | NA for zero/absent Area in every loader |
+| `PTM` | Modification token(s) as the engine wrote them | UniMod accessions for DIA-NN, delta masses for FragPipe/PEAKS; translate_ptm() maps both to names at plot time |
+| `Charge` | Precursor charge state, formatted '+ n' |  |
+| `Nter` | First residue of Sequence |  |
+| `Cter` | Last residue of Sequence | C-terminal K/R fraction is a tryptic-background diagnostic in the quality score |
+| `RT` | Retention time | Minutes, as reported by the engine |
+| `invk0` | Ion mobility, 1/k0 | timsTOF only; FAIMS compensation voltage is substituted for faims_orbi |
+| `Mass` | Precursor mass | Observed/calibrated for FragPipe and PEAKS; COMPUTED from Precursor.Mz and charge for DIA-NN |
+| `ppm` | Mass error in parts per million | A hardcoded dummy 0 for DIA-NN, which reports no observed precursor m/z; dropped from the quality score there |
+| `m_z` | Precursor mass-to-charge ratio | The library value for DIA-NN |
+| `Source_file` | Raw file / run the observation came from | Extracted by extract_run_name() |
+| `Source_File_ID` | Engine's own run identifier |  |
+| `Precursor_Id` | Engine's precursor identifier | DIA-NN |
+| `Found_By` | Search engine that produced the row | 'FragPipe', 'DIA-NN', 'PEAKS', or the dictionary's value for custom input |
+| `PeptideID` | Composite peptide identifier used for joins and counting |  |
 
 ## Troubleshooting
 

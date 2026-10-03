@@ -30,6 +30,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('01_id_counts | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -506,9 +507,19 @@ for (i in 1:length(motifs_pepshort)) {
 
 # PTM profile {.tabset}
 
-Note that numbers mean different things in function of the software
-- in PEAKS the numbers between [] are the delta mass
-- in Fragpipe and DIA-NN the numbers between () corrrespond to UniMode PTM codes
+The modification tokens are translated to readable names (`translate_ptm()`),
+because each search engine writes them differently:
+
+- **FragPipe** reports the monoisotopic **delta mass** behind a position and
+  residue -- `2M(15.9949)`
+- **DIA-NN** reports the **UniMod accession** -- `(UniMod:35)`
+- **PEAKS** reports the modification **name** -- `Oxidation (M)` -- and keeps the
+  delta mass in the peptide string instead; some exports use a bracketed delta
+  mass (`[+15.99]`)
+
+Those are all the same modification, and all of them are shown as `Oxidation`
+below. A token that matches no known modification is left exactly as the search
+engine wrote it. `pep_all$PTM` itself keeps the raw token.
 
 ## All peptides {.tabset}
 
@@ -591,6 +602,11 @@ if (params$PlotsSave) {
            width = 14, height = 12, units = "cm", device = "png")
   }
 }
+```
+
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
 ```
 
 # Session & provenance

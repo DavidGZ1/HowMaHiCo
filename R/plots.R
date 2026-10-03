@@ -1113,6 +1113,13 @@ plot_qc_box <- function(df, y_var, title) {
 #' @param shortpep_range Length-2 numeric vector `c(min, max)` — used only for
 #'   the `"proportion"` subtitle (the denominator is computed directly from
 #'   `pep_short`).
+#' @param translate Translate the PTM tokens to readable modification names via
+#'   [translate_ptm()] (default `TRUE`). The raw tokens are engine-specific —
+#'   UniMod accessions for DIA-NN, delta masses for FragPipe and PEAKS — so
+#'   without this the same modification reads differently per engine. Set
+#'   `FALSE` to plot the tokens as the search engine wrote them.
+#' @param reference Modification lookup table passed to [translate_ptm()];
+#'   defaults to [ptm_reference()]. Ignored when `translate = FALSE`.
 #'
 #' @return A ggplot2 tile heatmap.
 #'
@@ -1122,9 +1129,11 @@ plot_qc_box <- function(df, y_var, title) {
 #' \dontrun{
 #' plot_ptm_heatmap(pep_short, type = "count")
 #' plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = c(8, 13))
+#' plot_ptm_heatmap(pep_short, translate = FALSE)   # raw engine tokens
 #' }
 plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
-                              shortpep_range = c(8, 13)) {
+                              shortpep_range = c(8, 13), translate = TRUE,
+                              reference = ptm_reference()) {
   type <- match.arg(type)
 
   pep_short_ptm <-
@@ -1133,6 +1142,12 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
     dplyr::mutate(PTM = gsub(" ", "", PTM)) |>
     tidyr::separate_rows(PTM, sep = ";|,") |>
     dplyr::mutate(PTM = trimws(PTM, "left", "[0-9]+"))
+
+  # Translate once here, where the multi-PTM strings are already split into one
+  # token per row, so both the count and the proportion branch below inherit it.
+  if (translate)
+    pep_short_ptm <- pep_short_ptm |>
+      dplyr::mutate(PTM = translate_ptm(PTM, reference = reference))
 
   count_df <-
     pep_short_ptm |>

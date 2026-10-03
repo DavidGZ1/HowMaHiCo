@@ -30,6 +30,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('03_lcms_qc | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -162,6 +163,11 @@ if (params$PlotsSave) {
   ggsave_rawr(bp_score_score, file = "bp_score_score", folder = FolderFigures, width = 20, height = 12)
   ggsave_rawr(bp_masserror_ppm, file = "bp_masserror_ppm", folder = FolderFigures, width = 20, height = 12)
 }
+```
+
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
 ```
 
 # Session & provenance

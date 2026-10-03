@@ -185,9 +185,18 @@ get_annot_diann <- function(dir_data){
 #' Auto-generate a skeleton annotation table from a PEAKS export folder
 #'
 #' PEAKS counterpart of [get_annot_fragpipe()] / [get_annot_diann()]: indexes the
-#' search-result subfolders of a PEAKS export with the same internal indexer the
-#' loader uses ([read_peaks_batch()] keys on the subfolder name), drops the QC
-#' folders, and returns one row per result folder ready to fill in.
+#' search-result subfolders of a PEAKS export with the same internal indexer
+#' [read_peaks_batch()] uses to pick folders, drops the QC folders, and returns
+#' one row per result folder ready to fill in.
+#'
+#' **One row per folder is not necessarily one row per sample.** A PEAKS export
+#' folder usually holds several samples, one `Area#<sample>` column each inside
+#' its `peptide.csv`, and it is those suffixes that [annotate_peaks()] joins on.
+#' So for a multi-sample export, duplicate the folder's row once per sample and
+#' add a `Sample_peaks` column naming each sample exactly as its `Area#` column
+#' does; `Sample_folder` stays the same on every one of those rows. With one
+#' folder per sample the two keys coincide and [read_annot()] derives
+#' `Sample_peaks` for you.
 #'
 #' @param dir_data Path to the PEAKS export root folder (the one holding the
 #'   `<project>_PEAKS_<nn>` result subfolders).

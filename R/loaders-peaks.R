@@ -157,8 +157,18 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 #' 1. **`files`** — character vector of PEAKS export folder paths; uses those
 #'    directly, bypassing the directory index.
 #' 2. **`annotation`** — filters the directory index to subfolders whose
-#'    `basename` is listed in `annotation$Sample_peaks`.
+#'    `basename` is listed in `annotation$Sample_folder` (falling back to
+#'    `Sample_peaks` when the table has no `Sample_folder`).
 #' 3. **neither** — all non-QC PEAKS subfolders under `folder` are read.
+#'
+#' **The folder key and the sample key are not the same thing for PEAKS.** One
+#' export folder normally holds *several* samples, as one `Area#<sample>` column
+#' each inside its `peptide.csv`, and [read_peaks()] turns those suffixes into
+#' `Sample_peaks`. So `Sample_folder` selects the folders here, while
+#' `Sample_peaks` is what [annotate_peaks()] later joins the metadata on. Keying
+#' the folder filter on `Sample_peaks` (as this did before v0.22.0) matched no
+#' folder at all whenever the two differed, and the empty read then died inside
+#' `parse_peaks()` with `object 'Accession' not found`.
 #'
 #' The metadata join (adding `Condition`, `BioReplicate`, `Sample`, etc.)
 #' happens in [annotate_peaks()], not here. This function returns the raw
@@ -169,7 +179,9 @@ read_qc_peaks_single <- function(folder_peaks_qc, annotation){
 #'   `files` is supplied.
 #' @param annotation Optional annotation data frame (output of [read_annot()]).
 #'   When provided without `files`, only subfolders whose `basename` is in
-#'   `annotation$Sample_peaks` are read.
+#'   `annotation$Sample_folder` are read (`Sample_peaks` is used instead when the
+#'   table predates that column, which is the one-folder-per-sample layout where
+#'   the two keys coincide).
 #' @param files Optional character vector of PEAKS export folder paths to read
 #'   directly, bypassing the directory index.
 #' @param instrument Passed to [read_peaks()]; one of `"tims_tof"`,
@@ -198,14 +210,38 @@ read_peaks_batch <- function(folder = NULL, annotation = NULL, files = NULL,
     files_peaks <- get_dirs_index_peaks(folder)
     files_peaks_data <- files_peaks[files_peaks$QC == FALSE, ]
     if (!is.null(annotation)) {
-      annotated <- unique(as.character(annotation$Sample_peaks))
-      files_peaks_data <- files_peaks_data[basename(files_peaks_data$path_full) %in% annotated, ]
+      # the EXPORT FOLDER key, not the per-sample key: a PEAKS export folder
+      # usually holds several samples as Area#<sample> columns, and those
+      # suffixes (not the folder name) become Sample_peaks downstream
+      folder_col <- if ("Sample_folder" %in% names(annotation)) "Sample_folder" else "Sample_peaks"
+      annotated <- unique(as.character(annotation[[folder_col]]))
+      found <- basename(files_peaks_data$path_full)
+      files_peaks_data <- files_peaks_data[found %in% annotated, ]
+      if (nrow(files_peaks_data) == 0)
+        stop("No PEAKS export folder under '", folder, "' matches the annotation's ",
+             folder_col, " values.\n  annotation (", folder_col, "): ",
+             paste(utils::head(annotated, 5), collapse = ", "),
+             "\n  found on disk: ",
+             if (length(found)) paste(utils::head(found, 5), collapse = ", ") else "(none)",
+             "\n  Note that ", folder_col, " must name the PEAKS EXPORT FOLDER; the ",
+             "per-sample key (Sample_peaks) must match the Area#<sample> column ",
+             "names inside its peptide.csv.")
+      dropped <- setdiff(annotated, found)
+      if (length(dropped))
+        warning("PEAKS export folder(s) listed in the annotation but not found under '",
+                folder, "': ", paste(dropped, collapse = ", "))
     }
     paths_to_read <- unique(files_peaks_data$path_full)
   }
 
   lapply(paths_to_read, function(x) {
-    out <- read_peaks(filedir = getwd(), folder_peaks_db = x, instrument = instrument)
+    # split the path instead of prepending getwd(): the index returns paths that
+    # follow `folder`, so an ABSOLUTE FolderData (what the reports document and
+    # what system.file() hands over) used to be pasted behind the working
+    # directory and became unopenable. dirname()/basename() reconstruct either
+    # kind of path unchanged.
+    out <- read_peaks(filedir = dirname(x), folder_peaks_db = basename(x),
+                      instrument = instrument)
     message("loaded ", x)
     out
   }) |>
@@ -291,6 +327,21 @@ annotate_peaks <- function(input, annotation){
     stop(paste0("The following columns are missing from the annotation table, please add them:\n",
                 paste0(minimal_columns[!minimal_columns %in% names(annotation)], collapse = ", ")))
   }
+
+  # Sample_peaks here is the PER-SAMPLE key: for PEAKS it has to match the
+  # Area#<sample> column names of peptide.csv, which read_peaks() pivots into
+  # this column -- NOT the export folder name (that is Sample_folder, which
+  # read_peaks_batch() uses to pick the folders). Confusing the two silently
+  # produced a 0-row join, so say so when nothing matches.
+  shared <- intersect(as.character(annotation$Sample_peaks), as.character(input$Sample_peaks))
+  if (length(shared) == 0)
+    stop("No Sample_peaks value is shared between the annotation and the PEAKS data.\n",
+         "  annotation (Sample_peaks): ",
+         paste(utils::head(unique(as.character(annotation$Sample_peaks)), 5), collapse = ", "),
+         "\n  PEAKS data (from the Area#<sample> columns): ",
+         paste(utils::head(unique(as.character(input$Sample_peaks)), 5), collapse = ", "),
+         "\n  Sample_peaks must name the sample inside the export (the Area# suffix); ",
+         "the export FOLDER is Sample_folder.")
 
   output <- dplyr::inner_join(annotation, input, by = "Sample_peaks")
 

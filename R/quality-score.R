@@ -104,6 +104,54 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
   candidates[which.max(counts)]
 }
 
+# Fraction of ligands that belong to a nested peptide family.
+#
+# The class-II counterpart of anchor_information_content(). MHC-II ligands are
+# trimmed to ragged, length-variable sets around a shared ~9-residue binding
+# core, so a genuine HLA-II immunopeptidome is dominated by nested families while
+# a background/contaminant set is not. Unlike a motif model this needs no
+# alignment and no register guess: a sequence counts as nested when ANY of its
+# k-mers also occurs in another distinct sequence of the same sample.
+#
+# k is fixed at 9 because that is the length of the MHC-II binding core;
+# sequences shorter than k cannot be assessed and are excluded from both the
+# numerator and the denominator. NA for fewer than two assessable sequences.
+.nested_core_fraction <- function(sequences, k = 9L) {
+  seqs <- unique(as.character(sequences))
+  seqs <- seqs[!is.na(seqs)]
+  seqs <- seqs[nchar(seqs) >= k]
+  n <- length(seqs)
+  if (n < 2) return(NA_real_)
+
+  # every k-mer of every sequence, tagged with the sequence it came from
+  n_windows <- nchar(seqs) - k + 1L
+  idx <- rep(seq_len(n), times = n_windows)
+  starts <- unlist(lapply(n_windows, seq_len), use.names = FALSE)
+  kmers <- substring(seqs[idx], starts, starts + k - 1L)
+
+  # one (k-mer, sequence) pair at most, so an internal repeat cannot make a
+  # sequence look shared with itself
+  keep <- !duplicated(paste0(kmers, "
+", idx))
+  kmers <- kmers[keep]; idx <- idx[keep]
+
+  tab <- table(kmers)
+  shared <- kmers %in% names(tab)[tab > 1L]
+  length(unique(idx[shared])) / n
+}
+
+# Median absolute difference between an observed and a predicted column, used
+# for the DIA calibration-accuracy metrics. NA when either column is absent, or
+# when every difference is 0 -- the same guard the dummy DIA-NN `ppm` gets, so a
+# placeholder column cannot score as perfect accuracy.
+.median_abs_delta <- function(observed, predicted) {
+  if (is.null(observed) || is.null(predicted)) return(NA_real_)
+  delta <- abs(suppressWarnings(as.numeric(observed) - as.numeric(predicted)))
+  delta <- delta[is.finite(delta)]
+  if (length(delta) == 0 || all(delta == 0)) return(NA_real_)
+  stats::median(delta)
+}
+
 #' Raw per-sample immunopeptidomics quality metrics
 #'
 #' Computes, for each `Sample` in a `pep_all` table, the raw (un-scored) quality
@@ -119,13 +167,16 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 #'   HLA-II).
 #' @param mhcclass `"MHC1"`, `"MHC1_mouse"` or `"MHC2"`. For `"MHC2"` the
 #'   canonical-length and anchor-motif metrics are returned as `NA` (no
-#'   fixed-length anchor model), so they drop out of the composite downstream.
+#'   fixed-length anchor model), so they drop out of the composite downstream —
+#'   `frac_nested_core` is the class-II motif dimension instead, and
+#'   [quality_thresholds_default()] gives it the anchor metric's weight there.
 #'   For `"MHC1_mouse"`, `frac_9mer` counts 8- **and** 9-mers (both canonical for
 #'   murine H-2) and the anchor motif is scored on whichever of the two the
 #'   sample has more of.
 #'
 #' @return A data frame with one row per `Sample` and columns: `frac_in_window`,
 #'   `frac_9mer`, `frac_cterm_KR`, `frac_cterm_KR_longonly`, `anchor_information`,
+#'   `frac_nested_core`, `median_abs_rt_error`, `median_abs_im_error`,
 #'   `frac_cross_class`, `frac_charge_1_2`, `n_unique_pep`,
 #'   `n_unique_pep_in_window`, `n_source_proteins`, `median_abs_ppm`.
 #'
@@ -172,6 +223,14 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
       median_abs_ppm <- NA_real_
     }
 
+    # DIA calibration accuracy: DIA-NN reports no observed precursor m/z (its
+    # `ppm` is a dummy), but it does report a predicted RT and IM, and the
+    # deviation from those is the DIA analogue of a mass error. NA -- and so
+    # dropped from the composite -- for FragPipe/PEAKS, which carry no
+    # prediction, exactly as `ppm` is dropped for DIA-NN.
+    median_abs_rt_error <- .median_abs_delta(d[["RT"]], d[["Predicted.RT"]])
+    median_abs_im_error <- .median_abs_delta(d[["invk0"]], d[["Predicted.IM"]])
+
     data.frame(
       Sample = s,
       frac_in_window = if (n_pep == 0) NA_real_ else mean(in_win),
@@ -185,11 +244,18 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
       # sample has more of, instead of silently dropping one of them.
       anchor_information = if (!is_mhc1) NA_real_ else
         anchor_information_content(pep$Sequence[pep$Length == .modal_length(pep$Length, canonical_len)]),
+      # nested ragged families around a shared core: the class-II substitute
+      # for anchor-motif clarity, computed on the in-window ligands only so a
+      # long tryptic tail cannot manufacture nesting
+      frac_nested_core = if (n_pep == 0) NA_real_ else
+        .nested_core_fraction(pep$Sequence[in_win]),
       frac_charge_1_2 = frac_charge_1_2,
       n_unique_pep = n_pep,
       n_unique_pep_in_window = sum(in_win),
       n_source_proteins = dplyr::n_distinct(d$Accession),
       median_abs_ppm = median_abs_ppm,
+      median_abs_rt_error = median_abs_rt_error,
+      median_abs_im_error = median_abs_im_error,
       stringsAsFactors = FALSE
     )
   })
@@ -210,7 +276,9 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
 #'
 #' @param mhcclass MHC class the thresholds are for. `"MHC1_mouse"` relabels the
 #'   `frac_9mer` row to "8/9-mer fraction" and raises its green/amber cut-offs,
-#'   because that metric counts two canonical lengths for murine H-2.
+#'   because that metric counts two canonical lengths for murine H-2. `"MHC2"`
+#'   promotes `frac_nested_core` from a weight-0 diagnostic to the motif
+#'   dimension (weight 3), since the anchor metric is undefined there.
 #'
 #' @return A data frame with columns `metric`, `label`, `direction`
 #'   (`"higher_better"`/`"lower_better"`), `green`, `amber`, `weight`.
@@ -223,23 +291,42 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
 quality_thresholds_default <- function(mhcclass = "MHC1") {
   out <- data.frame(
     metric = c("frac_in_window", "frac_9mer", "frac_cterm_KR_longonly",
-               "frac_cterm_KR", "anchor_information", "frac_cross_class",
-               "frac_charge_1_2", "n_unique_pep", "n_unique_pep_in_window",
-               "n_source_proteins", "median_abs_ppm"),
+               "frac_cterm_KR", "anchor_information", "frac_nested_core",
+               "frac_cross_class", "frac_charge_1_2", "n_unique_pep",
+               "n_unique_pep_in_window", "n_source_proteins", "median_abs_ppm",
+               "median_abs_rt_error", "median_abs_im_error"),
     label = c("Length in window", "9-mer fraction", "Tryptic background (long peptides)",
               "C-terminal K/R (diagnostic)", "Anchor motif clarity",
+              "Nested cores (diagnostic)",
               "Cross-class contamination", "Charge 1+/2+",
               "Unique peptides", "Unique peptides in window", "Source proteins",
-              "Median |ppm|"),
+              "Median |ppm|", "Median |RT - predicted RT|",
+              "Median |1/k0 - predicted 1/k0|"),
     direction = c("higher_better", "higher_better", "lower_better",
-                  "lower_better", "higher_better", "lower_better", "higher_better",
+                  "lower_better", "higher_better", "higher_better",
+                  "lower_better", "higher_better",
                   "higher_better", "higher_better", "higher_better",
-                  "lower_better"),
-    green = c(0.80, 0.35, 0.30, 0.30, 2.0, 0.05, 0.85, NA, NA, NA, 5),
-    amber = c(0.60, 0.20, 0.50, 0.50, 1.0, 0.15, 0.70, NA, NA, NA, 10),
-    weight = c(3, 1.5, 1, 0, 3, 0.5, 1.5, 0.5, 0.5, 0.5, 1),
+                  "lower_better", "lower_better", "lower_better"),
+    green = c(0.80, 0.35, 0.30, 0.30, 2.0, 0.25, 0.05, 0.85, NA, NA, NA, 5, 0.5, 0.010),
+    amber = c(0.60, 0.20, 0.50, 0.50, 1.0, 0.10, 0.15, 0.70, NA, NA, NA, 10, 1.5, 0.030),
+    weight = c(3, 1.5, 1, 0, 3, 0, 0.5, 1.5, 0.5, 0.5, 0.5, 1, 0.5, 0.5),
     stringsAsFactors = FALSE
   )
+
+  # MHC-II has no fixed-length anchor model, so `anchor_information` is NA there
+  # and `frac_nested_core` takes over the motif dimension at the same weight:
+  # class-II ligands come as ragged, nested families around a shared 9-mer core,
+  # which is exactly what that metric measures. For MHC-I it stays a weight-0
+  # diagnostic (some nesting is normal, it is just not the primary signal).
+  # The class-II cut-offs are provisional -- prefer ThresholdMode =
+  # "qc_relative" when the experiment carries QC controls.
+  if (identical(mhcclass, "MHC2")) {
+    i <- match("frac_nested_core", out$metric)
+    out$label[i]  <- "Nested-core families"
+    out$green[i]  <- 0.50
+    out$amber[i]  <- 0.30
+    out$weight[i] <- 3
+  }
 
   # Murine H-2 ligands peak at BOTH 8- and 9-mers, so `frac_9mer` counts two
   # lengths there (see qc_metrics_by_sample()); relabel it and raise the bar
@@ -343,8 +430,9 @@ calibrate_thresholds_from_qc <- function(metrics, qc_samples,
 #'
 #' Computes a per-sample composite quality score (and a traffic-light category)
 #' from `pep_all`, combining several interpretable dimensions: length-window
-#' fidelity, 9-mer dominance, anchor-motif clarity, non-tryptic specificity,
-#' charge plausibility, depth, and mass accuracy. Each raw metric
+#' fidelity, 9-mer dominance, anchor-motif clarity (nested-core families for
+#' class II), non-tryptic specificity, charge plausibility, depth, and
+#' mass/RT/ion-mobility accuracy. Each raw metric
 #' ([qc_metrics_by_sample()]) is mapped to a 0-100 sub-score ([score_curve()])
 #' against either built-in defaults ([quality_thresholds_default()]) or
 #' thresholds calibrated from tagged QC samples ([calibrate_thresholds_from_qc()]).

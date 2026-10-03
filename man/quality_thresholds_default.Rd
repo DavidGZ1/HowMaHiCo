@@ -9,7 +9,9 @@ quality_thresholds_default(mhcclass = "MHC1")
 \arguments{
 \item{mhcclass}{MHC class the thresholds are for. \code{"MHC1_mouse"} relabels the
 \code{frac_9mer} row to "8/9-mer fraction" and raises its green/amber cut-offs,
-because that metric counts two canonical lengths for murine H-2.}
+because that metric counts two canonical lengths for murine H-2. \code{"MHC2"}
+promotes \code{frac_nested_core} from a weight-0 diagnostic to the motif
+dimension (weight 3), since the anchor metric is undefined there.}
 }
 \value{
 A data frame with columns \code{metric}, \code{label}, \code{direction}

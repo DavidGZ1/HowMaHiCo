@@ -28,6 +28,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE # FALSE throws error when output files already exist to avoid overwriting
   PlotsSave: FALSE #Saves all the plots as .png
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE # TRUE = saves all intermediary csvs, FALSE = saves only essential
 title: "`r paste0('00_mhc_report | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -94,6 +95,12 @@ shortpep_palette <- mhc_class_palette(params$MHCclass)
 shortpep_colors <- setNames(shortpep_palette,
   c(paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"), "others"))
 
+# interactive plots: plotly widgets instead of static ggplots, for the plots
+# printed from ordinary chunks. Plots inside results='asis' tabset loops stay
+# static -- a widget printed from such a loop needs an explicit tagList/
+# knit_print dance and silently renders empty without it.
+interactive_plots <- isTRUE(params$InteractivePlots)
+
 if(params$Subset == ""){
   subset <- params$Subset
   FolderResults <- params$FolderResults
@@ -117,11 +124,10 @@ check_output_exists(params$FolderResults, overwrite =  params$ResultsOverwrite)
 check_file_exists(file_rda, overwrite =  params$ResultsOverwrite)
 ```
 
-## Glosary
+## Glossary
 
-* Peptides (e.g. in barplots): this includes possible peptidoforms (i.e. different PTMs); although the peptides are often detected only in one peptidoform.
-* Sequences (e.g. in Venn plots): this refers to the stripped peptide sequence regardless of the possible PTMs.
-* Selected peptides or sequences: those with the expected length for the peptides being analyzed, 8-13 amino acids (AAs) for HLA1 and 12-20 AAs for HLA2
+Definitions of the counting units and of every column of the results table are
+collected in the [Glossary](#glossary) section at the end of this report.
 
 ## Annexes
 
@@ -993,7 +999,7 @@ if(is.null(corr_log2area_all) || all(is.na(corr_log2area_all))){
   plot_corr() + 
   ggtitle("Log2Area correlation for all peptides")
 
-ggplotly(p_corr_log2area_all)
+ggprint_rawr(p_corr_log2area_all, interactive = TRUE)
 }
 
 
@@ -1031,7 +1037,7 @@ p_corr_log2area_short<-
   plot_corr() +
     ggtitle(paste0("Log2Area correlation for selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) 
 
-ggplotly(p_corr_log2area_short)
+ggprint_rawr(p_corr_log2area_short, interactive = TRUE)
 }
 ```
 
@@ -1066,13 +1072,13 @@ if(all(is.na(pep_all_summ_area_biorep$Area_CV))){
 ### Condition
 
 ```{r plot-areacv-all-condition}
-if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all)
+if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all, interactive = interactive_plots)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-all-biorep}
-if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
+if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all, interactive = interactive_plots)
 ```
 
 ## Selected peptides  {.tabset}
@@ -1080,13 +1086,13 @@ if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplica
 ### Condition
 
 ```{r plot-areacv-short-condition}
-if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short)
+if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short, interactive = interactive_plots)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-short-biorep}
-if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short)
+if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short, interactive = interactive_plots)
 ```
 
 # Identification QC
@@ -1151,9 +1157,19 @@ for (i in 1:length(motifs_pepshort)) {
 
 ## PTM profile selected Peptides `r paste0("(", shortpep_range[1]," to ", shortpep_range[2], " AAs)")` {.tabset}
 
-Note that numbers mean different things in function of the software
-- in PEAKS the numbers between [] are the delta mass
-- in Fragpipe and DIA-NN the numbers between () corrrespond to UniMode PTM codes
+The modification tokens are translated to readable names (`translate_ptm()`),
+because each search engine writes them differently:
+
+- **FragPipe** reports the monoisotopic **delta mass** behind a position and
+  residue -- `2M(15.9949)`
+- **DIA-NN** reports the **UniMod accession** -- `(UniMod:35)`
+- **PEAKS** reports the modification **name** -- `Oxidation (M)` -- and keeps the
+  delta mass in the peptide string instead; some exports use a bracketed delta
+  mass (`[+15.99]`)
+
+Those are all the same modification, and all of them are shown as `Oxidation`
+below. A token that matches no known modification is left exactly as the search
+engine wrote it. `pep_all$PTM` itself keeps the raw token.
 
 
 ### Count
@@ -1281,6 +1297,11 @@ if(params$PlotsSave == TRUE){
            device = "png")
   }
 }
+```
+
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
 ```
 
 # Session & provenance
