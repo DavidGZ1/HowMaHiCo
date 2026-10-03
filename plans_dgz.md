@@ -8,6 +8,91 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
+### Road to the EuPA 2026 abstract (example/abstract_eupa2026_v3.md)
+
+Gap analysis of the package (v0.18.0) against the submitted abstract text, in
+priority order. Tier A must be true before the abstract is submitted, tier B
+before the meeting, tier C is wording-vs-code mismatches that can be closed
+either by implementing or by re-wording the abstract.
+
+**Tier A — blocking, the abstract makes these promises explicitly**
+
+* make the GitHub repo public. The abstract prints
+  https://github.com/DavidGZ1/HowMaHiCo, which currently 404s (`gh repo view`:
+  `isPrivate: true`), and GitHub Pages will not serve `gh-pages` from a private
+  repo, so https://davidgz1.github.io/HowMaHiCo/ is dead too. While there: fill
+  in the empty repo description + homepage field, add a CITATION.cff, and mint a
+  Zenodo DOI so the poster has something citable.
+* resolve the license conflict (was already in standby, now blocking "open-source
+  R package"): DESCRIPTION says MIT but `Imports: Peptides` is GPL-2 and
+  `Suggests: limma` is GPL >= 2. Pick one — relicense to GPL-3, or drop
+  `Peptides` to Suggests / reimplement the two descriptors actually used (GRAVY,
+  pI; ~30 lines) and keep MIT.
+* abstract housekeeping: the affiliation is still the placeholder
+  `[Affiliation: institution, city, country]`; decide whether the submission
+  carries the institutional address or DESCRIPTION's
+  `davidgz.science@gmail.com`.
+
+**Tier B — needed before the meeting; the abstract's Results/Conclusions rest on them**
+
+* demonstration dataset + actual results. The Results paragraph is capability
+  prose with no numbers, no figure and no comparison, and the only shipped data
+  is `inst/extdata/sim_fragpipe_dda` (462 *synthetic* peptides, FragPipe DDA
+  only) — fine for tests, not for a poster panel. Need at least one real dataset
+  rendered end to end, class 1 *and* class 2 (the advanced-plans "JY hla1 and
+  hla2 from Annica and Julian" item), ideally with a PRIDE accession so the QC
+  claims are reproducible. Highest-value single panel: the quality score
+  separating a genuine immunopeptidome from a failed pulldown / whole-proteome
+  negative control — that is the figure that demonstrates "how MHC is the
+  dataset".
+* general-overview report for the biologically focused user (the
+  advanced-plans "Simple summary of HowMaHiCo ala HowDirty" item). The abstract
+  promises "a general-overview report for biologically focused users and another
+  for deeper evaluation by the LC-MS expert"; what exists is 8 thematic slices
+  plus `00_mhc_report`, a ~1300-line all-in-one that is the opposite of an
+  overview (and the legacy report where the Overlap intra-Condition bug is still
+  uncorrected). `03_lcms_qc` already covers the expert half. Scope: one page —
+  counts, length-window fidelity, quality score, red flags.
+* cross-experiment comparison, claimed in the Conclusions but not implemented:
+  one render = one subset, and nothing stacks the per-sample score CSVs that
+  `05_quality_score` writes into a trend view. Add a `compare_runs()` reading N
+  score tables (+ a longitudinal/trend plot per metric) so the sentence becomes
+  true.
+
+**Tier C — code does not match the wording; implement or re-word**
+
+* "interactive HTML" is overstated. Interactivity today = tabsets + floating TOC,
+  DT tables in 06/07/08, and exactly two `ggplotly()` calls (00_mhc_report
+  L996/L1034, 04_quant L118/L156); every other plot is a static raster. Either
+  land the standby `InteractivePlots` toggle for the plots that are *not* inside
+  `results='asis'` loops (correlation, PCA, volcano, dynamic range, completeness
+  are the easy ones) or soften the abstract to "self-contained, navigable HTML".
+* class 2 in the title vs. the quality score: for `MHCclass = "MHC2"`,
+  `qc_metrics_by_sample()` returns NA for `frac_9mer` and `anchor_information`
+  (no fixed-length anchor model), so they drop out of the composite — the "motif
+  clarity" the Results paragraph names is not delivered for class 2, although
+  the title claims "class 1 and class 2". Either add a register-free class-2
+  motif metric (positional entropy over a sliding 9-mer core) or qualify the
+  sentence.
+* mass error is absent for DIA-NN (`ppm` is a hardcoded 0 dummy, documented and
+  dropped from the score), so "identification QC such as score and mass error"
+  is hollow for the DIA audience. Derivable from `Precursor.Mz` vs the
+  theoretical m/z of sequence + PTM if it is worth making real.
+* PTM profiles are unreadable as shipped: UniMod codes for DIA-NN, bare delta
+  masses for FragPipe/PEAKS. The `translate_ptm()` design is already in standby —
+  promote it if the abstract keeps "PTM profiles".
+* verify PEAKS Xpro before it appears in print: "check/add functionality for
+  peaks Xpro" is still open on the DGZ list, and PEAKS is the only engine with
+  no shipped example dataset (fixtures only).
+* "for both non-coders and advanced programmers" is present tense in the
+  Background, but the workflow needs R, a hand-edited annotation CSV and a render
+  call; `get_pipeline_script()` + demo mode soften it, and Docker/Shiny are
+  correctly labelled "planned". Low risk — re-read it once the Shiny tier exists.
+* finish the glossaries, which the abstract's reproducibility framing leans on:
+  the in-report one (`00_mhc_report` L120 "Glosary", on the DGZ list as
+  incomplete) and the README glossary of the `pep_all` column headers (already a
+  standby item below).
+
 
 ## In standby
 * peptide position within the parent protein (the third part of the physicochemical-properties item) — deferred; it is the only part that needs a user-supplied search FASTA, since no loader carries a position column (FragPipe psm.tsv, DIA-NN report.tsv and PEAKS peptide.csv all lack one). Full design recorded in CLAUDE.md under "Deferred designs".
