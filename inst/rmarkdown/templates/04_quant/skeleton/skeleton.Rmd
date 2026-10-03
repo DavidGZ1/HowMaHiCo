@@ -30,6 +30,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('04_quant | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -115,7 +116,7 @@ if(is.null(corr_log2area_all) || all(is.na(corr_log2area_all))){
   plot_corr() +
   ggtitle("Log2Area correlation for all peptides")
 
-ggplotly(p_corr_log2area_all)
+ggprint_rawr(p_corr_log2area_all, interactive = TRUE)
 }
 
 
@@ -153,7 +154,7 @@ p_corr_log2area_short<-
   plot_corr() +
     ggtitle(paste0("Log2Area correlation for selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)"))
 
-ggplotly(p_corr_log2area_short)
+ggprint_rawr(p_corr_log2area_short, interactive = TRUE)
 }
 ```
 
@@ -188,13 +189,13 @@ if(all(is.na(pep_all_summ_area_biorep$Area_CV))){
 ### Condition
 
 ```{r plot-areacv-all-condition}
-if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all)
+if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all, interactive = interactive_plots)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-all-biorep}
-if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
+if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all, interactive = interactive_plots)
 ```
 
 ## Selected peptides `r paste0("(", shortpep_range[1], " to ", shortpep_range[2], " AAs)")` {.tabset}
@@ -202,13 +203,13 @@ if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplica
 ### Condition
 
 ```{r plot-areacv-short-condition}
-if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short)
+if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short, interactive = interactive_plots)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-short-biorep}
-if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short)
+if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short, interactive = interactive_plots)
 ```
 
 

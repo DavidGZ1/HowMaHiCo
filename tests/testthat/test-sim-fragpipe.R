@@ -507,3 +507,64 @@ test_that("08_prot_all falls back to leading proteins when none are mapped", {
   expect_equal(length(unique(prot$Protein)), 413L)
   expect_true(all(prot$n_Peptides_shared == 0))
 })
+
+# InteractivePlots (v0.21.0) can only be verified by rendering: ggplotly() returns
+# an htmlwidget, and a widget that does not get its dependencies attached renders
+# as an EMPTY tab with no error and no failing expectation. So this asserts the
+# widget markers really reach the HTML, in both directions.
+
+test_that("InteractivePlots puts plotly widgets in the HTML, and FALSE keeps them out", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if_not_installed("plotly")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("siminter_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  render_05 <- function(interactive, output) {
+    suppressWarnings(suppressMessages(
+      run_howmahico_report(
+        "05_quality_score",
+        params = list(
+          SampleSet           = "sim",
+          Software            = "fragpipe_dda_individual",
+          Instrument          = "tims_tof",
+          FolderDocumentation = proj,
+          AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+          FolderData          = file.path(proj, "sim_fragpipe_dda"),
+          FolderResults       = proj,
+          FolderFigures       = proj,
+          ProjectDir          = proj,
+          PepAllSource        = "build",
+          Subset              = "",
+          MHCclass            = "MHC1",
+          InteractivePlots    = interactive,
+          ResultsOverwrite    = TRUE,
+          PlotsSave           = FALSE,
+          CsvSave             = FALSE
+        ),
+        output_file = output,
+        quiet = TRUE)))
+  }
+
+  out_on <- render_05(TRUE, "sim_05_interactive.html")
+  expect_true(file.exists(out_on))
+  html_on <- paste(readLines(out_on, warn = FALSE), collapse = "\n")
+  # the widget containers and the embedded plotly library both have to be there:
+  # containers without the library is exactly the silent-empty-plot failure
+  expect_match(html_on, "plotly html-widget", fixed = TRUE)
+  expect_match(html_on, "plotly.js", fixed = TRUE)
+  # all three plots of this report are convertible, so all three are widgets
+  n_widgets <- lengths(regmatches(html_on, gregexpr("plotly html-widget", html_on,
+                                                    fixed = TRUE)))
+  expect_gte(n_widgets, 3L)
+
+  out_off <- render_05(FALSE, "sim_05_static.html")
+  expect_true(file.exists(out_off))
+  html_off <- paste(readLines(out_off, warn = FALSE), collapse = "\n")
+  expect_false(grepl("plotly html-widget", html_off, fixed = TRUE))
+})

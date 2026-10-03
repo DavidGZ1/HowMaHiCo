@@ -43,6 +43,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('06_quant_stats | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -190,21 +191,21 @@ coldata |>
 
 ```{r plot-completeness-unit, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
 p_completeness_unit <- plot_completeness(mat_raw, coldata, type = "unit")
-ggprint_rawr(p_completeness_unit)
+ggprint_rawr(p_completeness_unit, interactive = interactive_plots)
 ```
 
 ## Per feature
 
 ```{r plot-completeness-feature, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
 p_completeness_feature <- plot_completeness(mat_raw, coldata, type = "feature")
-ggprint_rawr(p_completeness_feature)
+ggprint_rawr(p_completeness_feature, interactive = interactive_plots)
 ```
 
 ## Presence / absence map
 
 ```{r plot-missing-heatmap, echo=FALSE, fig.width=8, fig.height=7, warning=FALSE}
 p_missing_heatmap <- plot_missing_heatmap(mat_raw, coldata)
-ggprint_rawr(p_missing_heatmap)
+ggprint_rawr(p_missing_heatmap, interactive = interactive_plots)
 ```
 
 # Normalization {.tabset}
@@ -219,7 +220,7 @@ individual spread being destroyed.
 ```{r plot-intensity-before, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
 p_intensity_before <- plot_intensity_dist(mat_filt, coldata, type = "box",
                                           title = "Before normalization")
-ggprint_rawr(p_intensity_before)
+ggprint_rawr(p_intensity_before, interactive = interactive_plots)
 ```
 
 ## After (boxplots)
@@ -227,7 +228,7 @@ ggprint_rawr(p_intensity_before)
 ```{r plot-intensity-after, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
 p_intensity_after <- plot_intensity_dist(mat_norm, coldata, type = "box",
                                          title = paste0("After ", norm_method, " normalization"))
-ggprint_rawr(p_intensity_after)
+ggprint_rawr(p_intensity_after, interactive = interactive_plots)
 ```
 
 ## After (densities)
@@ -235,14 +236,14 @@ ggprint_rawr(p_intensity_after)
 ```{r plot-intensity-density, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
 p_intensity_density <- plot_intensity_dist(mat_norm, coldata, type = "density",
                                            title = paste0("After ", norm_method, " normalization"))
-ggprint_rawr(p_intensity_density)
+ggprint_rawr(p_intensity_density, interactive = interactive_plots)
 ```
 
 # Dynamic range
 
 ```{r plot-dynamic-range, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
 p_dynamic_range <- plot_dynamic_range(mat_norm, coldata)
-if (is.null(p_dynamic_range)) cat("_Not available for this dataset._") else ggprint_rawr(p_dynamic_range)
+if (is.null(p_dynamic_range)) cat("_Not available for this dataset._") else ggprint_rawr(p_dynamic_range, interactive = interactive_plots)
 ```
 
 ```{r imputation-section, echo=FALSE, results='asis', fig.width=8, fig.height=5, warning=FALSE}
@@ -280,21 +281,21 @@ unit (or all features when imputation is enabled).
 
 ```{r plot-pca-scores, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
 p_pca_scores <- plot_pca(mat_used, coldata, type = "scores")
-if (is.null(p_pca_scores)) cat("_Not enough complete features or units for a PCA._") else ggprint_rawr(p_pca_scores)
+if (is.null(p_pca_scores)) cat("_Not enough complete features or units for a PCA._") else ggprint_rawr(p_pca_scores, interactive = interactive_plots)
 ```
 
 ### Scree
 
 ```{r plot-pca-scree, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE}
 p_pca_scree <- plot_pca(mat_used, coldata, type = "scree")
-if (is.null(p_pca_scree)) cat("_Not available._") else ggprint_rawr(p_pca_scree)
+if (is.null(p_pca_scree)) cat("_Not available._") else ggprint_rawr(p_pca_scree, interactive = interactive_plots)
 ```
 
 ### Loadings
 
 ```{r plot-pca-loadings, echo=FALSE, fig.width=8, fig.height=6, warning=FALSE}
 p_pca_loadings <- plot_pca(mat_used, coldata, type = "loadings")
-if (is.null(p_pca_loadings)) cat("_Not available._") else ggprint_rawr(p_pca_loadings)
+if (is.null(p_pca_loadings)) cat("_Not available._") else ggprint_rawr(p_pca_loadings, interactive = interactive_plots)
 ```
 
 ## Heatmaps {.tabset}
@@ -308,7 +309,7 @@ the unclustered view shows the conditions side by side in the annotated order.
 ```{r plot-heatmap-clustered, echo=FALSE, fig.width=8, fig.height=8, warning=FALSE}
 p_heatmap_clustered <- plot_quant_heatmap(mat_used, coldata, cluster = TRUE,
                                           top_n = params$TopNHeatmap)
-if (is.null(p_heatmap_clustered)) cat("_Not available._") else ggprint_rawr(p_heatmap_clustered)
+if (is.null(p_heatmap_clustered)) cat("_Not available._") else ggprint_rawr(p_heatmap_clustered, interactive = interactive_plots)
 ```
 
 ### Unclustered
@@ -316,7 +317,7 @@ if (is.null(p_heatmap_clustered)) cat("_Not available._") else ggprint_rawr(p_he
 ```{r plot-heatmap-unclustered, echo=FALSE, fig.width=8, fig.height=8, warning=FALSE}
 p_heatmap_unclustered <- plot_quant_heatmap(mat_used, coldata, cluster = FALSE,
                                             top_n = params$TopNHeatmap)
-if (is.null(p_heatmap_unclustered)) cat("_Not available._") else ggprint_rawr(p_heatmap_unclustered)
+if (is.null(p_heatmap_unclustered)) cat("_Not available._") else ggprint_rawr(p_heatmap_unclustered, interactive = interactive_plots)
 ```
 
 ## Global condition separation (PERMANOVA)
@@ -451,7 +452,7 @@ if (!can_test) {
 p_sig_summary <- NULL
 if (can_test) {
   p_sig_summary <- plot_sig_summary(quant_stats_summary)
-  ggprint_rawr(p_sig_summary)
+  ggprint_rawr(p_sig_summary, interactive = interactive_plots)
 } else {
   cat("_Not available for this dataset._")
 }

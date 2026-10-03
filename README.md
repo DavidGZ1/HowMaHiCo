@@ -292,6 +292,7 @@ records how it was produced.
 | `TestMode` | `TRUE` keeps ~100 rows **per run** — a fast dry run that preserves every run/Condition/replicate |
 | `ResultsOverwrite` | `FALSE` aborts rather than overwriting results from an earlier run |
 | `CsvSave` / `PlotsSave` | Also write the intermediate csv tables / every figure as png |
+| `InteractivePlots` | `TRUE` renders the convertible plots as interactive plotly widgets (hover, zoom, pan) instead of static images. Applies to the plots printed from ordinary chunks; plots inside tabset loops, the sequence logos, the UpSet plots and the ggpubr composites stay static, and the log2(Area) correlation matrices are interactive either way |
 
 Folder paths are absolute, or relative to the working directory you render from
 — the templates live inside the installed package and can be rendered from

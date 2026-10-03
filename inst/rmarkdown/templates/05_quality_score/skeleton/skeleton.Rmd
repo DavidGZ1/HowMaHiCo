@@ -32,6 +32,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('05_quality_score | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -124,7 +125,7 @@ overview |>
 
 ```{r plot-composite, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
 p_quality_composite <- plot_quality_composite(scores)
-p_quality_composite
+ggprint_rawr(p_quality_composite, interactive = interactive_plots)
 ```
 
 # Per-metric breakdown
@@ -134,7 +135,7 @@ good; grey = not applicable to this dataset.
 
 ```{r plot-heatmap, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
 p_quality_heatmap <- plot_quality_heatmap(scores, thresholds_used)
-p_quality_heatmap
+ggprint_rawr(p_quality_heatmap, interactive = interactive_plots)
 ```
 
 ## Raw metrics
@@ -159,7 +160,7 @@ length windows.
 
 ```{r plot-cross-class, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE, message=FALSE}
 p_cross_class_length <- plot_cross_class_length(pep_all, shortpep_range, params$MHCclass)
-p_cross_class_length
+ggprint_rawr(p_cross_class_length, interactive = interactive_plots)
 ```
 
 # Methods

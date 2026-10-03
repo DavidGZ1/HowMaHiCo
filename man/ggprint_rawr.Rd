@@ -4,14 +4,26 @@
 \alias{ggprint_rawr}
 \title{Print a plot, skipping ones that were never built}
 \usage{
-ggprint_rawr(input)
+ggprint_rawr(input, interactive = FALSE)
 }
 \arguments{
 \item{input}{The object to print. When it is a bare variable name, that name
 is used to check existence rather than the value.}
+
+\item{interactive}{Return the plot as an interactive plotly widget
+(\code{\link[plotly:ggplotly]{plotly::ggplotly()}}) instead of a static ggplot. The report templates pass
+their \code{InteractivePlots} param here. Objects \code{ggplotly()} cannot convert
+(ggpubr composites, sequence logos, base-graphics heatmaps, objects that are
+already widgets) are returned unchanged, so a report never breaks for
+requesting interactivity.
+
+Only use this from an ordinary chunk: an htmlwidget printed from inside a
+\code{results='asis'} loop needs an explicit \code{tagList}/\code{knit_print} dance to get
+its dependencies attached, and silently renders empty without it.}
 }
 \value{
-The object, so a knitr chunk prints it; invisible \code{NULL} with a
+The object, so a knitr chunk prints it; a plotly widget when
+\code{interactive = TRUE} and the plot can be converted; invisible \code{NULL} with a
 warning when it was never generated.
 }
 \description{
@@ -24,5 +36,6 @@ evaluated and judged by its value, so \code{NULL} counts as "not generated".
 \examples{
 \dontrun{
 ggprint_rawr(p_corr_log2area_all)
+ggprint_rawr(p_pca_scores, interactive = TRUE)
 }
 }

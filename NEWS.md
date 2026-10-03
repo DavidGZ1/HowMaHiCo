@@ -1,3 +1,46 @@
+# HowMaHiCo 0.21.0
+
+## Interactive plots, on a toggle
+
+* **New param `InteractivePlots` (default `FALSE`), declared by all ten
+  templates.** With `TRUE` the convertible plots become plotly widgets -- hover
+  values, zoom, pan -- instead of static images, which is what the reports'
+  "interactive HTML" claim should mean beyond tabsets and DT tables.
+* `ggprint_rawr()` gained an **`interactive`** argument returning
+  `plotly::ggplotly(input)`. It keeps the caller-frame name resolution and the
+  not-generated guard, so the 34 call sites that already used it needed one
+  argument each and nothing else. The shared setup (and the two `00_*`
+  templates, which do not use it) derives
+  `interactive_plots <- isTRUE(params$InteractivePlots)` once.
+* **Plots inside `results='asis'` tabset loops are deliberately left static.** An
+  htmlwidget printed from such a loop needs an explicit `tagList`/`knit_print`
+  dance to get its dependencies attached and otherwise renders **empty, with no
+  error** -- the same reason those loops already use `kable` rather than `DT`. A
+  new test walks every skeleton's chunks and fails if an asis chunk ever asks for
+  an interactive plot.
+* **Unconvertible objects are returned unchanged**, never converted and never
+  erroring: ggpubr composites (`plot_peplength_dens()`, `plot_pepmass()`),
+  sequence logos, and anything that is already a widget
+  (`.ggplotly_incompatible`). Asking for interactivity cannot break a report.
+* The three bare plot prints in `05_quality_score` and the four `ggplotly()`
+  calls on the log2(Area) correlation matrices now route through the same helper.
+  The correlation matrices pass `interactive = TRUE` unconditionally, preserving
+  the always-interactive behaviour they have had since v0.1.
+
+## Tests
+
+* `test-sim-fragpipe.R` renders `05_quality_score` against the simulated data
+  **with the toggle on and off** and asserts that the widget containers and the
+  embedded plotly library are present in one and absent in the other. Rendering
+  is the only way to catch the silent-empty-widget failure -- no parse check or
+  unit test can see it.
+* `test-theme-and-save.R` covers the conversion, the preserved default, the
+  not-generated guard under `interactive = TRUE`, and the pass-through of a
+  ggpubr composite / a non-plot / an object that is already a widget.
+* `test-report-templates.R` gained the asis-boundary guard above, the
+  `InteractivePlots` entry in its `common_params` list, and a check that a
+  template using `interactive_plots` really derives it.
+
 # HowMaHiCo 0.20.0
 
 ## A motif dimension for MHC class II

@@ -7,7 +7,27 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.20.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.21.0** — Phases 1–6 of the package conversion are complete.
+v0.21.0 is **Tier C stage 3**: the **`InteractivePlots`** param, declared by all
+ten templates. `ggprint_rawr()` gained an `interactive` argument that returns
+`plotly::ggplotly(input)` — keeping its caller-frame name resolution and its
+not-generated guard — and the shared setup (plus the two `00_*` templates, which
+have their own) derives `interactive_plots <- isTRUE(params$InteractivePlots)`,
+passed at the **34 call sites that print from ordinary chunks**. Plots inside
+`results='asis'` tabset loops are deliberately untouched: an htmlwidget printed
+from such a loop needs an explicit `tagList`/`knit_print` dance and otherwise
+renders **empty with no error** (the same reason those loops use `kable` instead
+of `DT`), and a test now guards that boundary. Unconvertible classes
+(`.ggplotly_incompatible`: ggpubr composites, seqlogos, objects already widgets)
+are returned unchanged rather than erroring, so asking for interactivity can
+never break a report. The three bare plot prints in `05_quality_score` and the
+four `ggplotly()` calls on the correlation matrices now route through the same
+helper — the latter with `interactive = TRUE` hardcoded, preserving their
+always-interactive behaviour. Verified by rendering: a new test in
+`test-sim-fragpipe.R` renders `05_quality_score` with the toggle on and off and
+asserts the widget containers *and* the embedded plotly library are present in
+one and absent in the other — the only way to catch the silent-empty-widget
+failure.
 v0.20.0 is **Tier C stage 2**: the two holes the quality score had in the
 abstract's headline claims. (a) **MHC class II had no motif dimension at all** —
 `frac_9mer` and `anchor_information` are both `NA` there (no fixed-length anchor
@@ -605,6 +625,7 @@ didn't need (they hardcoded `1_documentation/`):
 | `ResultsOverwrite` | FALSE makes `check_output_exists`/`check_file_exists` abort if outputs already exist |
 | `TestMode` | TRUE = keep only the first ~100 rows **per run** (fast iteration on a representative subset — every run/Condition/replicate survives, unlike a head-of-file truncation of a combined export; can still break correlation plots) |
 | `CsvSave` / `PlotsSave` | TRUE = also export intermediary csvs / png plots |
+| `InteractivePlots` | TRUE = the plots printed from **ordinary chunks** become plotly widgets via `ggprint_rawr(interactive = ...)`; plots inside `results='asis'` tabset loops stay static (a widget printed from such a loop silently renders empty), as do the unconvertible classes in `.ggplotly_incompatible` (ggpubr composites, seqlogos, `plot_heatmap()`'s base graphics). The two log2(Area) correlation matrices pass `interactive = TRUE` unconditionally - they have been widgets since v0.1 |
 
 `run_howmahico_report()` always writes `input_params.csv` (package version + render
 timestamp + every param, long-format, via `write_input_params()`/`write.csv_rawr()`)

@@ -28,6 +28,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE # FALSE throws error when output files already exist to avoid overwriting
   PlotsSave: FALSE #Saves all the plots as .png
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE # TRUE = saves all intermediary csvs, FALSE = saves only essential
 title: "`r paste0('00_mhc_report | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -93,6 +94,12 @@ shortpep_range <- mhc_length_window(params$MHCclass,
 shortpep_palette <- mhc_class_palette(params$MHCclass)
 shortpep_colors <- setNames(shortpep_palette,
   c(paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs"), "others"))
+
+# interactive plots: plotly widgets instead of static ggplots, for the plots
+# printed from ordinary chunks. Plots inside results='asis' tabset loops stay
+# static -- a widget printed from such a loop needs an explicit tagList/
+# knit_print dance and silently renders empty without it.
+interactive_plots <- isTRUE(params$InteractivePlots)
 
 if(params$Subset == ""){
   subset <- params$Subset
@@ -992,7 +999,7 @@ if(is.null(corr_log2area_all) || all(is.na(corr_log2area_all))){
   plot_corr() + 
   ggtitle("Log2Area correlation for all peptides")
 
-ggplotly(p_corr_log2area_all)
+ggprint_rawr(p_corr_log2area_all, interactive = TRUE)
 }
 
 
@@ -1030,7 +1037,7 @@ p_corr_log2area_short<-
   plot_corr() +
     ggtitle(paste0("Log2Area correlation for selected peptides (", shortpep_range[1]," to ", shortpep_range[2], " AAs)")) 
 
-ggplotly(p_corr_log2area_short)
+ggprint_rawr(p_corr_log2area_short, interactive = TRUE)
 }
 ```
 
@@ -1065,13 +1072,13 @@ if(all(is.na(pep_all_summ_area_biorep$Area_CV))){
 ### Condition
 
 ```{r plot-areacv-all-condition}
-if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all)
+if (is.null(pviolin_areacv_cond_all)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_all, interactive = interactive_plots)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-all-biorep}
-if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all)
+if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_all, interactive = interactive_plots)
 ```
 
 ## Selected peptides  {.tabset}
@@ -1079,13 +1086,13 @@ if (is.null(pviolin_areacv_biorep_all)) cat("_No replicates found for BioReplica
 ### Condition
 
 ```{r plot-areacv-short-condition}
-if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short)
+if (is.null(pviolin_areacv_cond_short)) cat("_No replicates found for Condition — Area %CV not available._") else ggprint_rawr(pviolin_areacv_cond_short, interactive = interactive_plots)
 ```
 
 ### BioReplicate
 
 ```{r plot-areacv-short-biorep}
-if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short)
+if (is.null(pviolin_areacv_biorep_short)) cat("_No replicates found for BioReplicate — Area %CV not available._") else ggprint_rawr(pviolin_areacv_biorep_short, interactive = interactive_plots)
 ```
 
 # Identification QC

@@ -37,6 +37,7 @@ params:
   TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives); Warning: may mess up correlation plots
   ResultsOverwrite: TRUE
   PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
 title: "`r paste0('07_pepchem | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
@@ -172,7 +173,7 @@ Position-independent residue frequency. Non-standard residues (`X`, `B`, `Z`,
 p_aa_composition_condition <- plot_aa_composition(aa_by_condition, type = "bar")
 if (is.null(p_aa_composition_condition))
   cat("_No usable sequence in this subset._") else
-  ggprint_rawr(p_aa_composition_condition)
+  ggprint_rawr(p_aa_composition_condition, interactive = interactive_plots)
 ```
 
 ## By Sample
@@ -181,7 +182,7 @@ if (is.null(p_aa_composition_condition))
 p_aa_composition_sample <- plot_aa_composition(aa_by_sample, type = "heatmap")
 if (is.null(p_aa_composition_sample))
   cat("_No usable sequence in this subset._") else
-  ggprint_rawr(p_aa_composition_sample)
+  ggprint_rawr(p_aa_composition_sample, interactive = interactive_plots)
 ```
 
 ## Enrichment
@@ -197,7 +198,7 @@ p_aa_composition_enrichment <- plot_aa_composition(aa_by_condition,
                                                    type = "enrichment")
 if (is.null(p_aa_composition_enrichment))
   cat("_No usable sequence in this subset._") else
-  ggprint_rawr(p_aa_composition_enrichment)
+  ggprint_rawr(p_aa_composition_enrichment, interactive = interactive_plots)
 ```
 
 ## Statistics
@@ -232,7 +233,7 @@ comparable between Conditions.
 p_aa_position <- plot_aa_position_heatmap(aa_positions, ncol = phis_ncol)
 if (is.null(p_aa_position))
   cat("_Not enough equal-length peptides for a positional profile._") else
-  ggprint_rawr(p_aa_position)
+  ggprint_rawr(p_aa_position, interactive = interactive_plots)
 ```
 
 `r if (!is.null(motif_length_used)) paste0("Computed on the ", motif_length_used, "-mers of this subset.") else ""`
@@ -250,7 +251,7 @@ p_aa_terminal <- plot_aa_position_heatmap(
   title = "Terminal-position amino-acid frequency (all lengths)")
 if (is.null(p_aa_terminal))
   cat("_No usable position in this subset._") else
-  ggprint_rawr(p_aa_terminal)
+  ggprint_rawr(p_aa_terminal, interactive = interactive_plots)
 ```
 
 # Physicochemical descriptors {.tabset}
@@ -286,7 +287,7 @@ for (prop in property_cols) {
 p_effectsize <- plot_property_effectsize(pepchem_stats, fdr = params$FdrCutoff)
 if (is.null(p_effectsize))
   cat("_Fewer than two Conditions in this subset - no comparison possible._") else
-  ggprint_rawr(p_effectsize)
+  ggprint_rawr(p_effectsize, interactive = interactive_plots)
 ```
 
 ## Sample level (primary)
