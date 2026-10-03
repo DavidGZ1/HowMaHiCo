@@ -32,15 +32,20 @@ qc_metrics_by_sample(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1")
   `"MHC1"`, `"MHC1_mouse"` or `"MHC2"`. For `"MHC2"` the
   canonical-length and anchor-motif metrics are returned as `NA` (no
   fixed-length anchor model), so they drop out of the composite
-  downstream. For `"MHC1_mouse"`, `frac_9mer` counts 8- **and** 9-mers
-  (both canonical for murine H-2) and the anchor motif is scored on
-  whichever of the two the sample has more of.
+  downstream — `frac_nested_core` is the class-II motif dimension
+  instead, and
+  [`quality_thresholds_default()`](https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.md)
+  gives it the anchor metric's weight there. For `"MHC1_mouse"`,
+  `frac_9mer` counts 8- **and** 9-mers (both canonical for murine H-2)
+  and the anchor motif is scored on whichever of the two the sample has
+  more of.
 
 ## Value
 
 A data frame with one row per `Sample` and columns: `frac_in_window`,
 `frac_9mer`, `frac_cterm_KR`, `frac_cterm_KR_longonly`,
-`anchor_information`, `frac_cross_class`, `frac_charge_1_2`,
+`anchor_information`, `frac_nested_core`, `median_abs_rt_error`,
+`median_abs_im_error`, `frac_cross_class`, `frac_charge_1_2`,
 `n_unique_pep`, `n_unique_pep_in_window`, `n_source_proteins`,
 `median_abs_ppm`.
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,112 @@
       <small>Source: <a href="https://github.com/DavidGZ1/HowMaHiCo/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.22.0" id="howmahico-0220">HowMaHiCo 0.22.0<a class="anchor" aria-label="anchor" href="#howmahico-0220"></a></h2>
+<div class="section level3">
+<h3 id="peaks-xpro-actually-works-now-0-22-0">PEAKS Xpro actually works now<a class="anchor" aria-label="anchor" href="#peaks-xpro-actually-works-now-0-22-0"></a></h3>
+<p>Verifying the PEAKS claim with a shipped dataset (Tier C’s last item) turned up <strong>two bugs that made the documented PEAKS entry point unusable</strong>, both silent or cryptic rather than loud:</p>
+<ul><li>
+<strong><code><a href="../reference/read_peaks_batch.html">read_peaks_batch()</a></code> filtered the export FOLDERS by the PER-SAMPLE key.</strong> A PEAKS export folder normally holds several samples, one <code>Area#&lt;sample&gt;</code> column each inside its <code>peptide.csv</code>, and [read_peaks()] turns those suffixes into <code>Sample_peaks</code> – which is also what <code><a href="../reference/annotate_peaks.html">annotate_peaks()</a></code> joins the metadata on. Filtering folders by that same value therefore matched <strong>no folder at all</strong> whenever folder and sample names differed (i.e. always, for a multi-sample export): the empty read then died inside <code><a href="../reference/parse_peaks.html">parse_peaks()</a></code> with <code>object 'Accession' not found</code>. Keying the annotation on the folder instead produced the mirror failure – a silent 0-row join. Folder selection now uses <code>Sample_folder</code> (falling back to <code>Sample_peaks</code> for the one-folder-per-sample layout, where the two coincide), and both halves of the trap now fail with an error naming the two keys and showing what was found on each side.</li>
+<li>
+<strong><code><a href="../reference/read_peaks_batch.html">read_peaks_batch()</a></code> pasted an absolute path behind the working directory.</strong> It called <code>read_peaks(filedir = getwd(), folder_peaks_db = &lt;indexed path&gt;)</code>, so an absolute <code>FolderData</code> – exactly what the reports document and what <code><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file()</a></code> returns – became an unopenable path. It now splits the indexed path with <code><a href="https://rdrr.io/r/base/basename.html" class="external-link">dirname()</a></code>/<code><a href="https://rdrr.io/r/base/basename.html" class="external-link">basename()</a></code>, which reconstructs a relative or absolute path unchanged.</li>
+<li>
+<code><a href="../reference/get_annot_peaks.html">get_annot_peaks()</a></code> documents that one row per folder is not one row per sample, and what to add by hand for a multi-sample export.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="a-simulated-peaks-export-to-test-against-0-22-0">A simulated PEAKS export to test against<a class="anchor" aria-label="anchor" href="#a-simulated-peaks-export-to-test-against-0-22-0"></a></h3>
+<ul><li>
+<strong>New <code>inst/extdata/sim_peaks_xpro/</code></strong> (+ <code>sim_peaks_xpro_annotation.csv</code>): the 462 simulated peptides over 6 samples in real PEAKS Xpro shape – one export folder, <code>-10lgP</code>, a <code>1/k0 Range</code> string, <code>Area#&lt;sample&gt;</code> columns, a few oxidised methionines written PEAKS-style (<code>(+15.99)</code> on the peptide, the name in <code>PTM</code>). PEAKS was the only engine with no end-to-end fixture, which is why the above went unnoticed. ~61 KB.</li>
+<li>
+<code>test-loaders-peaks.R</code> gained the end-to-end <code>build_pep_all("peaks_xpro")</code> assertion, a check that folder selection keys on <code>Sample_folder</code>, and a check that each half of the key mix-up now errors loudly.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="corrected-ptm-documentation-0-22-0">Corrected PTM documentation<a class="anchor" aria-label="anchor" href="#corrected-ptm-documentation-0-22-0"></a></h3>
+<ul><li>v0.19.0 described PEAKS as writing a bracketed delta mass in <code>PTM</code>. It does not: <strong>PEAKS writes the modification name</strong> (<code>Oxidation (M)</code>) and keeps the delta mass in the peptide string. <code><a href="../reference/translate_ptm.html">translate_ptm()</a></code> handled this correctly already – a token with no number falls through unchanged – but the docs, the two report notes and the test comments said otherwise, and are now right. A test pins the pass-through so a PEAKS name can never be mangled into a mass match.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="the-abstract-0-22-0">The abstract<a class="anchor" aria-label="anchor" href="#the-abstract-0-22-0"></a></h3>
+<ul><li>
+<code>example/abstract_eupa2026_v3.md</code> now names what the code does: motif clarity is attributed to anchor information content for class 1 and nested binding cores for class 2, and the identification-QC sentence distinguishes DDA mass error from DIA retention-time/ion-mobility calibration error.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.21.0" id="howmahico-0210">HowMaHiCo 0.21.0<a class="anchor" aria-label="anchor" href="#howmahico-0210"></a></h2>
+<div class="section level3">
+<h3 id="interactive-plots-on-a-toggle-0-21-0">Interactive plots, on a toggle<a class="anchor" aria-label="anchor" href="#interactive-plots-on-a-toggle-0-21-0"></a></h3>
+<ul><li>
+<strong>New param <code>InteractivePlots</code> (default <code>FALSE</code>), declared by all ten templates.</strong> With <code>TRUE</code> the convertible plots become plotly widgets – hover values, zoom, pan – instead of static images, which is what the reports’ “interactive HTML” claim should mean beyond tabsets and DT tables.</li>
+<li>
+<code><a href="../reference/ggprint_rawr.html">ggprint_rawr()</a></code> gained an <strong><code>interactive</code></strong> argument returning <code>plotly::ggplotly(input)</code>. It keeps the caller-frame name resolution and the not-generated guard, so the 34 call sites that already used it needed one argument each and nothing else. The shared setup (and the two <code>00_*</code> templates, which do not use it) derives <code>interactive_plots &lt;- isTRUE(params$InteractivePlots)</code> once.</li>
+<li>
+<strong>Plots inside <code>results='asis'</code> tabset loops are deliberately left static.</strong> An htmlwidget printed from such a loop needs an explicit <code>tagList</code>/<code>knit_print</code> dance to get its dependencies attached and otherwise renders <strong>empty, with no error</strong> – the same reason those loops already use <code>kable</code> rather than <code>DT</code>. A new test walks every skeleton’s chunks and fails if an asis chunk ever asks for an interactive plot.</li>
+<li>
+<strong>Unconvertible objects are returned unchanged</strong>, never converted and never erroring: ggpubr composites (<code><a href="../reference/plot_peplength_dens.html">plot_peplength_dens()</a></code>, <code><a href="../reference/plot_pepmass.html">plot_pepmass()</a></code>), sequence logos, and anything that is already a widget (<code>.ggplotly_incompatible</code>). Asking for interactivity cannot break a report.</li>
+<li>The three bare plot prints in <code>05_quality_score</code> and the four <code>ggplotly()</code> calls on the log2(Area) correlation matrices now route through the same helper. The correlation matrices pass <code>interactive = TRUE</code> unconditionally, preserving the always-interactive behaviour they have had since v0.1.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-21-0">Tests<a class="anchor" aria-label="anchor" href="#tests-0-21-0"></a></h3>
+<ul><li>
+<code>test-sim-fragpipe.R</code> renders <code>05_quality_score</code> against the simulated data <strong>with the toggle on and off</strong> and asserts that the widget containers and the embedded plotly library are present in one and absent in the other. Rendering is the only way to catch the silent-empty-widget failure – no parse check or unit test can see it.</li>
+<li>
+<code>test-theme-and-save.R</code> covers the conversion, the preserved default, the not-generated guard under <code>interactive = TRUE</code>, and the pass-through of a ggpubr composite / a non-plot / an object that is already a widget.</li>
+<li>
+<code>test-report-templates.R</code> gained the asis-boundary guard above, the <code>InteractivePlots</code> entry in its <code>common_params</code> list, and a check that a template using <code>interactive_plots</code> really derives it.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.20.0" id="howmahico-0200">HowMaHiCo 0.20.0<a class="anchor" aria-label="anchor" href="#howmahico-0200"></a></h2>
+<div class="section level3">
+<h3 id="a-motif-dimension-for-mhc-class-ii-0-20-0">A motif dimension for MHC class II<a class="anchor" aria-label="anchor" href="#a-motif-dimension-for-mhc-class-ii-0-20-0"></a></h3>
+<ul><li>
+<strong>New metric <code>frac_nested_core</code></strong> in <code><a href="../reference/qc_metrics_by_sample.html">qc_metrics_by_sample()</a></code>, with the internal <code>.nested_core_fraction()</code>. For <code>MHCclass = "MHC2"</code> both <code>frac_9mer</code> and <code>anchor_information</code> are <code>NA</code> – class-II ligands have no fixed-length anchor register – so the quality score had no motif dimension at all for the class the package’s title claims to support. Class-II peptides are trimmed into ragged, length-variable families around one ~9-residue binding core, so this measures the fraction of in-window ligands sharing a 9-mer with another ligand of the same sample. No alignment, register guess, binding predictor or external data is involved.</li>
+<li>
+<code>quality_thresholds_default("MHC2")</code> promotes it to the anchor metric’s weight
+<ol start="3" style="list-style-type: decimal"><li>and relabels it “Nested-core families”; for <code>MHC1</code>/<code>MHC1_mouse</code> it stays a <strong>weight-0 diagnostic</strong>, since some nesting is normal there but is not the primary signal. Metric <em>keys</em> are identical across classes, as with the mouse <code>frac_9mer</code> rewrite. The class-II cut-offs are provisional – prefer <code>ThresholdMode = "qc_relative"</code>.</li>
+</ol></li>
+<li>It is computed on the <strong>in-window</strong> ligands only, so a long tryptic tail cannot manufacture nesting, and a sequence can never count as nested with itself (one (k-mer, sequence) pair at most, so internal repeats do not register).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="identification-qc-that-works-for-dia-0-20-0">Identification QC that works for DIA<a class="anchor" aria-label="anchor" href="#identification-qc-that-works-for-dia-0-20-0"></a></h3>
+<ul><li>
+<strong>New metrics <code>median_abs_rt_error</code> and <code>median_abs_im_error</code>.</strong> Mass error is an MS2-level DDA metric: DIA-NN’s <code>Precursor.Mz</code> is the <em>library</em> value and <code>report.tsv</code> carries no observed precursor m/z, so no real ppm can be recovered from it (<code>ppm</code> is a hardcoded dummy, dropped from the score). DIA-NN does report a predicted RT and ion mobility per precursor, and the deviation from them is the DIA analogue – both columns were already carried into <code>pep_all</code> by <code><a href="../reference/parse_diann.html">parse_diann()</a></code> and unused until now.</li>
+<li>Both are <code>NA</code> for FragPipe and PEAKS, which carry no prediction, so they drop out of the composite exactly as <code>ppm</code> drops out for DIA-NN. The internal <code>.median_abs_delta()</code> also returns <code>NA</code> when every difference is 0, so a placeholder column cannot score as perfect accuracy. Their cut-offs are instrument- and gradient-dependent, which the report states.</li>
+<li>
+<code>05_quality_score</code>’s <strong>Methods</strong> section documents both substitutions, and its overview text now names them instead of only listing what drops out.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-20-0">Tests<a class="anchor" aria-label="anchor" href="#tests-0-20-0"></a></h3>
+<ul><li>
+<code>test-quality-score.R</code> gained the nested-core maths (shared cores, the internal-repeat trap, the <code>NA</code> cases), the per-class threshold promotion, the <code>.median_abs_delta()</code> guards, calibration metrics with and without predictions, and a guard that <strong>every scored threshold row exists in the metrics table</strong> for every MHC class – a mismatch there would abort the whole report inside <code><a href="../reference/score_sample_quality.html">score_sample_quality()</a></code>’s composite step.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.19.0" id="howmahico-0190">HowMaHiCo 0.19.0<a class="anchor" aria-label="anchor" href="#howmahico-0190"></a></h2>
+<div class="section level3">
+<h3 id="readable-ptm-names-0-19-0">Readable PTM names<a class="anchor" aria-label="anchor" href="#readable-ptm-names-0-19-0"></a></h3>
+<ul><li>
+<strong>New <code>R/ptm.R</code>: <code><a href="../reference/ptm_reference.html">ptm_reference()</a></code> + <code><a href="../reference/translate_ptm.html">translate_ptm()</a></code>.</strong> The <code>PTM</code> column is written differently by every search engine – DIA-NN stores UniMod accessions (<code>(UniMod:35)</code>), FragPipe a delta mass behind a position+residue prefix (<code>2M(15.9949)</code>), PEAKS a signed delta mass rounded to two decimals (<code>[+15.99]</code>) – so the PTM heatmaps showed three unrelated-looking labels for what is one modification, and a UniMod-only translation would have been a silent no-op on the project’s default FragPipe data. <code><a href="../reference/translate_ptm.html">translate_ptm()</a></code> handles all three dialects in one pass and returns <code>Oxidation</code> for each.</li>
+<li>
+<code><a href="../reference/plot_ptm_heatmap.html">plot_ptm_heatmap()</a></code> gained <code>translate = TRUE</code> (and a <code>reference</code> pass-through), applied where the multi-PTM strings are already split into one token per row so both the count and the proportion branch inherit it. <code>translate = FALSE</code> restores the raw engine tokens. Display-time only: <code>pep_all$PTM</code> keeps the raw value, as with the v0.12.0 “data keys unchanged” renames.</li>
+<li>Unmatched tokens are returned <strong>unchanged</strong> rather than becoming <code>NA</code>, so an unknown modification stays visible on the heatmap. <code><a href="../reference/ptm_reference.html">ptm_reference()</a></code> is ordered by how commonly each modification occurs, because a few are mass-degenerate (<code>Glu-&gt;pyro-Glu</code>/<code>Dehydrated</code>, <code>Gln-&gt;pyro-Glu</code>/<code>Ammonia-loss</code>) and the first row within tolerance wins; pass a reordered copy to change that preference.</li>
+<li>
+<strong>Fixed a factually wrong note</strong> in <code>00_mhc_report</code> and <code>01_id_counts</code>, which told the reader that “Fragpipe and DIA-NN” numbers are UniMod codes. FragPipe and PEAKS report delta masses; only DIA-NN reports UniMod.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="one-glossary-generated-from-one-function-0-19-0">One glossary, generated from one function<a class="anchor" aria-label="anchor" href="#one-glossary-generated-from-one-function-0-19-0"></a></h3>
+<ul><li>
+<strong>New <code><a href="../reference/pep_all_glossary.html">pep_all_glossary()</a></code></strong> (<code>R/report-helpers.R</code>) documents all 30 core <code>pep_all</code> columns, including the caveats that are easy to misread: DIA-NN’s <code>ppm</code> is a hardcoded dummy, its <code>Mass</code> is computed rather than observed, <code>Accession</code> is a protein <em>group</em> only for DIA-NN and PEAKS, and <code>Score</code> is not comparable across engines.</li>
+<li>
+<strong>New shared child <code>inst/rmarkdown/shared/glossary.Rmd</code></strong>, included by all ten templates ahead of their “Session &amp; provenance” footer. It explains the counting units (peptides vs sequences vs parent proteins vs selected) with the length window interpolated from <code>shortpep_range</code>, then renders <code><a href="../reference/pep_all_glossary.html">pep_all_glossary()</a></code> as a table.</li>
+<li>This replaces the hardcoded glossary prose in <code>00_mhc_report</code>, which had gone stale – it stated a 12-20 AA MHC-II window (the actual window is 12-25) and named <code>3_results</code>/<code>4_figures</code> regardless of the run’s actual path params. The README gained the same table under a new “Glossary” heading, closing the standby item for it.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="tests-0-19-0">Tests<a class="anchor" aria-label="anchor" href="#tests-0-19-0"></a></h3>
+<ul><li>New <code>tests/testthat/test-ptm.R</code>: all three token dialects, the tolerance that still separates Acetyl (42.010565) from Trimethyl (42.046950), PEAKS’ 2-decimal rounding, pass-through of unknown tokens/<code>NA</code>/<code>""</code>, the reference-order rule for mass-degenerate modifications, and a <code>plot_ptm_heatmap(translate = TRUE/FALSE)</code> assertion on the plot data.</li>
+<li>
+<code>test-report-helpers.R</code> gained two glossary guards: every column <code>validate_pep_all()</code> requires must be documented, and so must every column the reports consume from a real <code><a href="../reference/build_pep_all.html">build_pep_all()</a></code> run on the shipped sim data.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.18.0" id="howmahico-0180">HowMaHiCo 0.18.0<a class="anchor" aria-label="anchor" href="#howmahico-0180"></a></h2>
 <div class="section level3">

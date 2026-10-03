@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -174,6 +174,13 @@
 
         </dt>
         <dd>Provider sentence of a report header</dd>
+
+        <dt>
+
+          <code><a href="pep_all_glossary.html">pep_all_glossary()</a></code>
+
+        </dt>
+        <dd>Glossary of the <code>pep_all</code> columns</dd>
       </dl></div><div class="section level2">
       <h2 id="data-loaders">Data loaders<a class="anchor" aria-label="anchor" href="#data-loaders"></a></h2>
 
@@ -1018,6 +1025,29 @@
 
         </dt>
         <dd>Summed ligand intensity against the search engine's protein quantity</dd>
+      </dl></div><div class="section level2">
+      <h2 id="modifications-ptms-">Modifications (PTMs)<a class="anchor" aria-label="anchor" href="#modifications-ptms-"></a></h2>
+
+      <div class="section-desc"><p>Translate the engine-specific PTM tokens carried in <code>pep_all$PTM</code> – UniMod accessions from DIA-NN, monoisotopic delta masses from FragPipe and PEAKS – into readable modification names at plot time</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="ptm_reference.html">ptm_reference()</a></code>
+
+        </dt>
+        <dd>Reference table of common peptide modifications</dd>
+
+        <dt>
+
+          <code><a href="translate_ptm.html">translate_ptm()</a></code>
+
+        </dt>
+        <dd>Translate PTM tokens into readable modification names</dd>
       </dl></div><div class="section level2">
       <h2 id="export-i-o-helpers">Export &amp; I/O helpers<a class="anchor" aria-label="anchor" href="#export-i-o-helpers"></a></h2>
 

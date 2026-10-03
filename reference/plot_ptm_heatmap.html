@@ -13,7 +13,7 @@ per Condition. All data preparation is handled internally — only pep_short
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,9 @@ per Condition. All data preparation is handled internally — only <code>pep_sho
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_ptm_heatmap</span><span class="op">(</span></span>
 <span>  <span class="va">pep_short</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"count"</span>, <span class="st">"proportion"</span><span class="op">)</span>,</span>
-<span>  shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span></span>
+<span>  shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span>,</span>
+<span>  translate <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  reference <span class="op">=</span> <span class="fu"><a href="ptm_reference.html">ptm_reference</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -78,6 +80,19 @@ per Condition. All data preparation is handled internally — only <code>pep_sho
 the <code>"proportion"</code> subtitle (the denominator is computed directly from
 <code>pep_short</code>).</p></dd>
 
+
+<dt id="arg-translate">translate<a class="anchor" aria-label="anchor" href="#arg-translate"></a></dt>
+<dd><p>Translate the PTM tokens to readable modification names via
+<code><a href="translate_ptm.html">translate_ptm()</a></code> (default <code>TRUE</code>). The raw tokens are engine-specific —
+UniMod accessions for DIA-NN, delta masses for FragPipe and PEAKS — so
+without this the same modification reads differently per engine. Set
+<code>FALSE</code> to plot the tokens as the search engine wrote them.</p></dd>
+
+
+<dt id="arg-reference">reference<a class="anchor" aria-label="anchor" href="#arg-reference"></a></dt>
+<dd><p>Modification lookup table passed to <code><a href="translate_ptm.html">translate_ptm()</a></code>;
+defaults to <code><a href="ptm_reference.html">ptm_reference()</a></code>. Ignored when <code>translate = FALSE</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -89,6 +104,7 @@ the <code>"proportion"</code> subtitle (the denominator is computed directly fro
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="fu">plot_ptm_heatmap</span><span class="op">(</span><span class="va">pep_short</span>, type <span class="op">=</span> <span class="st">"count"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">plot_ptm_heatmap</span><span class="op">(</span><span class="va">pep_short</span>, type <span class="op">=</span> <span class="st">"proportion"</span>, shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plot_ptm_heatmap</span><span class="op">(</span><span class="va">pep_short</span>, translate <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>   <span class="co"># raw engine tokens</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -427,6 +427,11 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </td>
 <td>Also write the intermediate csv tables / every figure as png</td>
 </tr>
+<tr>
+<td><code>InteractivePlots</code></td>
+<td>
+<code>TRUE</code> renders the convertible plots as interactive plotly widgets (hover, zoom, pan) instead of static images. Applies to the plots printed from ordinary chunks; plots inside tabset loops, the sequence logos, the UpSet plots and the ggpubr composites stay static, and the log2(Area) correlation matrices are interactive either way</td>
+</tr>
 </tbody>
 </table>
 <p>Folder paths are absolute, or relative to the working directory you render from — the templates live inside the installed package and can be rendered from anywhere.</p>
@@ -636,6 +641,176 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </table>
 <p>Plus each report’s own result tables (<code>quant_stats_results.csv</code>, <code>pepchem_summary.csv</code>, …). <code>CsvSave = TRUE</code> adds the intermediate tables (per-sample log2Area matrices, count summaries, upset tables); <code>PlotsSave = TRUE</code> writes every figure as png to <code>&lt;FolderFigures&gt;/&lt;Subset&gt;/</code>. The HTML report itself goes to <code>output_file</code>.</p>
 <p><code><a href="reference/build_pep_all.html">build_pep_all()</a></code> also writes the <code>&lt;Subset&gt;_pep_all.rda</code> cache into <code>FolderData</code>, which is what the focused reports read.</p>
+</div>
+<div class="section level2">
+<h2 id="glossary">Glossary<a class="anchor" aria-label="anchor" href="#glossary"></a>
+</h2>
+<p>The reports distinguish <strong>peptides</strong> (distinct peptidoforms - one sequence with two modifications counts twice) from <strong>sequences</strong> (stripped, counted once) and <strong>parent proteins</strong> (protein <em>groups</em> for DIA-NN and PEAKS). <em>Selected</em> peptides are those inside the expected ligand length window for the run (<code>MHCclass</code>).</p>
+<p>Columns of <code>pep_all</code> / <code>pep_all.csv</code>, one row per peptide-sample observation. The same table is printed in every report, both generated from <code><a href="reference/pep_all_glossary.html">pep_all_glossary()</a></code>:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr>
+<th>Column</th>
+<th>Meaning</th>
+<th>Notes</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>Condition</code></td>
+<td>Experimental group the sample belongs to</td>
+<td>From the annotation table; factor order = annotation row order</td>
+</tr>
+<tr>
+<td><code>BioReplicate</code></td>
+<td>Biological replicate within a Condition</td>
+<td>From the annotation table</td>
+</tr>
+<tr>
+<td><code>TechReplicate</code></td>
+<td>Technical/injection replicate within a BioReplicate</td>
+<td>From the annotation table</td>
+</tr>
+<tr>
+<td><code>Sample</code></td>
+<td>The analysed sample - the unit most plots are drawn per</td>
+<td>From the annotation table</td>
+</tr>
+<tr>
+<td><code>Sample_ID</code></td>
+<td>Free-text human-readable sample identifier</td>
+<td>Optional; get_annot_sampleid() can fill it from a HyStar sample list</td>
+</tr>
+<tr>
+<td><code>Accession</code></td>
+<td>Protein accession(s) the peptide was assigned to</td>
+<td>A protein GROUP for DIA-NN (‘;’-list) and PEAKS (‘:’-list); a single <code>sp\|ID\|ENTRY</code> string for FragPipe</td>
+</tr>
+<tr>
+<td><code>ProteinFirst</code></td>
+<td>Leading protein of the group</td>
+<td>Default protein key of build_prot_all()</td>
+</tr>
+<tr>
+<td><code>GeneFirst</code></td>
+<td>Leading gene name of the group</td>
+<td>Empty when the engine reports no gene</td>
+</tr>
+<tr>
+<td><code>OrganismFirst</code></td>
+<td>Organism suffix parsed from the leading accession</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Peptide</code></td>
+<td>Peptide as reported, modifications included</td>
+<td>Two peptidoforms of one sequence are two different peptides</td>
+</tr>
+<tr>
+<td><code>Sequence</code></td>
+<td>Stripped amino-acid sequence, no modifications</td>
+<td>The ‘sequences’ counted in Venn/UpSet plots</td>
+</tr>
+<tr>
+<td><code>Length</code></td>
+<td>Number of amino acids in Sequence</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Length_range</code></td>
+<td>Whether Length falls in the expected ligand window</td>
+<td>Window from MHCclass (or ShortPeptideLengthMin/Max); defines pep_short</td>
+</tr>
+<tr>
+<td><code>Score</code></td>
+<td>Search-engine confidence score</td>
+<td>Engine-specific and NOT comparable across engines: FragPipe hyperscore, DIA-NN Q.Value (lower is better), PEAKS -10lgP</td>
+</tr>
+<tr>
+<td><code>Area</code></td>
+<td>Precursor peak area (linear scale)</td>
+<td>NA when the engine reported zero - see compute_log2area()</td>
+</tr>
+<tr>
+<td><code>Log2Area</code></td>
+<td>log2 of Area</td>
+<td>NA for zero/absent Area in every loader</td>
+</tr>
+<tr>
+<td><code>PTM</code></td>
+<td>Modification token(s) as the engine wrote them</td>
+<td>UniMod accessions for DIA-NN, delta masses for FragPipe/PEAKS; translate_ptm() maps both to names at plot time</td>
+</tr>
+<tr>
+<td><code>Charge</code></td>
+<td>Precursor charge state, formatted ‘+ n’</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Nter</code></td>
+<td>First residue of Sequence</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Cter</code></td>
+<td>Last residue of Sequence</td>
+<td>C-terminal K/R fraction is a tryptic-background diagnostic in the quality score</td>
+</tr>
+<tr>
+<td><code>RT</code></td>
+<td>Retention time</td>
+<td>Minutes, as reported by the engine</td>
+</tr>
+<tr>
+<td><code>invk0</code></td>
+<td>Ion mobility, 1/k0</td>
+<td>timsTOF only; FAIMS compensation voltage is substituted for faims_orbi</td>
+</tr>
+<tr>
+<td><code>Mass</code></td>
+<td>Precursor mass</td>
+<td>Observed/calibrated for FragPipe and PEAKS; COMPUTED from Precursor.Mz and charge for DIA-NN</td>
+</tr>
+<tr>
+<td><code>ppm</code></td>
+<td>Mass error in parts per million</td>
+<td>A hardcoded dummy 0 for DIA-NN, which reports no observed precursor m/z; dropped from the quality score there</td>
+</tr>
+<tr>
+<td><code>m_z</code></td>
+<td>Precursor mass-to-charge ratio</td>
+<td>The library value for DIA-NN</td>
+</tr>
+<tr>
+<td><code>Source_file</code></td>
+<td>Raw file / run the observation came from</td>
+<td>Extracted by extract_run_name()</td>
+</tr>
+<tr>
+<td><code>Source_File_ID</code></td>
+<td>Engine’s own run identifier</td>
+<td></td>
+</tr>
+<tr>
+<td><code>Precursor_Id</code></td>
+<td>Engine’s precursor identifier</td>
+<td>DIA-NN</td>
+</tr>
+<tr>
+<td><code>Found_By</code></td>
+<td>Search engine that produced the row</td>
+<td>‘FragPipe’, ‘DIA-NN’, ‘PEAKS’, or the dictionary’s value for custom input</td>
+</tr>
+<tr>
+<td><code>PeptideID</code></td>
+<td>Composite peptide identifier used for joins and counting</td>
+<td></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>

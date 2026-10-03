@@ -11,6 +11,115 @@ they are moved to “to do”
 
 ## To do
 
+### Road to the EuPA 2026 abstract (example/abstract_eupa2026_v3.md)
+
+Gap analysis of the package (v0.18.0) against the submitted abstract
+text, in priority order. Tier A must be true before the abstract is
+submitted, tier B before the meeting, tier C is wording-vs-code
+mismatches that can be closed either by implementing or by re-wording
+the abstract.
+
+**Tier A — blocking, the abstract makes these promises explicitly**
+
+- make the GitHub repo public. The abstract prints
+  <https://github.com/DavidGZ1/HowMaHiCo>, which currently 404s
+  (`gh repo view`: `isPrivate: true`), and GitHub Pages will not serve
+  `gh-pages` from a private repo, so
+  <https://davidgz1.github.io/HowMaHiCo/> is dead too. While there: fill
+  in the empty repo description + homepage field, add a CITATION.cff,
+  and mint a Zenodo DOI so the poster has something citable.
+- resolve the license conflict (was already in standby, now blocking
+  “open-source R package”): DESCRIPTION says MIT but `Imports: Peptides`
+  is GPL-2 and `Suggests: limma` is GPL \>= 2. Pick one — relicense to
+  GPL-3, or drop `Peptides` to Suggests / reimplement the two
+  descriptors actually used (GRAVY, pI; ~30 lines) and keep MIT.
+- abstract housekeeping: the affiliation is still the placeholder
+  `[Affiliation: institution, city, country]`; decide whether the
+  submission carries the institutional address or DESCRIPTION’s
+  `davidgz.science@gmail.com`.
+
+**Tier B — needed before the meeting; the abstract’s Results/Conclusions
+rest on them**
+
+- demonstration dataset + actual results. The Results paragraph is
+  capability prose with no numbers, no figure and no comparison, and the
+  only shipped data is `inst/extdata/sim_fragpipe_dda` (462 *synthetic*
+  peptides, FragPipe DDA only) — fine for tests, not for a poster panel.
+  Need at least one real dataset rendered end to end, class 1 *and*
+  class 2 (the advanced-plans “JY hla1 and hla2 from Annica and Julian”
+  item), ideally with a PRIDE accession so the QC claims are
+  reproducible. Highest-value single panel: the quality score separating
+  a genuine immunopeptidome from a failed pulldown / whole-proteome
+  negative control — that is the figure that demonstrates “how MHC is
+  the dataset”.
+- general-overview report for the biologically focused user (the
+  advanced-plans “Simple summary of HowMaHiCo ala HowDirty” item). The
+  abstract promises “a general-overview report for biologically focused
+  users and another for deeper evaluation by the LC-MS expert”; what
+  exists is 8 thematic slices plus `00_mhc_report`, a ~1300-line
+  all-in-one that is the opposite of an overview (and the legacy report
+  where the Overlap intra-Condition bug is still uncorrected).
+  `03_lcms_qc` already covers the expert half. Scope: one page — counts,
+  length-window fidelity, quality score, red flags.
+- cross-experiment comparison, claimed in the Conclusions but not
+  implemented: one render = one subset, and nothing stacks the
+  per-sample score CSVs that `05_quality_score` writes into a trend
+  view. Add a `compare_runs()` reading N score tables (+ a
+  longitudinal/trend plot per metric) so the sentence becomes true.
+
+**Tier C — code does not match the wording; implement or re-word**
+
+- **DONE (v0.21.0)** - “interactive HTML” is overstated. Interactivity
+  today = tabsets + floating TOC, DT tables in 06/07/08, and exactly two
+  `ggplotly()` calls (00_mhc_report L996/L1034, 04_quant L118/L156);
+  every other plot is a static raster. Either land the standby
+  `InteractivePlots` toggle for the plots that are *not* inside
+  `results='asis'` loops (correlation, PCA, volcano, dynamic range,
+  completeness are the easy ones) or soften the abstract to
+  “self-contained, navigable HTML”.
+- **DONE (v0.20.0)** — class 2 in the title vs. the quality score: for
+  `MHCclass = "MHC2"`,
+  [`qc_metrics_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.md)
+  returns NA for `frac_9mer` and `anchor_information` (no fixed-length
+  anchor model), so they drop out of the composite — the “motif clarity”
+  the Results paragraph names is not delivered for class 2, although the
+  title claims “class 1 and class 2”. Either add a register-free class-2
+  motif metric (positional entropy over a sliding 9-mer core) or qualify
+  the sentence.
+- **DONE (v0.20.0)** — mass error is absent for DIA-NN (`ppm` is a
+  hardcoded 0 dummy, documented and dropped from the score), so
+  “identification QC such as score and mass error” is hollow for the DIA
+  audience. Derivable from `Precursor.Mz` vs the theoretical m/z of
+  sequence + PTM if it is worth making real.
+- **DONE (v0.19.0)** — PTM profiles are unreadable as shipped: UniMod
+  codes for DIA-NN, bare delta masses for FragPipe/PEAKS. `R/ptm.R`
+  ([`ptm_reference()`](https://davidgz1.github.io/HowMaHiCo/reference/ptm_reference.md) +
+  [`translate_ptm()`](https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.md))
+  now translates both forms, wired into
+  `plot_ptm_heatmap(translate = TRUE)`.
+- **DONE (v0.22.0)** — verify PEAKS Xpro before it appears in print. It
+  did not work:
+  [`read_peaks_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks_batch.md)
+  filtered export folders by the per-sample key (`Sample_peaks`) instead
+  of `Sample_folder`, and pasted an absolute `FolderData` behind
+  [`getwd()`](https://rdrr.io/r/base/getwd.html). Both fixed, both now
+  failing loudly, and `inst/extdata/sim_peaks_xpro/` + tests cover the
+  path end to end. **Still open for DGZ**: run it against a REAL PEAKS
+  11/Xpro export — a simulated one cannot prove column-name parity.
+- “for both non-coders and advanced programmers” is present tense in the
+  Background, but the workflow needs R, a hand-edited annotation CSV and
+  a render call;
+  [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md) +
+  demo mode soften it, and Docker/Shiny are correctly labelled
+  “planned”. Low risk — re-read it once the Shiny tier exists.
+- **DONE (v0.19.0)** — finish the glossaries, which the abstract’s
+  reproducibility framing leans on:
+  [`pep_all_glossary()`](https://davidgz1.github.io/HowMaHiCo/reference/pep_all_glossary.md) +
+  `inst/rmarkdown/shared/glossary.Rmd` now generate both the in-report
+  glossary (in all ten templates) and the README table from one
+  function. Still open for DGZ: read the 30 descriptions and correct
+  anything that is wrong.
+
 ## In standby
 
 - peptide position within the parent protein (the third part of the
@@ -23,15 +132,6 @@ they are moved to “to do”
   e.g. CHEB_001 all dda dataset not in repo). The all-NA Area/CV and
   all-NA correlation cases are already guarded in the report chunks; the
   partial (some groups 0/NA) failure needs a repro to target.
-- For PTM plots, translate unimod code into modification name — deferred
-  (full implementation design saved in
-  memory/project_ptm_translation_plan.md). Scope chosen: translate BOTH
-  UniMod accessions AND delta masses to names. Key gotcha: only DIA-NN
-  stores UniMod codes (UniMod:NN); FragPipe (default/sim) and PEAKS
-  store delta masses. Plan: new R/ptm.R with ptm_reference() +
-  translate_ptm(), wired into plot_ptm_heatmap() as a display-time
-  translate=TRUE arg; correct the wrong PTM note in 01_id_counts
-  skeleton.
 - InteractivePlots (TRUE/FALSE) toggle to render compatible plots via
   ggplotly — deferred: most compatible plots print inside results=‘asis’
   tabset loops where embedding plotly htmlwidgets (vs static ggplots) is
@@ -51,12 +151,59 @@ they are moved to “to do”
 - include whole folder with dia-quant-output when diann
 - check and deal with license discrepancies between howmahico, peptides,
   limma
-- readme: add a glossary of the column headers in pep_all
 
 ### to be done by DGZ
 
-- Check and complete glosary
-- check/add functionality for peaks Xpro
+- Check and complete glosary - NOW GENERATED: the 30 column descriptions
+  live in pep_all_glossary() (R/report-helpers.R) and feed both the
+  in-report glossary (inst/rmarkdown/shared/glossary.Rmd, in all ten
+  templates) and the README table. They were written by Claude from the
+  loaders + CLAUDE.md, so read them once and correct anything wrong; the
+  tests only check that every required column IS documented, never that
+  the text is right (v0.19.0)
+- check/add functionality for peaks Xpro - the two blocking bugs are
+  fixed and covered by a simulated export (v0.22.0), but **run it on a
+  real PEAKS 11/Xpro export**: a simulated peptide.csv cannot prove
+  column-name parity (-10lgP, “1/k0 Range”, Area#, PTM spelling) with
+  what PEAKS actually writes, and nothing has ever been read from a
+  genuine Xpro export. Check in particular whether one export folder
+  really holds all samples (the layout the fix now assumes) or whether
+  your exports are one folder per sample
+- **review the provisional class-2 quality-score thresholds** (v0.20.0):
+  frac_nested_core is scored green \>= 0.50 / amber \>= 0.30 at weight 3
+  for MHCclass = “MHC2” (quality_thresholds_default() in
+  R/quality-score.R). Those numbers are a judgement call, not literature
+  values - no published nested-core fraction was used. Either calibrate
+  them on a real HLA-II dataset (the JY hla2 data in advanced plans) or
+  tell users to run ThresholdMode = “qc_relative”, which the report
+  already recommends. Also sanity-check the biology: is “shares a 9-mer
+  with another ligand of the same sample” the nesting signal you would
+  use, or would a longer/shorter k, or a per-family size, be better?
+- **review the DIA calibration thresholds** (v0.20.0):
+  median_abs_rt_error green 0.5 / amber 1.5 min and median_abs_im_error
+  green 0.010 / amber 0.030 1/k0, both weight 0.5. These are instrument-
+  and gradient-dependent, so the defaults are only placeholders - set
+  them from your own timsTOF runs, or leave them to qc_relative mode.
+  Also confirm Predicted.RT is in minutes on the same scale as RT in
+  your DIA-NN version (the metric is a plain absolute difference)
+- **read the in-report Methods/Glossary prose added in
+  v0.19.0-v0.22.0**: the new nested-core and RT/IM paragraphs in
+  05_quality_score, the corrected PTM note in
+  00_mhc_report/01_id_counts, and the counting-units section of
+  glossary.Rmd. All written by Claude; they state biology and should be
+  read by you before the abstract is submitted
+- **check the v0.22.0 abstract edits** in
+  example/abstract_eupa2026_v3.md: the motif-clarity sentence now reads
+  “anchor-position information content for class 1, nested binding cores
+  for class 2” and the identification-QC sentence now distinguishes DDA
+  mass error from DIA RT/ion-mobility calibration error. Both are
+  accurate as to what the code does, but they are longer - trim to the
+  word limit as you see fit
+- **decide on the InteractivePlots default** (v0.21.0): it is FALSE, so
+  reports look exactly as before unless asked. If interactivity is the
+  selling point of the abstract, consider flipping the default to TRUE -
+  but check the file sizes first (each plotly widget embeds its own
+  JSON; the existing all-in-one reports are already 8-10 MB)
 - 2do by me, check Overlap intra-Condition seems to be showing peptides
   in sequences, and sequences+proteins in proteins - corrected in the
   individual reports, but not in the legacy main report
@@ -483,3 +630,110 @@ create_dir = create_dir)
   the FASTA, in standby). Also fixed: docs/ was missing from
   .Rbuildignore (R CMD check note after building the pkgdown site
   locally) (v0.18.0)
+
+- for PTM plots, translate unimod code into modification name: new
+  R/ptm.R with ptm_reference() (curated UniMod accession / name /
+  monoisotopic delta-mass table, ordered by commonness so the first
+  match within tolerance wins on mass-degenerate pairs like
+  Glu-\>pyro-Glu / Dehydrated) + translate_ptm() (vectorised over the
+  unique tokens; payload read from inside ()/\[\], dispatched on
+  UniMod-accession vs signed decimal, unmatched tokens returned
+  UNCHANGED rather than NA), wired into plot_ptm_heatmap() as translate
+  = TRUE (+ reference pass-through) applied where the tokens are already
+  split so both the count and proportion branches inherit it. Both
+  dialects are handled because a UniMod-only translation would be a
+  silent no-op on the default FragPipe data. Display-time only —
+  pep_all\$PTM stays raw. Also fixed the wrong note in
+  00_mhc_report/01_id_counts (“Fragpipe and DIA-NN … UniMode PTM codes”;
+  it is FragPipe and PEAKS that write delta masses). New test-ptm.R
+  covers all three dialects, the Acetyl/Trimethyl tolerance boundary,
+  PEAKS’ 2-decimal rounding, pass-through of unknown/NA/“” and the
+  reference-order rule (v0.19.0)
+
+- readme: add a glossary of the column headers in pep_all + finish the
+  in-report glossary: new pep_all_glossary() (R/report-helpers.R, 30
+  rows, including the misreadable parts — DIA-NN dummy ppm,
+  computed-not-observed Mass, Accession-as-protein-group,
+  engine-specific Score) feeding both the new shared child
+  inst/rmarkdown/shared/glossary.Rmd (included by all ten templates
+  before their Session & provenance footer; counting units explained
+  with the length window interpolated from shortpep_range) and the
+  README’s new Glossary section. Replaces 00_mhc_report’s hardcoded
+  prose, which claimed a 12-20 AA MHC-II window (the real one is 12-25)
+  and named 3_results/4_figures regardless of the run’s params. Guarded
+  by two tests: every validate_pep_all() required column is documented,
+  and so is every column the reports consume from a real build_pep_all()
+  run on the sim data (v0.19.0)
+
+- class-2 motif metric + DIA identification QC: new frac_nested_core
+  metric (internal .nested_core_fraction(): fraction of in-window
+  ligands sharing a 9-mer - the MHC-II binding-core length - with
+  another ligand of the same sample; one (k-mer, sequence) pair at most
+  so internal repeats cannot make a sequence nested with itself; NA
+  below two assessable sequences). quality_thresholds_default(“MHC2”)
+  promotes it to the anchor metric’s weight (3, label “Nested-core
+  families”) because anchor_information/frac_9mer are both NA for class
+  II; weight-0 diagnostic for MHC1/MHC1_mouse. Metric keys identical
+  across classes. Plus median_abs_rt_error / median_abs_im_error
+  (internal .median_abs_delta()): DIA-NN’s Precursor.Mz is the LIBRARY
+  value and report.tsv has no observed precursor m/z, so the dummy ppm
+  cannot be repaired - its Predicted.RT/Predicted.IM (already in
+  pep_all, unused) give the DIA analogue instead, NA for FragPipe/PEAKS
+  and NA when every difference is 0. Both substitutions documented in
+  05_quality_score’s Methods; tests cover the maths, the per-class
+  promotion, the guards, and that every scored threshold row exists in
+  the metrics table (v0.20.0)
+
+- InteractivePlots (TRUE/FALSE) toggle to render compatible plots via
+  ggplotly: new param on all ten templates; ggprint_rawr() gained an
+  interactive arg returning plotly::ggplotly() (caller-frame name
+  resolution and the not-generated guard kept), the shared setup + the
+  two 00\_\* templates derive interactive_plots \<-
+  isTRUE(params\$InteractivePlots), and the 34 call sites that print
+  from ORDINARY chunks pass it. Plots inside results=‘asis’ tabset loops
+  stay static on purpose (a widget printed from such a loop silently
+  renders EMPTY without a tagList/knit_print dance - the same reason
+  those loops use kable not DT), guarded by a test that walks every
+  skeleton’s chunks. Unconvertible classes (ggpubr composites, seqlogos,
+  objects already widgets) are returned unchanged, so asking for
+  interactivity cannot break a report. 05_quality_score’s three bare
+  prints and the four ggplotly() calls on the correlation matrices now
+  route through the same helper, the latter with interactive = TRUE
+  hardcoded to keep their behaviour. Verified by rendering
+  05_quality_score with the toggle on AND off and asserting the widget
+  containers + embedded plotly library are present in one and absent in
+  the other (v0.21.0)
+
+- check/add functionality for peaks Xpro: FOUND BROKEN and fixed -
+  read_peaks_batch() filtered the export FOLDERS by
+  annotation\$Sample_peaks, which is the PER-SAMPLE key (a PEAKS export
+  folder holds several samples as Area# columns, and those suffixes are
+  what annotate_peaks() joins on), so an annotation that could be joined
+  matched no folder at all (empty read -\> “object ‘Accession’ not
+  found” in parse_peaks()) while one naming the folder gave a silent
+  0-row join; folder selection now uses Sample_folder (falling back to
+  Sample_peaks for one-folder-per-sample layouts) and both halves of the
+  trap error out naming the two keys. Second bug: read_peaks(filedir =
+  getwd(), folder_peaks_db = ) pasted an ABSOLUTE FolderData behind the
+  working directory (the reports document absolute paths, and
+  system.file() returns them) - now split with dirname()/basename().
+  Both were invisible because PEAKS had no end-to-end fixture, so
+  v0.22.0 ships inst/extdata/sim_peaks_xpro/ (462 simulated peptides x 6
+  samples in real PEAKS shape: one export folder, -10lgP, 1/k0 Range,
+  Area#, PEAKS-style oxidation) + tests. get_annot_peaks() documents
+  that one row per folder is not one row per sample. Remaining for DGZ:
+  run it on a real PEAKS 11/Xpro export (v0.22.0)
+
+- corrected the v0.19.0 PTM documentation: PEAKS writes the modification
+  NAME in its PTM column (“Oxidation (M)”) and keeps the delta mass in
+  the peptide string - it is FragPipe (delta mass) and DIA-NN (UniMod)
+  that need translating. translate_ptm() already passed names through
+  unchanged; the docs, the two report notes and the test comments were
+  wrong, and a test now pins the pass-through so a PEAKS name cannot be
+  mangled into a mass match (v0.22.0)
+
+- abstract wording (example/abstract_eupa2026_v3.md): motif clarity now
+  attributed to anchor information content for class 1 and nested
+  binding cores for class 2, and the identification-QC sentence
+  distinguishes DDA mass error from DIA retention-time/ion-mobility
+  calibration error (v0.22.0)

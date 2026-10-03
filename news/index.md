@@ -1,5 +1,258 @@
 # Changelog
 
+## HowMaHiCo 0.22.0
+
+### PEAKS Xpro actually works now
+
+Verifying the PEAKS claim with a shipped dataset (Tier C’s last item)
+turned up **two bugs that made the documented PEAKS entry point
+unusable**, both silent or cryptic rather than loud:
+
+- **[`read_peaks_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks_batch.md)
+  filtered the export FOLDERS by the PER-SAMPLE key.** A PEAKS export
+  folder normally holds several samples, one `Area#<sample>` column each
+  inside its `peptide.csv`, and \[read_peaks()\] turns those suffixes
+  into `Sample_peaks` – which is also what
+  [`annotate_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_peaks.md)
+  joins the metadata on. Filtering folders by that same value therefore
+  matched **no folder at all** whenever folder and sample names differed
+  (i.e. always, for a multi-sample export): the empty read then died
+  inside
+  [`parse_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_peaks.md)
+  with `object 'Accession' not found`. Keying the annotation on the
+  folder instead produced the mirror failure – a silent 0-row join.
+  Folder selection now uses `Sample_folder` (falling back to
+  `Sample_peaks` for the one-folder-per-sample layout, where the two
+  coincide), and both halves of the trap now fail with an error naming
+  the two keys and showing what was found on each side.
+- **[`read_peaks_batch()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks_batch.md)
+  pasted an absolute path behind the working directory.** It called
+  `read_peaks(filedir = getwd(), folder_peaks_db = <indexed path>)`, so
+  an absolute `FolderData` – exactly what the reports document and what
+  [`system.file()`](https://rdrr.io/r/base/system.file.html) returns –
+  became an unopenable path. It now splits the indexed path with
+  [`dirname()`](https://rdrr.io/r/base/basename.html)/[`basename()`](https://rdrr.io/r/base/basename.html),
+  which reconstructs a relative or absolute path unchanged.
+- [`get_annot_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/get_annot_peaks.md)
+  documents that one row per folder is not one row per sample, and what
+  to add by hand for a multi-sample export.
+
+### A simulated PEAKS export to test against
+
+- **New `inst/extdata/sim_peaks_xpro/`** (+
+  `sim_peaks_xpro_annotation.csv`): the 462 simulated peptides over 6
+  samples in real PEAKS Xpro shape – one export folder, `-10lgP`, a
+  `1/k0 Range` string, `Area#<sample>` columns, a few oxidised
+  methionines written PEAKS-style (`(+15.99)` on the peptide, the name
+  in `PTM`). PEAKS was the only engine with no end-to-end fixture, which
+  is why the above went unnoticed. ~61 KB.
+- `test-loaders-peaks.R` gained the end-to-end
+  `build_pep_all("peaks_xpro")` assertion, a check that folder selection
+  keys on `Sample_folder`, and a check that each half of the key mix-up
+  now errors loudly.
+
+### Corrected PTM documentation
+
+- v0.19.0 described PEAKS as writing a bracketed delta mass in `PTM`. It
+  does not: **PEAKS writes the modification name** (`Oxidation (M)`) and
+  keeps the delta mass in the peptide string.
+  [`translate_ptm()`](https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.md)
+  handled this correctly already – a token with no number falls through
+  unchanged – but the docs, the two report notes and the test comments
+  said otherwise, and are now right. A test pins the pass-through so a
+  PEAKS name can never be mangled into a mass match.
+
+### The abstract
+
+- `example/abstract_eupa2026_v3.md` now names what the code does: motif
+  clarity is attributed to anchor information content for class 1 and
+  nested binding cores for class 2, and the identification-QC sentence
+  distinguishes DDA mass error from DIA retention-time/ion-mobility
+  calibration error.
+
+## HowMaHiCo 0.21.0
+
+### Interactive plots, on a toggle
+
+- **New param `InteractivePlots` (default `FALSE`), declared by all ten
+  templates.** With `TRUE` the convertible plots become plotly widgets –
+  hover values, zoom, pan – instead of static images, which is what the
+  reports’ “interactive HTML” claim should mean beyond tabsets and DT
+  tables.
+- [`ggprint_rawr()`](https://davidgz1.github.io/HowMaHiCo/reference/ggprint_rawr.md)
+  gained an **`interactive`** argument returning
+  `plotly::ggplotly(input)`. It keeps the caller-frame name resolution
+  and the not-generated guard, so the 34 call sites that already used it
+  needed one argument each and nothing else. The shared setup (and the
+  two `00_*` templates, which do not use it) derives
+  `interactive_plots <- isTRUE(params$InteractivePlots)` once.
+- **Plots inside `results='asis'` tabset loops are deliberately left
+  static.** An htmlwidget printed from such a loop needs an explicit
+  `tagList`/`knit_print` dance to get its dependencies attached and
+  otherwise renders **empty, with no error** – the same reason those
+  loops already use `kable` rather than `DT`. A new test walks every
+  skeleton’s chunks and fails if an asis chunk ever asks for an
+  interactive plot.
+- **Unconvertible objects are returned unchanged**, never converted and
+  never erroring: ggpubr composites
+  ([`plot_peplength_dens()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_peplength_dens.md),
+  [`plot_pepmass()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_pepmass.md)),
+  sequence logos, and anything that is already a widget
+  (`.ggplotly_incompatible`). Asking for interactivity cannot break a
+  report.
+- The three bare plot prints in `05_quality_score` and the four
+  `ggplotly()` calls on the log2(Area) correlation matrices now route
+  through the same helper. The correlation matrices pass
+  `interactive = TRUE` unconditionally, preserving the
+  always-interactive behaviour they have had since v0.1.
+
+### Tests
+
+- `test-sim-fragpipe.R` renders `05_quality_score` against the simulated
+  data **with the toggle on and off** and asserts that the widget
+  containers and the embedded plotly library are present in one and
+  absent in the other. Rendering is the only way to catch the
+  silent-empty-widget failure – no parse check or unit test can see it.
+- `test-theme-and-save.R` covers the conversion, the preserved default,
+  the not-generated guard under `interactive = TRUE`, and the
+  pass-through of a ggpubr composite / a non-plot / an object that is
+  already a widget.
+- `test-report-templates.R` gained the asis-boundary guard above, the
+  `InteractivePlots` entry in its `common_params` list, and a check that
+  a template using `interactive_plots` really derives it.
+
+## HowMaHiCo 0.20.0
+
+### A motif dimension for MHC class II
+
+- **New metric `frac_nested_core`** in
+  [`qc_metrics_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.md),
+  with the internal `.nested_core_fraction()`. For `MHCclass = "MHC2"`
+  both `frac_9mer` and `anchor_information` are `NA` – class-II ligands
+  have no fixed-length anchor register – so the quality score had no
+  motif dimension at all for the class the package’s title claims to
+  support. Class-II peptides are trimmed into ragged, length-variable
+  families around one ~9-residue binding core, so this measures the
+  fraction of in-window ligands sharing a 9-mer with another ligand of
+  the same sample. No alignment, register guess, binding predictor or
+  external data is involved.
+- `quality_thresholds_default("MHC2")` promotes it to the anchor
+  metric’s weight
+  3.  and relabels it “Nested-core families”; for `MHC1`/`MHC1_mouse` it
+      stays a **weight-0 diagnostic**, since some nesting is normal
+      there but is not the primary signal. Metric *keys* are identical
+      across classes, as with the mouse `frac_9mer` rewrite. The
+      class-II cut-offs are provisional – prefer
+      `ThresholdMode = "qc_relative"`.
+- It is computed on the **in-window** ligands only, so a long tryptic
+  tail cannot manufacture nesting, and a sequence can never count as
+  nested with itself (one (k-mer, sequence) pair at most, so internal
+  repeats do not register).
+
+### Identification QC that works for DIA
+
+- **New metrics `median_abs_rt_error` and `median_abs_im_error`.** Mass
+  error is an MS2-level DDA metric: DIA-NN’s `Precursor.Mz` is the
+  *library* value and `report.tsv` carries no observed precursor m/z, so
+  no real ppm can be recovered from it (`ppm` is a hardcoded dummy,
+  dropped from the score). DIA-NN does report a predicted RT and ion
+  mobility per precursor, and the deviation from them is the DIA
+  analogue – both columns were already carried into `pep_all` by
+  [`parse_diann()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_diann.md)
+  and unused until now.
+- Both are `NA` for FragPipe and PEAKS, which carry no prediction, so
+  they drop out of the composite exactly as `ppm` drops out for DIA-NN.
+  The internal `.median_abs_delta()` also returns `NA` when every
+  difference is 0, so a placeholder column cannot score as perfect
+  accuracy. Their cut-offs are instrument- and gradient-dependent, which
+  the report states.
+- `05_quality_score`’s **Methods** section documents both substitutions,
+  and its overview text now names them instead of only listing what
+  drops out.
+
+### Tests
+
+- `test-quality-score.R` gained the nested-core maths (shared cores, the
+  internal-repeat trap, the `NA` cases), the per-class threshold
+  promotion, the `.median_abs_delta()` guards, calibration metrics with
+  and without predictions, and a guard that **every scored threshold row
+  exists in the metrics table** for every MHC class – a mismatch there
+  would abort the whole report inside
+  [`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md)’s
+  composite step.
+
+## HowMaHiCo 0.19.0
+
+### Readable PTM names
+
+- **New `R/ptm.R`:
+  [`ptm_reference()`](https://davidgz1.github.io/HowMaHiCo/reference/ptm_reference.md) +
+  [`translate_ptm()`](https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.md).**
+  The `PTM` column is written differently by every search engine –
+  DIA-NN stores UniMod accessions (`(UniMod:35)`), FragPipe a delta mass
+  behind a position+residue prefix (`2M(15.9949)`), PEAKS a signed delta
+  mass rounded to two decimals (`[+15.99]`) – so the PTM heatmaps showed
+  three unrelated-looking labels for what is one modification, and a
+  UniMod-only translation would have been a silent no-op on the
+  project’s default FragPipe data.
+  [`translate_ptm()`](https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.md)
+  handles all three dialects in one pass and returns `Oxidation` for
+  each.
+- [`plot_ptm_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ptm_heatmap.md)
+  gained `translate = TRUE` (and a `reference` pass-through), applied
+  where the multi-PTM strings are already split into one token per row
+  so both the count and the proportion branch inherit it.
+  `translate = FALSE` restores the raw engine tokens. Display-time only:
+  `pep_all$PTM` keeps the raw value, as with the v0.12.0 “data keys
+  unchanged” renames.
+- Unmatched tokens are returned **unchanged** rather than becoming `NA`,
+  so an unknown modification stays visible on the heatmap.
+  [`ptm_reference()`](https://davidgz1.github.io/HowMaHiCo/reference/ptm_reference.md)
+  is ordered by how commonly each modification occurs, because a few are
+  mass-degenerate (`Glu->pyro-Glu`/`Dehydrated`,
+  `Gln->pyro-Glu`/`Ammonia-loss`) and the first row within tolerance
+  wins; pass a reordered copy to change that preference.
+- **Fixed a factually wrong note** in `00_mhc_report` and
+  `01_id_counts`, which told the reader that “Fragpipe and DIA-NN”
+  numbers are UniMod codes. FragPipe and PEAKS report delta masses; only
+  DIA-NN reports UniMod.
+
+### One glossary, generated from one function
+
+- **New
+  [`pep_all_glossary()`](https://davidgz1.github.io/HowMaHiCo/reference/pep_all_glossary.md)**
+  (`R/report-helpers.R`) documents all 30 core `pep_all` columns,
+  including the caveats that are easy to misread: DIA-NN’s `ppm` is a
+  hardcoded dummy, its `Mass` is computed rather than observed,
+  `Accession` is a protein *group* only for DIA-NN and PEAKS, and
+  `Score` is not comparable across engines.
+- **New shared child `inst/rmarkdown/shared/glossary.Rmd`**, included by
+  all ten templates ahead of their “Session & provenance” footer. It
+  explains the counting units (peptides vs sequences vs parent proteins
+  vs selected) with the length window interpolated from
+  `shortpep_range`, then renders
+  [`pep_all_glossary()`](https://davidgz1.github.io/HowMaHiCo/reference/pep_all_glossary.md)
+  as a table.
+- This replaces the hardcoded glossary prose in `00_mhc_report`, which
+  had gone stale – it stated a 12-20 AA MHC-II window (the actual window
+  is 12-25) and named `3_results`/`4_figures` regardless of the run’s
+  actual path params. The README gained the same table under a new
+  “Glossary” heading, closing the standby item for it.
+
+### Tests
+
+- New `tests/testthat/test-ptm.R`: all three token dialects, the
+  tolerance that still separates Acetyl (42.010565) from Trimethyl
+  (42.046950), PEAKS’ 2-decimal rounding, pass-through of unknown
+  tokens/`NA`/`""`, the reference-order rule for mass-degenerate
+  modifications, and a `plot_ptm_heatmap(translate = TRUE/FALSE)`
+  assertion on the plot data.
+- `test-report-helpers.R` gained two glossary guards: every column
+  `validate_pep_all()` requires must be documented, and so must every
+  column the reports consume from a real
+  [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)
+  run on the shipped sim data.
+
 ## HowMaHiCo 0.18.0
 
 ### Protein-level table and report

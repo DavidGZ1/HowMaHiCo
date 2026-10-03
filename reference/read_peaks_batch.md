@@ -30,7 +30,9 @@ read_peaks_batch(
   Optional annotation data frame (output of
   [`read_annot()`](https://davidgz1.github.io/HowMaHiCo/reference/read_annot.md)).
   When provided without `files`, only subfolders whose `basename` is in
-  `annotation$Sample_peaks` are read.
+  `annotation$Sample_folder` are read (`Sample_peaks` is used instead
+  when the table predates that column, which is the
+  one-folder-per-sample layout where the two keys coincide).
 
 - files:
 
@@ -54,9 +56,23 @@ with `Sample_peaks` identifying the source subfolder of each row.
     those directly, bypassing the directory index.
 
 2.  **`annotation`** — filters the directory index to subfolders whose
-    `basename` is listed in `annotation$Sample_peaks`.
+    `basename` is listed in `annotation$Sample_folder` (falling back to
+    `Sample_peaks` when the table has no `Sample_folder`).
 
 3.  **neither** — all non-QC PEAKS subfolders under `folder` are read.
+
+**The folder key and the sample key are not the same thing for PEAKS.**
+One export folder normally holds *several* samples, as one
+`Area#<sample>` column each inside its `peptide.csv`, and
+[`read_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/read_peaks.md)
+turns those suffixes into `Sample_peaks`. So `Sample_folder` selects the
+folders here, while `Sample_peaks` is what
+[`annotate_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/annotate_peaks.md)
+later joins the metadata on. Keying the folder filter on `Sample_peaks`
+(as this did before v0.22.0) matched no folder at all whenever the two
+differed, and the empty read then died inside
+[`parse_peaks()`](https://davidgz1.github.io/HowMaHiCo/reference/parse_peaks.md)
+with `object 'Accession' not found`.
 
 The metadata join (adding `Condition`, `BioReplicate`, `Sample`, etc.)
 happens in

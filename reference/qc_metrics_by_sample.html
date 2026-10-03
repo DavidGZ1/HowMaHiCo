@@ -11,7 +11,7 @@ unified pep_all schema with no external data."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,7 +72,9 @@ HLA-II).</p></dd>
 <dt id="arg-mhcclass">mhcclass<a class="anchor" aria-label="anchor" href="#arg-mhcclass"></a></dt>
 <dd><p><code>"MHC1"</code>, <code>"MHC1_mouse"</code> or <code>"MHC2"</code>. For <code>"MHC2"</code> the
 canonical-length and anchor-motif metrics are returned as <code>NA</code> (no
-fixed-length anchor model), so they drop out of the composite downstream.
+fixed-length anchor model), so they drop out of the composite downstream —
+<code>frac_nested_core</code> is the class-II motif dimension instead, and
+<code><a href="quality_thresholds_default.html">quality_thresholds_default()</a></code> gives it the anchor metric's weight there.
 For <code>"MHC1_mouse"</code>, <code>frac_9mer</code> counts 8- <strong>and</strong> 9-mers (both canonical for
 murine H-2) and the anchor motif is scored on whichever of the two the
 sample has more of.</p></dd>
@@ -82,6 +84,7 @@ sample has more of.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with one row per <code>Sample</code> and columns: <code>frac_in_window</code>,
 <code>frac_9mer</code>, <code>frac_cterm_KR</code>, <code>frac_cterm_KR_longonly</code>, <code>anchor_information</code>,
+<code>frac_nested_core</code>, <code>median_abs_rt_error</code>, <code>median_abs_im_error</code>,
 <code>frac_cross_class</code>, <code>frac_charge_1_2</code>, <code>n_unique_pep</code>,
 <code>n_unique_pep_in_window</code>, <code>n_source_proteins</code>, <code>median_abs_ppm</code>.</p>
     </div>

@@ -2,9 +2,9 @@
 
 Computes a per-sample composite quality score (and a traffic-light
 category) from `pep_all`, combining several interpretable dimensions:
-length-window fidelity, 9-mer dominance, anchor-motif clarity,
-non-tryptic specificity, charge plausibility, depth, and mass accuracy.
-Each raw metric
+length-window fidelity, 9-mer dominance, anchor-motif clarity
+(nested-core families for class II), non-tryptic specificity, charge
+plausibility, depth, and mass/RT/ion-mobility accuracy. Each raw metric
 ([`qc_metrics_by_sample()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.md))
 is mapped to a 0-100 sub-score
 ([`score_curve()`](https://davidgz1.github.io/HowMaHiCo/reference/score_curve.md))

@@ -51,14 +51,23 @@ length window and palette, and the Condition pairs to compare
 
 - [`mhc_length_window()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_length_window.md)
   : Peptide-length window of an MHC class
+
 - [`mhc_class_palette()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_class_palette.md)
   : Two-colour fill palette of an MHC class
+
 - [`mhc_classes()`](https://davidgz1.github.io/HowMaHiCo/reference/mhc_classes.md)
   : Names of the built-in MHC classes
+
 - [`condition_pairs()`](https://davidgz1.github.io/HowMaHiCo/reference/condition_pairs.md)
   : All pairwise Condition comparisons
+
 - [`provider_line()`](https://davidgz1.github.io/HowMaHiCo/reference/provider_line.md)
   : Provider sentence of a report header
+
+- [`pep_all_glossary()`](https://davidgz1.github.io/HowMaHiCo/reference/pep_all_glossary.md)
+  :
+
+  Glossary of the `pep_all` columns
 
 ## Data loaders
 
@@ -455,6 +464,17 @@ the search engine itself reported.
 
 - [`plot_ligand_vs_protein_quant()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_ligand_vs_protein_quant.md)
   : Summed ligand intensity against the search engine's protein quantity
+
+## Modifications (PTMs)
+
+Translate the engine-specific PTM tokens carried in `pep_all$PTM` –
+UniMod accessions from DIA-NN, monoisotopic delta masses from FragPipe
+and PEAKS – into readable modification names at plot time
+
+- [`ptm_reference()`](https://davidgz1.github.io/HowMaHiCo/reference/ptm_reference.md)
+  : Reference table of common peptide modifications
+- [`translate_ptm()`](https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.md)
+  : Translate PTM tokens into readable modification names
 
 ## Export & I/O helpers
 

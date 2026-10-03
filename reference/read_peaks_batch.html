@@ -13,7 +13,7 @@ priority order):"></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,7 +73,9 @@ Required when using <code>annotation</code> or scan-all modes; may be <code>NULL
 <dt id="arg-annotation">annotation<a class="anchor" aria-label="anchor" href="#arg-annotation"></a></dt>
 <dd><p>Optional annotation data frame (output of <code><a href="read_annot.html">read_annot()</a></code>).
 When provided without <code>files</code>, only subfolders whose <code>basename</code> is in
-<code>annotation$Sample_peaks</code> are read.</p></dd>
+<code>annotation$Sample_folder</code> are read (<code>Sample_peaks</code> is used instead when the
+table predates that column, which is the one-folder-per-sample layout where
+the two keys coincide).</p></dd>
 
 
 <dt id="arg-files">files<a class="anchor" aria-label="anchor" href="#arg-files"></a></dt>
@@ -97,9 +99,18 @@ with <code>Sample_peaks</code> identifying the source subfolder of each row.</p>
 <ol><li><p><strong><code>files</code></strong> — character vector of PEAKS export folder paths; uses those
 directly, bypassing the directory index.</p></li>
 <li><p><strong><code>annotation</code></strong> — filters the directory index to subfolders whose
-<code>basename</code> is listed in <code>annotation$Sample_peaks</code>.</p></li>
+<code>basename</code> is listed in <code>annotation$Sample_folder</code> (falling back to
+<code>Sample_peaks</code> when the table has no <code>Sample_folder</code>).</p></li>
 <li><p><strong>neither</strong> — all non-QC PEAKS subfolders under <code>folder</code> are read.</p></li>
-</ol><p>The metadata join (adding <code>Condition</code>, <code>BioReplicate</code>, <code>Sample</code>, etc.)
+</ol><p><strong>The folder key and the sample key are not the same thing for PEAKS.</strong> One
+export folder normally holds <em>several</em> samples, as one <code>Area#&lt;sample&gt;</code> column
+each inside its <code>peptide.csv</code>, and <code><a href="read_peaks.html">read_peaks()</a></code> turns those suffixes into
+<code>Sample_peaks</code>. So <code>Sample_folder</code> selects the folders here, while
+<code>Sample_peaks</code> is what <code><a href="annotate_peaks.html">annotate_peaks()</a></code> later joins the metadata on. Keying
+the folder filter on <code>Sample_peaks</code> (as this did before v0.22.0) matched no
+folder at all whenever the two differed, and the empty read then died inside
+<code><a href="parse_peaks.html">parse_peaks()</a></code> with <code>object 'Accession' not found</code>.</p>
+<p>The metadata join (adding <code>Condition</code>, <code>BioReplicate</code>, <code>Sample</code>, etc.)
 happens in <code><a href="annotate_peaks.html">annotate_peaks()</a></code>, not here. This function returns the raw
 long-format PEAKS data only.</p>
     </div>

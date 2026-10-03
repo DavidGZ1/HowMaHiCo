@@ -13,7 +13,9 @@ table) is needed.
 plot_ptm_heatmap(
   pep_short,
   type = c("count", "proportion"),
-  shortpep_range = c(8, 13)
+  shortpep_range = c(8, 13),
+  translate = TRUE,
+  reference = ptm_reference()
 )
 ```
 
@@ -35,6 +37,23 @@ plot_ptm_heatmap(
   `"proportion"` subtitle (the denominator is computed directly from
   `pep_short`).
 
+- translate:
+
+  Translate the PTM tokens to readable modification names via
+  [`translate_ptm()`](https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.md)
+  (default `TRUE`). The raw tokens are engine-specific — UniMod
+  accessions for DIA-NN, delta masses for FragPipe and PEAKS — so
+  without this the same modification reads differently per engine. Set
+  `FALSE` to plot the tokens as the search engine wrote them.
+
+- reference:
+
+  Modification lookup table passed to
+  [`translate_ptm()`](https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.md);
+  defaults to
+  [`ptm_reference()`](https://davidgz1.github.io/HowMaHiCo/reference/ptm_reference.md).
+  Ignored when `translate = FALSE`.
+
 ## Value
 
 A ggplot2 tile heatmap.
@@ -45,5 +64,6 @@ A ggplot2 tile heatmap.
 if (FALSE) { # \dontrun{
 plot_ptm_heatmap(pep_short, type = "count")
 plot_ptm_heatmap(pep_short, type = "proportion", shortpep_range = c(8, 13))
+plot_ptm_heatmap(pep_short, translate = FALSE)   # raw engine tokens
 } # }
 ```

@@ -69,6 +69,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_fragpipe.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_peaks.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/pep_all_glossary.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/pepchem_by_sample.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/pepchem_properties.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/peptide_properties.html</loc></url>
@@ -121,6 +122,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/print_annot.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/prot_engine_columns.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/provider_line.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/ptm_reference.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/qc_metrics_by_sample.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/read_annot.html</loc></url>
@@ -147,6 +149,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/theme_howmahico.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/theme_rawr.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/top_source_proteins.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/translate_ptm.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/write.csv_rawr.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/write_input_params.html</loc></url>
 </urlset>

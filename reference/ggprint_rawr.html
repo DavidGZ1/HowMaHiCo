@@ -15,7 +15,7 @@ evaluated and judged by its value, so NULL counts as &quot;not generated&quot;."
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.18.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.22.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,7 +55,7 @@ evaluated and judged by its value, so <code>NULL</code> counts as "not generated
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ggprint_rawr</span><span class="op">(</span><span class="va">input</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">ggprint_rawr</span><span class="op">(</span><span class="va">input</span>, interactive <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,10 +66,23 @@ evaluated and judged by its value, so <code>NULL</code> counts as "not generated
 <dd><p>The object to print. When it is a bare variable name, that name
 is used to check existence rather than the value.</p></dd>
 
+
+<dt id="arg-interactive">interactive<a class="anchor" aria-label="anchor" href="#arg-interactive"></a></dt>
+<dd><p>Return the plot as an interactive plotly widget
+(<code><a href="https://rdrr.io/pkg/plotly/man/ggplotly.html" class="external-link">plotly::ggplotly()</a></code>) instead of a static ggplot. The report templates pass
+their <code>InteractivePlots</code> param here. Objects <code>ggplotly()</code> cannot convert
+(ggpubr composites, sequence logos, base-graphics heatmaps, objects that are
+already widgets) are returned unchanged, so a report never breaks for
+requesting interactivity.</p>
+<p>Only use this from an ordinary chunk: an htmlwidget printed from inside a
+<code>results='asis'</code> loop needs an explicit <code>tagList</code>/<code>knit_print</code> dance to get
+its dependencies attached, and silently renders empty without it.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The object, so a knitr chunk prints it; invisible <code>NULL</code> with a
+    <p>The object, so a knitr chunk prints it; a plotly widget when
+<code>interactive = TRUE</code> and the plot can be converted; invisible <code>NULL</code> with a
 warning when it was never generated.</p>
     </div>
 
@@ -77,6 +90,7 @@ warning when it was never generated.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="fu">ggprint_rawr</span><span class="op">(</span><span class="va">p_corr_log2area_all</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">ggprint_rawr</span><span class="op">(</span><span class="va">p_pca_scores</span>, interactive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>
