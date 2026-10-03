@@ -57,7 +57,9 @@ ptm_reference <- function() {
     return(x)
   }
 
-  # FragPipe / PEAKS: signed delta mass
+  # FragPipe (and bracketed PEAKS exports): signed delta mass. A token that is
+  # already a name -- PEAKS' usual "Oxidation (M)" -- carries no number here and
+  # falls through to be returned unchanged.
   num <- regmatches(token, regexpr("[-+]?[0-9]*\\.?[0-9]+", token))
   if (length(num) == 1L) {
     mass <- suppressWarnings(as.numeric(num))
@@ -71,12 +73,19 @@ ptm_reference <- function() {
 
 #' Translate PTM tokens into readable modification names
 #'
-#' The `PTM` column of `pep_all` is search-engine-specific: **DIA-NN** writes
-#' UniMod accessions (`(UniMod:35)`), while **FragPipe** and **PEAKS** write
-#' monoisotopic delta masses (`2M(15.9949)`, `[+15.99]`). This translates either
-#' form to a name (`"Oxidation"`), so PTM plots are readable and comparable
-#' across engines. Both forms are handled in one pass, which matters because the
-#' delta-mass form is the one the project's default (FragPipe) data uses.
+#' The `PTM` column of `pep_all` is search-engine-specific:
+#'
+#' * **DIA-NN** writes UniMod accessions — `(UniMod:35)`
+#' * **FragPipe** writes monoisotopic delta masses behind a position+residue
+#'   prefix — `2M(15.9949)`
+#' * **PEAKS** writes the modification *name* — `Oxidation (M)` — and carries the
+#'   delta mass in the peptide string instead; bracketed delta masses
+#'   (`[+15.99]`) still turn up in some exports
+#'
+#' This maps all of those onto one readable name, so PTM plots are comparable
+#' across engines. Handling the delta-mass form matters because it is what the
+#' project's default (FragPipe) data uses, and a token that is already a name
+#' simply passes through unchanged.
 #'
 #' Display-time only — `pep_all$PTM` itself is left raw, following the same
 #' "data keys unchanged" rule as the report's renamed display labels.
@@ -90,7 +99,7 @@ ptm_reference <- function() {
 #'   `()` or `[]` when present, else the whole string. `NA` and `""` pass
 #'   through.
 #' @param tol Delta-mass matching tolerance in Da. The default `0.01` is wide
-#'   enough for PEAKS' 2-decimal rounding (`[+15.99]`) and still separates
+#'   enough for 2-decimal rounding (`[+15.99]`) and still separates
 #'   near-neighbours such as Acetyl (42.010565) from Trimethyl (42.046950).
 #' @param reference Lookup table; defaults to [ptm_reference()]. The first row
 #'   within `tol` wins, so row order encodes the preference between

@@ -7,7 +7,31 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.21.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.22.0** — Phases 1–6 of the package conversion are complete.
+v0.22.0 closes **Tier C stage 4** and, in doing so, found that **the documented
+PEAKS entry point could not work at all**. `read_peaks_batch()` filtered the
+export *folders* by `annotation$Sample_peaks`, which is the **per-sample** key:
+a PEAKS export folder normally holds several samples as `Area#<sample>` columns,
+and `read_peaks()` turns those suffixes into `Sample_peaks`, which is what
+`annotate_peaks()` joins on. So an annotation that could be joined matched no
+folder (empty read → `object 'Accession' not found` from `parse_peaks()`), and one
+naming the folder gave a silent 0-row join. Folder selection now uses
+**`Sample_folder`** (falling back to `Sample_peaks` for one-folder-per-sample
+layouts) and both halves of the trap error out naming the two keys. Second bug:
+`read_peaks_batch()` called `read_peaks(filedir = getwd(), ...)` on an already
+indexed path, so an **absolute `FolderData`** — what the reports document, and
+what `system.file()` returns — was pasted behind the working directory and could
+not be opened; it now splits the path with `dirname()`/`basename()`. Both were
+invisible because PEAKS was the only engine without an end-to-end fixture, so
+v0.22.0 also ships **`inst/extdata/sim_peaks_xpro/`** (+ its annotation): the 462
+simulated peptides over 6 samples in real PEAKS shape (one export folder,
+`-10lgP`, a `1/k0 Range` string, `Area#<sample>` columns, PEAKS-style oxidation).
+Also corrected: v0.19.0's claim that PEAKS writes a bracketed delta mass in
+`PTM` — it writes the modification **name** (`Oxidation (M)`) and keeps the delta
+mass in the peptide string; `translate_ptm()` always passed such tokens through
+unchanged, and a test now pins that. And `example/abstract_eupa2026_v3.md` was
+updated to name anchor information content (class 1) vs nested binding cores
+(class 2) for motif clarity, and DDA mass error vs DIA RT/IM calibration error.
 v0.21.0 is **Tier C stage 3**: the **`InteractivePlots`** param, declared by all
 ten templates. `ggprint_rawr()` gained an `interactive` argument that returns
 `plotly::ggplotly(input)` — keeping its caller-frame name resolution and its
@@ -367,6 +391,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/`, and the focused `01_id_counts/`, `02_overlaps/`, `03_lcms_qc/`, `04_quant/`, `05_quality_score/`, `06_quant_stats/`, `07_pepchem/`, `08_prot_all/` skeleton Rmds (+ the shared children `inst/rmarkdown/shared/setup.Rmd` and `glossary.Rmd`) |
 | `inst/scripts/` | `howmahico_pipeline.R` — the guided, runnable walkthrough handed out by `get_pipeline_script()` |
 | `vignettes/` | `howmahico.Rmd` — the narrated walkthrough (`vignette("howmahico")`) |
+| `inst/extdata/sim_fragpipe_dda/`, `inst/extdata/sim_peaks_xpro/` | Simulated search output (+ their annotation CSVs) used by the end-to-end tests and by `get_pipeline_script()`'s demo mode |
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
@@ -406,7 +431,11 @@ note above.
   software-specific loader families converging on the `pep_all` schema:
   - `read_fragpipe_batch` / `parse_fragpipe` / `annotate_fragpipe` — FragPipe `psm.tsv`
   - `read_diann_batch` / `parse_diann` / `annotate_diann` — DIA-NN `report.tsv`
-  - `read_peaks_batch` / `read_peaks` — PEAKS `peptide.csv`
+  - `read_peaks_batch` / `read_peaks` / `parse_peaks` / `annotate_peaks` — PEAKS
+    `peptide.csv`. **Two keys, do not confuse them**: `Sample_folder` picks the
+    export folder (`read_peaks_batch`), `Sample_peaks` must match the
+    `Area#<sample>` column names inside its `peptide.csv` and is what
+    `annotate_peaks()` joins on. One export folder normally holds several samples
   - Batch readers accept `annotation = annot` to read only files listed in the
     annotation table (3-way dispatch: explicit files > annotation table > scan folder)
 - **`R/annotation.R`** — `read_annot`, `print_annot`, `get_annot_fragpipe`,

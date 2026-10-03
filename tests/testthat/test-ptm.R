@@ -1,8 +1,9 @@
-# translate_ptm() has to cope with THREE token dialects, because the PTM column
-# is written differently by every engine: DIA-NN stores UniMod accessions,
-# FragPipe a delta mass in parentheses behind a position+residue prefix, PEAKS a
-# signed delta mass in brackets rounded to two decimals. A UniMod-only
-# translation would be a silent no-op on the project's default (FragPipe) data.
+# translate_ptm() has to cope with every dialect of the PTM column, because each
+# engine writes it differently: DIA-NN stores UniMod accessions, FragPipe a delta
+# mass in parentheses behind a position+residue prefix, and PEAKS the
+# modification NAME (its delta mass lives in the peptide string), with bracketed
+# delta masses still appearing in some exports. A UniMod-only translation would
+# be a silent no-op on the project's default (FragPipe) data.
 
 test_that("UniMod accessions translate", {
   expect_equal(translate_ptm("(UniMod:35)"), "Oxidation")
@@ -10,12 +11,21 @@ test_that("UniMod accessions translate", {
   expect_equal(translate_ptm("(unimod: 21)"), "Phospho")   # case/space tolerant
 })
 
-test_that("FragPipe and PEAKS delta masses translate", {
+test_that("delta masses translate, in parentheses or brackets", {
   expect_equal(translate_ptm("2M(15.9949)"), "Oxidation")       # FragPipe
   expect_equal(translate_ptm("N-term(42.0106)"), "Acetyl")      # FragPipe, n-term
-  expect_equal(translate_ptm("[+15.99]"), "Oxidation")          # PEAKS, 2 decimals
+  expect_equal(translate_ptm("[+15.99]"), "Oxidation")          # bracketed, 2 decimals
   expect_equal(translate_ptm("[-17.03]"), "Gln->pyro-Glu")      # negative delta
   expect_equal(translate_ptm("C(57.0215)"), "Carbamidomethyl")
+})
+
+test_that("PEAKS tokens that are already names survive untouched", {
+  # PEAKS' PTM column carries the NAME and puts the delta mass in the peptide
+  # string, so there is nothing to translate and nothing may be corrupted -- the
+  # residue specificity in the brackets must not be read as a mass
+  expect_equal(translate_ptm("Oxidation (M)"), "Oxidation (M)")
+  expect_equal(translate_ptm("Deamidation (NQ)"), "Deamidation (NQ)")
+  expect_equal(translate_ptm("Phosphorylation (STY)"), "Phosphorylation (STY)")
 })
 
 test_that("the tolerance still separates near-neighbour masses", {

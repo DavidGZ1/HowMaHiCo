@@ -18,7 +18,9 @@ Required when using \code{annotation} or scan-all modes; may be \code{NULL} when
 
 \item{annotation}{Optional annotation data frame (output of \code{\link[=read_annot]{read_annot()}}).
 When provided without \code{files}, only subfolders whose \code{basename} is in
-\code{annotation$Sample_peaks} are read.}
+\code{annotation$Sample_folder} are read (\code{Sample_peaks} is used instead when the
+table predates that column, which is the one-folder-per-sample layout where
+the two keys coincide).}
 
 \item{files}{Optional character vector of PEAKS export folder paths to read
 directly, bypassing the directory index.}
@@ -41,9 +43,19 @@ priority order):
 \item \strong{\code{files}} — character vector of PEAKS export folder paths; uses those
 directly, bypassing the directory index.
 \item \strong{\code{annotation}} — filters the directory index to subfolders whose
-\code{basename} is listed in \code{annotation$Sample_peaks}.
+\code{basename} is listed in \code{annotation$Sample_folder} (falling back to
+\code{Sample_peaks} when the table has no \code{Sample_folder}).
 \item \strong{neither} — all non-QC PEAKS subfolders under \code{folder} are read.
 }
+
+\strong{The folder key and the sample key are not the same thing for PEAKS.} One
+export folder normally holds \emph{several} samples, as one \code{Area#<sample>} column
+each inside its \code{peptide.csv}, and \code{\link[=read_peaks]{read_peaks()}} turns those suffixes into
+\code{Sample_peaks}. So \code{Sample_folder} selects the folders here, while
+\code{Sample_peaks} is what \code{\link[=annotate_peaks]{annotate_peaks()}} later joins the metadata on. Keying
+the folder filter on \code{Sample_peaks} (as this did before v0.22.0) matched no
+folder at all whenever the two differed, and the empty read then died inside
+\code{parse_peaks()} with \verb{object 'Accession' not found}.
 
 The metadata join (adding \code{Condition}, \code{BioReplicate}, \code{Sample}, etc.)
 happens in \code{\link[=annotate_peaks]{annotate_peaks()}}, not here. This function returns the raw

@@ -12,7 +12,7 @@ translate_ptm(x, tol = 0.01, reference = ptm_reference())
 through.}
 
 \item{tol}{Delta-mass matching tolerance in Da. The default \code{0.01} is wide
-enough for PEAKS' 2-decimal rounding (\verb{[+15.99]}) and still separates
+enough for 2-decimal rounding (\verb{[+15.99]}) and still separates
 near-neighbours such as Acetyl (42.010565) from Trimethyl (42.046950).}
 
 \item{reference}{Lookup table; defaults to \code{\link[=ptm_reference]{ptm_reference()}}. The first row
@@ -24,14 +24,23 @@ A character vector the same length as \code{x}, with recognised tokens
 replaced by their modification name.
 }
 \description{
-The \code{PTM} column of \code{pep_all} is search-engine-specific: \strong{DIA-NN} writes
-UniMod accessions (\code{(UniMod:35)}), while \strong{FragPipe} and \strong{PEAKS} write
-monoisotopic delta masses (\verb{2M(15.9949)}, \verb{[+15.99]}). This translates either
-form to a name (\code{"Oxidation"}), so PTM plots are readable and comparable
-across engines. Both forms are handled in one pass, which matters because the
-delta-mass form is the one the project's default (FragPipe) data uses.
+The \code{PTM} column of \code{pep_all} is search-engine-specific:
 }
 \details{
+\itemize{
+\item \strong{DIA-NN} writes UniMod accessions — \code{(UniMod:35)}
+\item \strong{FragPipe} writes monoisotopic delta masses behind a position+residue
+prefix — \verb{2M(15.9949)}
+\item \strong{PEAKS} writes the modification \emph{name} — \code{Oxidation (M)} — and carries the
+delta mass in the peptide string instead; bracketed delta masses
+(\verb{[+15.99]}) still turn up in some exports
+}
+
+This maps all of those onto one readable name, so PTM plots are comparable
+across engines. Handling the delta-mass form matters because it is what the
+project's default (FragPipe) data uses, and a token that is already a name
+simply passes through unchanged.
+
 Display-time only — \code{pep_all$PTM} itself is left raw, following the same
 "data keys unchanged" rule as the report's renamed display labels.
 

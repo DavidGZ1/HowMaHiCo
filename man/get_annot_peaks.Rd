@@ -20,9 +20,19 @@ sorted by \code{Sample_folder}.
 }
 \description{
 PEAKS counterpart of \code{\link[=get_annot_fragpipe]{get_annot_fragpipe()}} / \code{\link[=get_annot_diann]{get_annot_diann()}}: indexes the
-search-result subfolders of a PEAKS export with the same internal indexer the
-loader uses (\code{\link[=read_peaks_batch]{read_peaks_batch()}} keys on the subfolder name), drops the QC
-folders, and returns one row per result folder ready to fill in.
+search-result subfolders of a PEAKS export with the same internal indexer
+\code{\link[=read_peaks_batch]{read_peaks_batch()}} uses to pick folders, drops the QC folders, and returns
+one row per result folder ready to fill in.
+}
+\details{
+\strong{One row per folder is not necessarily one row per sample.} A PEAKS export
+folder usually holds several samples, one \code{Area#<sample>} column each inside
+its \code{peptide.csv}, and it is those suffixes that \code{\link[=annotate_peaks]{annotate_peaks()}} joins on.
+So for a multi-sample export, duplicate the folder's row once per sample and
+add a \code{Sample_peaks} column naming each sample exactly as its \code{Area#} column
+does; \code{Sample_folder} stays the same on every one of those rows. With one
+folder per sample the two keys coincide and \code{\link[=read_annot]{read_annot()}} derives
+\code{Sample_peaks} for you.
 }
 \examples{
 \dontrun{

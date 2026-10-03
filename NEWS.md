@@ -1,3 +1,61 @@
+# HowMaHiCo 0.22.0
+
+## PEAKS Xpro actually works now
+
+Verifying the PEAKS claim with a shipped dataset (Tier C's last item) turned up
+**two bugs that made the documented PEAKS entry point unusable**, both silent or
+cryptic rather than loud:
+
+* **`read_peaks_batch()` filtered the export FOLDERS by the PER-SAMPLE key.** A
+  PEAKS export folder normally holds several samples, one `Area#<sample>` column
+  each inside its `peptide.csv`, and [read_peaks()] turns those suffixes into
+  `Sample_peaks` -- which is also what `annotate_peaks()` joins the metadata on.
+  Filtering folders by that same value therefore matched **no folder at all**
+  whenever folder and sample names differed (i.e. always, for a multi-sample
+  export): the empty read then died inside `parse_peaks()` with
+  `object 'Accession' not found`. Keying the annotation on the folder instead
+  produced the mirror failure -- a silent 0-row join. Folder selection now uses
+  `Sample_folder` (falling back to `Sample_peaks` for the one-folder-per-sample
+  layout, where the two coincide), and both halves of the trap now fail with an
+  error naming the two keys and showing what was found on each side.
+* **`read_peaks_batch()` pasted an absolute path behind the working directory.**
+  It called `read_peaks(filedir = getwd(), folder_peaks_db = <indexed path>)`,
+  so an absolute `FolderData` -- exactly what the reports document and what
+  `system.file()` returns -- became an unopenable path. It now splits the indexed
+  path with `dirname()`/`basename()`, which reconstructs a relative or absolute
+  path unchanged.
+* `get_annot_peaks()` documents that one row per folder is not one row per
+  sample, and what to add by hand for a multi-sample export.
+
+## A simulated PEAKS export to test against
+
+* **New `inst/extdata/sim_peaks_xpro/`** (+ `sim_peaks_xpro_annotation.csv`):
+  the 462 simulated peptides over 6 samples in real PEAKS Xpro shape -- one
+  export folder, `-10lgP`, a `1/k0 Range` string, `Area#<sample>` columns, a few
+  oxidised methionines written PEAKS-style (`(+15.99)` on the peptide, the name
+  in `PTM`). PEAKS was the only engine with no end-to-end fixture, which is why
+  the above went unnoticed. ~61 KB.
+* `test-loaders-peaks.R` gained the end-to-end `build_pep_all("peaks_xpro")`
+  assertion, a check that folder selection keys on `Sample_folder`, and a check
+  that each half of the key mix-up now errors loudly.
+
+## Corrected PTM documentation
+
+* v0.19.0 described PEAKS as writing a bracketed delta mass in `PTM`. It does
+  not: **PEAKS writes the modification name** (`Oxidation (M)`) and keeps the
+  delta mass in the peptide string. `translate_ptm()` handled this correctly
+  already -- a token with no number falls through unchanged -- but the docs, the
+  two report notes and the test comments said otherwise, and are now right.
+  A test pins the pass-through so a PEAKS name can never be mangled into a mass
+  match.
+
+## The abstract
+
+* `example/abstract_eupa2026_v3.md` now names what the code does: motif clarity
+  is attributed to anchor information content for class 1 and nested binding
+  cores for class 2, and the identification-QC sentence distinguishes DDA mass
+  error from DIA retention-time/ion-mobility calibration error.
+
 # HowMaHiCo 0.21.0
 
 ## Interactive plots, on a toggle

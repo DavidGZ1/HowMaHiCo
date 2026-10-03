@@ -510,13 +510,16 @@ for (i in 1:length(motifs_pepshort)) {
 The modification tokens are translated to readable names (`translate_ptm()`),
 because each search engine writes them differently:
 
-- **FragPipe** and **PEAKS** report the monoisotopic **delta mass** --
-  `2M(15.9949)` and `[+15.99]` respectively
+- **FragPipe** reports the monoisotopic **delta mass** behind a position and
+  residue -- `2M(15.9949)`
 - **DIA-NN** reports the **UniMod accession** -- `(UniMod:35)`
+- **PEAKS** reports the modification **name** -- `Oxidation (M)` -- and keeps the
+  delta mass in the peptide string instead; some exports use a bracketed delta
+  mass (`[+15.99]`)
 
-All three of those are the same modification (Oxidation), and all three are
-shown as `Oxidation` below. A token that matches no known modification is left
-exactly as the search engine wrote it. `pep_all$PTM` itself keeps the raw token.
+Those are all the same modification, and all of them are shown as `Oxidation`
+below. A token that matches no known modification is left exactly as the search
+engine wrote it. `pep_all$PTM` itself keeps the raw token.
 
 ## All peptides {.tabset}
 
