@@ -1,5 +1,48 @@
 # Changelog
 
+## HowMaHiCo 0.26.0
+
+Found by running the EuPA-2026 demonstration (`demo/eupa2026_demo.R`) on
+simulated class-1 and class-2 data.
+
+### A genuine class-II sample could not pass the quality score
+
+- **The charge-plausibility metric was MHC-I only.** `frac_charge_1_2`
+  counted 1+/2+ precursors and was scored against the MHC-I cut-offs
+  (green 0.85) for every class. Class-II ligands (12-25-mers) carry more
+  basic residues and come mostly as 2+ to 4+, so a genuine HLA-II sample
+  scored 0 on a weight-1.5 dimension. For `MHCclass = "MHC2"` the metric
+  now counts **2+ to 4+**, labelled “Charge 2+ to 4+”, with
+  **provisional** cut-offs (green 0.80, amber 0.60). The metric key is
+  unchanged across classes, as for the mouse `frac_9mer`. On the
+  simulated class-2 data this moves the composite from 55 to 70.
+
+### Charges were read from factor level codes
+
+- `pep_all$Charge` is a factor of labels such as `"+ 2"`, and
+  [`as.numeric()`](https://rdrr.io/r/base/numeric.html) on a factor
+  returns its **level codes**. A dataset without any 1+ precursor
+  (common with DIA-NN libraries) therefore had 2+ read as 1+, 3+ as 2+,
+  and so on. This affected
+  [`get_charge_group()`](https://davidgz1.github.io/HowMaHiCo/reference/get_charge_group.md)
+  (the charge plots and tables of `00_mhc_report`/`01_id_counts`, and
+  the MHC-I charge score) and, in the PEAKS loader, the charge part of
+  `Peptide_charge` and `PeptideID`. All of these now go through one
+  internal `.charge_number()`, which parses the digits from the label.
+  Tests pin the no-1+ case.
+
+### Demonstration
+
+- New `demo/eupa2026_demo.R` (tracked, not part of the package build)
+  renders the simulated class-1 and class-2 datasets and simulates two
+  controls with MaHiCoInSilico: a tryptic-contamination titration (0 to
+  100 %) and a class-1 + 25 % class-2 cross-contamination. It then
+  builds the poster panels with
+  [`compare_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_runs.md)
+  /
+  [`plot_run_trend()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_run_trend.md).
+  The data and outputs live in the gitignored `example/`.
+
 ## HowMaHiCo 0.25.0
 
 ### A one-page overview report for biologists

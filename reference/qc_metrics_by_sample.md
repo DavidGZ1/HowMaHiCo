@@ -38,7 +38,10 @@ qc_metrics_by_sample(pep_all, shortpep_range = c(8, 13), mhcclass = "MHC1")
   gives it the anchor metric's weight there. For `"MHC1_mouse"`,
   `frac_9mer` counts 8- **and** 9-mers (both canonical for murine H-2)
   and the anchor motif is scored on whichever of the two the sample has
-  more of.
+  more of. `frac_charge_1_2` is the fraction of in-window observations
+  at a plausible charge: 1+/2+ for MHC-I (and custom windows), but **2+
+  to 4+ for `"MHC2"`**, whose 12-25-mers are rarely singly charged. The
+  key is the same for every class.
 
 ## Value
 

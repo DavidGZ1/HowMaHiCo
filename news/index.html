@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,24 @@
       <small>Source: <a href="https://github.com/DavidGZ1/HowMaHiCo/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.26.0" id="howmahico-0260">HowMaHiCo 0.26.0<a class="anchor" aria-label="anchor" href="#howmahico-0260"></a></h2>
+<p>Found by running the EuPA-2026 demonstration (<code>demo/eupa2026_demo.R</code>) on simulated class-1 and class-2 data.</p>
+<div class="section level3">
+<h3 id="a-genuine-class-ii-sample-could-not-pass-the-quality-score-0-26-0">A genuine class-II sample could not pass the quality score<a class="anchor" aria-label="anchor" href="#a-genuine-class-ii-sample-could-not-pass-the-quality-score-0-26-0"></a></h3>
+<ul><li>
+<strong>The charge-plausibility metric was MHC-I only.</strong> <code>frac_charge_1_2</code> counted 1+/2+ precursors and was scored against the MHC-I cut-offs (green 0.85) for every class. Class-II ligands (12-25-mers) carry more basic residues and come mostly as 2+ to 4+, so a genuine HLA-II sample scored 0 on a weight-1.5 dimension. For <code>MHCclass = "MHC2"</code> the metric now counts <strong>2+ to 4+</strong>, labelled “Charge 2+ to 4+”, with <strong>provisional</strong> cut-offs (green 0.80, amber 0.60). The metric key is unchanged across classes, as for the mouse <code>frac_9mer</code>. On the simulated class-2 data this moves the composite from 55 to 70.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="charges-were-read-from-factor-level-codes-0-26-0">Charges were read from factor level codes<a class="anchor" aria-label="anchor" href="#charges-were-read-from-factor-level-codes-0-26-0"></a></h3>
+<ul><li>
+<code>pep_all$Charge</code> is a factor of labels such as <code>"+ 2"</code>, and <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric()</a></code> on a factor returns its <strong>level codes</strong>. A dataset without any 1+ precursor (common with DIA-NN libraries) therefore had 2+ read as 1+, 3+ as 2+, and so on. This affected <code><a href="../reference/get_charge_group.html">get_charge_group()</a></code> (the charge plots and tables of <code>00_mhc_report</code>/<code>01_id_counts</code>, and the MHC-I charge score) and, in the PEAKS loader, the charge part of <code>Peptide_charge</code> and <code>PeptideID</code>. All of these now go through one internal <code>.charge_number()</code>, which parses the digits from the label. Tests pin the no-1+ case.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="demonstration-0-26-0">Demonstration<a class="anchor" aria-label="anchor" href="#demonstration-0-26-0"></a></h3>
+<ul><li>New <code>demo/eupa2026_demo.R</code> (tracked, not part of the package build) renders the simulated class-1 and class-2 datasets and simulates two controls with MaHiCoInSilico: a tryptic-contamination titration (0 to 100 %) and a class-1 + 25 % class-2 cross-contamination. It then builds the poster panels with <code><a href="../reference/compare_runs.html">compare_runs()</a></code> / <code><a href="../reference/plot_run_trend.html">plot_run_trend()</a></code>. The data and outputs live in the gitignored <code>example/</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.25.0" id="howmahico-0250">HowMaHiCo 0.25.0<a class="anchor" aria-label="anchor" href="#howmahico-0250"></a></h2>
 <div class="section level3">

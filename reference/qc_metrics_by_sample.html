@@ -11,7 +11,7 @@ unified pep_all schema with no external data."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,7 +77,10 @@ fixed-length anchor model), so they drop out of the composite downstream —
 <code><a href="quality_thresholds_default.html">quality_thresholds_default()</a></code> gives it the anchor metric's weight there.
 For <code>"MHC1_mouse"</code>, <code>frac_9mer</code> counts 8- <strong>and</strong> 9-mers (both canonical for
 murine H-2) and the anchor motif is scored on whichever of the two the
-sample has more of.</p></dd>
+sample has more of. <code>frac_charge_1_2</code> is the fraction of in-window
+observations at a plausible charge: 1+/2+ for MHC-I (and custom windows),
+but <strong>2+ to 4+ for <code>"MHC2"</code></strong>, whose 12-25-mers are rarely singly charged.
+The key is the same for every class.</p></dd>
 
 </dl></div>
     <div class="section level2">

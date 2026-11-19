@@ -24,7 +24,9 @@ quality_thresholds_default(mhcclass = "MHC1")
   cut-offs, because that metric counts two canonical lengths for murine
   H-2. `"MHC2"` promotes `frac_nested_core` from a weight-0 diagnostic
   to the motif dimension (weight 3), since the anchor metric is
-  undefined there.
+  undefined there, and relabels `frac_charge_1_2` to "Charge 2+ to 4+"
+  with provisional cut-offs (green 0.80, amber 0.60), matching what that
+  metric counts for class II.
 
 ## Value
 

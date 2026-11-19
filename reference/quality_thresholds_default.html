@@ -19,7 +19,7 @@ calibrate_thresholds_from_qc())."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,7 +73,9 @@ metrics) are scored only in QC-relative mode (see
 <code>frac_9mer</code> row to "8/9-mer fraction" and raises its green/amber cut-offs,
 because that metric counts two canonical lengths for murine H-2. <code>"MHC2"</code>
 promotes <code>frac_nested_core</code> from a weight-0 diagnostic to the motif
-dimension (weight 3), since the anchor metric is undefined there.</p></dd>
+dimension (weight 3), since the anchor metric is undefined there, and
+relabels <code>frac_charge_1_2</code> to "Charge 2+ to 4+" with provisional cut-offs
+(green 0.80, amber 0.60), matching what that metric counts for class II.</p></dd>
 
 </dl></div>
     <div class="section level2">
