@@ -74,6 +74,9 @@ utils::globalVariables(c(
   # prot-all engine and its plots (R/prot-all.R, plot_* in R/plots.R)
   "Protein", "Protein_", "Protein_shared", "Peptide_unique_", "n_Detected",
   "n_Peptides_total", "n_Proteins",
+  # cross-run comparison and the overview red flags (R/compare-runs.R,
+  # R/quality-score.R, plot_run_trend in R/plots.R)
+  "value", "is_QC", "Colour", "Detail", "Severity",
   # pre-existing NSE names that R CMD check still listed as undefined
   "invk0", "invk0_bin", "perc_num"
 ))

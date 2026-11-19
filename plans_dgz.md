@@ -23,11 +23,8 @@ either by implementing or by re-wording the abstract.
   repo, so https://davidgz1.github.io/HowMaHiCo/ is dead too. While there: fill
   in the empty repo description + homepage field, add a CITATION.cff, and mint a
   Zenodo DOI so the poster has something citable.
-* resolve the license conflict (was already in standby, now blocking "open-source
-  R package"): DESCRIPTION says MIT but `Imports: Peptides` is GPL-2 and
-  `Suggests: limma` is GPL >= 2. Pick one — relicense to GPL-3, or drop
-  `Peptides` to Suggests / reimplement the two descriptors actually used (GRAVY,
-  pI; ~30 lines) and keep MIT.
+* **DONE (v0.23.0)** — license conflict resolved: relicensed to `GPL (>= 2)`
+  (not plain GPL-3: Peptides, gplots and ggcorrplot are GPL-2 *only*).
 * abstract housekeeping: the affiliation is still the placeholder
   `[Affiliation: institution, city, country]`; decide whether the submission
   carries the institutional address or DESCRIPTION's
@@ -45,7 +42,7 @@ either by implementing or by re-wording the abstract.
   separating a genuine immunopeptidome from a failed pulldown / whole-proteome
   negative control — that is the figure that demonstrates "how MHC is the
   dataset".
-* general-overview report for the biologically focused user (the
+* **DONE (v0.25.0, `09_overview`)** — general-overview report for the biologically focused user (the
   advanced-plans "Simple summary of HowMaHiCo ala HowDirty" item). The abstract
   promises "a general-overview report for biologically focused users and another
   for deeper evaluation by the LC-MS expert"; what exists is 8 thematic slices
@@ -53,7 +50,7 @@ either by implementing or by re-wording the abstract.
   overview (and the legacy report where the Overlap intra-Condition bug is still
   uncorrected). `03_lcms_qc` already covers the expert half. Scope: one page —
   counts, length-window fidelity, quality score, red flags.
-* cross-experiment comparison, claimed in the Conclusions but not implemented:
+* **DONE (v0.24.0)** — cross-experiment comparison, claimed in the Conclusions but not implemented:
   one render = one subset, and nothing stacks the per-sample score CSVs that
   `05_quality_score` writes into a trend view. Add a `compare_runs()` reading N
   score tables (+ a longitudinal/trend plot per metric) so the sentence becomes
@@ -111,7 +108,6 @@ either by implementing or by re-wording the abstract.
 * bioreplicate as numbers or text, without condition, gets merged afterwards
 * maybe generate a report in long format
 * include whole folder with dia-quant-output when diann
-* check and deal with license discrepancies between howmahico, peptides, limma
 
 
 
@@ -167,6 +163,33 @@ either by implementing or by re-wording the abstract.
 * check way sample\_annotation is named in the reports, should be the same as in the example
 * check which column is used as quant for each software
 * get\_report\_template change param order, start with template then file
+* **review the 09\_overview red-flag rules** (v0.25.0): overview\_red\_flags()
+  in R/quality-score.R flags (a) a Fail (High) / Warning (Medium) composite,
+  (b) any scored dimension with a sub-score < 50, i.e. past amber (High at 0),
+  (c) a sample with < 0.5 x the experiment median of unique peptides
+  (depth\_ratio = 0.5 is my choice, not a literature value) and (d) a Condition
+  with a single BioReplicate (Low). On the simulated MHC-I data the only flags
+  are Medium "Charge 1+/2+" (0.66 vs amber 0.70) - likely a quirk of the
+  simulation, but check that rule against your real data. Are these the flags
+  a biologist needs, and is the severity right?
+* **read the 09\_overview prose** (v0.25.0): all captions were written by Claude
+  and state biology - e.g. "MHC class I ligands pile up at 8-11 amino acids,
+  usually with a sharp 9-mer peak", "MHC class II ... typically 13-17 amino
+  acids", Pass >= 70 = "a typical immunopeptidome", Fail < 40 = "a failed
+  pulldown or a non-MHC sample". Also check the "Where to go next" table and
+  whether 09\_overview is the right name/number for the report you would hand
+  out first
+* **try compare\_runs() on real runs** (v0.24.0): render 05\_quality\_score for
+  two or more real subsets, then compare\_runs(<results folders>) |>
+  plot\_run\_trend(). Check that the default run labels ("SampleSet | Subset")
+  and the default metrics (composite score, length in window, unique peptides in
+  window) are the ones you want, and whether a dedicated cross-run report
+  template is worth adding
+* **confirm the license wording** (v0.23.0): DESCRIPTION is now GPL (>= 2) and
+  LICENSE.md the GPL-2 text; the README License section explains why (Peptides,
+  gplots, ggcorrplot are GPL-2 only; ggupset is GPL-3). If the abstract or
+  poster says "MIT" or just "open-source", align it. Remember to check a new
+  dependency's licence before adding it
 
 
 
@@ -293,3 +316,6 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * check/add functionality for peaks Xpro: FOUND BROKEN and fixed - read\_peaks\_batch() filtered the export FOLDERS by annotation$Sample\_peaks, which is the PER-SAMPLE key (a PEAKS export folder holds several samples as Area#<sample> columns, and those suffixes are what annotate\_peaks() joins on), so an annotation that could be joined matched no folder at all (empty read -> "object 'Accession' not found" in parse\_peaks()) while one naming the folder gave a silent 0-row join; folder selection now uses Sample\_folder (falling back to Sample\_peaks for one-folder-per-sample layouts) and both halves of the trap error out naming the two keys. Second bug: read\_peaks(filedir = getwd(), folder\_peaks\_db = <indexed path>) pasted an ABSOLUTE FolderData behind the working directory (the reports document absolute paths, and system.file() returns them) - now split with dirname()/basename(). Both were invisible because PEAKS had no end-to-end fixture, so v0.22.0 ships inst/extdata/sim\_peaks\_xpro/ (462 simulated peptides x 6 samples in real PEAKS shape: one export folder, -10lgP, 1/k0 Range, Area#<sample>, PEAKS-style oxidation) + tests. get\_annot\_peaks() documents that one row per folder is not one row per sample. Remaining for DGZ: run it on a real PEAKS 11/Xpro export (v0.22.0)
 * corrected the v0.19.0 PTM documentation: PEAKS writes the modification NAME in its PTM column ("Oxidation (M)") and keeps the delta mass in the peptide string - it is FragPipe (delta mass) and DIA-NN (UniMod) that need translating. translate\_ptm() already passed names through unchanged; the docs, the two report notes and the test comments were wrong, and a test now pins the pass-through so a PEAKS name cannot be mangled into a mass match (v0.22.0)
 * abstract wording (example/abstract\_eupa2026\_v3.md): motif clarity now attributed to anchor information content for class 1 and nested binding cores for class 2, and the identification-QC sentence distinguishes DDA mass error from DIA retention-time/ion-mobility calibration error (v0.22.0)
+* resolve the license conflict: relicensed MIT -> GPL (>= 2). Auditing every dependency found more than Peptides/limma: Peptides, gplots and ggcorrplot are GPL-2 ONLY, ggupset is GPL-3, limma/ggpubr GPL (>= 2). Plain GPL-3 (the option on the table) would itself have clashed with the GPL-2-only three, so the package now uses R's own terms, GPL-2 or later, compatible with each. LICENSE.md = GPL-2 text (usethis::use_gpl_license(2, include_future = TRUE)), MIT LICENSE stub removed, README License section explains the choice; also closes the standby "license discrepancies" item (v0.23.0)
+* cross-experiment comparison: new R/compare-runs.R with compare_runs() (stacks the <Subset>_scores.csv tables of N 05_quality_score renders - csv paths, results folders or score data frames; labels runs from the companion *_05_quality_score_input_params.csv as "SampleSet | Subset" and attaches MHCclass/ThresholdMode/render_timestamp/package_version; input or timestamp order; column union; WARNS on mixed MHCclass/ThresholdMode since composites are then not comparable) + summarise_runs() (per run x metric n/median/IQR + Pass/Warning/Fail counts) + plot_run_trend() (panel per metric, runs on x, box or median-trend line, QC samples as triangles, optional color_by). The 05 score csv gained a Condition column. No report template for it yet - the function + plot make the abstract's sentence true (v0.24.0)
+* general-overview report for the biologically focused user: new `09_overview` template, one page for the biologist - at-a-glance table (samples, Conditions, unique peptides all/in-window, source proteins, median score, Pass/Warning/Fail, red-flag counts), ligands per sample in/out of the length window, length histogram, composite quality score, a plain-language Red flags section and a "where to go next" table pointing at 01-08. New exported overview_red_flags() (Fail/Warning composite; any SCORED dimension past amber, worded by its label, High at sub-score 0; sample < 0.5 x median unique peptides; Condition with a single BioReplicate) and qc_samples_from_annotation() (the QCColumn lookup 05 inlined, now shared by 05 and 09). Writes <Subset>_red_flags.csv. Render test in test-sim-fragpipe.R + unit tests in test-overview.R (v0.25.0)

@@ -1,3 +1,90 @@
+# HowMaHiCo 0.25.0
+
+## A one-page overview report for biologists
+
+The abstract promises "a general-overview report for biologically focused users
+and another for deeper evaluation by the LC-MS expert". The expert half existed
+(`03_lcms_qc` and the other focused reports), but the overview did not: the
+closest thing was the ~1300-line all-in-one `00_mhc_report`.
+
+* **New template `09_overview`** (`run_howmahico_report("09_overview", ...)`),
+  rendered against the `pep_all` cache like the other focused reports. It has
+  one page with plain-language captions:
+  * an at-a-glance table: samples, Conditions, unique peptides (all / in the
+    length window), source proteins, median quality score, Pass/Warning/Fail
+    counts and the number of red flags;
+  * ligands per sample, split in/out of the MHC length window;
+  * whether the lengths look like MHC ligands;
+  * the composite quality score with its traffic light;
+  * **red flags**;
+  * a "where to go next" table mapping each question to the focused report
+    (01–08) that answers it.
+
+  It always writes `<Subset>_red_flags.csv` next to the input params.
+* **New `overview_red_flags()`** turns a score table into a short list of
+  `Sample`, `Severity` (High > Medium > Low), `Flag` and `Detail`. It flags:
+  * a Fail (High) or Warning (Medium) composite;
+  * any *scored* quality dimension past its amber threshold, worded with that
+    dimension's label (High when its sub-score is 0). This covers cross-class
+    contamination, tryptic background, length fidelity and so on;
+  * a sample below half the experiment's median unique-peptide count;
+  * a Condition with a single BioReplicate.
+
+  The rules are few and transparent on purpose: a flag is a prompt to look, not
+  a verdict.
+* **New `qc_samples_from_annotation()`**: the `QCColumn` lookup that
+  `05_quality_score` inlined, now shared by 05 and 09. It returns an empty
+  vector for a missing file, an empty column name or an absent column.
+
+# HowMaHiCo 0.24.0
+
+## Comparing runs
+
+The abstract's Conclusions claimed cross-experiment comparison, but one render
+scores one subset and nothing read more than one score table. Now:
+
+* **`compare_runs()`** stacks the per-sample score tables of several
+  `05_quality_score` renders into one long table. It accepts score csvs,
+  results folders (every `*scores.csv` in them), or `score_sample_quality()`
+  data frames. It reads the companion `*_05_quality_score_input_params.csv`
+  to label each run (`SampleSet | Subset`) and to attach `MHCclass`,
+  `ThresholdMode`, `render_timestamp` and `package_version`. Runs are kept in
+  input order, or ordered by render time with `order = "timestamp"` for a
+  longitudinal view. Columns are unioned, so a metric missing from one run is
+  `NA` there. It **warns** when the runs were scored with different `MHCclass`
+  or `ThresholdMode`: the class selects the threshold table, and QC-relative
+  thresholds are calibrated per run, so their composite scores are not directly
+  comparable.
+* **`summarise_runs()`** reports, per run and metric, `n`, median and IQR,
+  plus the Pass/Warning/Fail counts of each run.
+* **`plot_run_trend()`** draws one panel per metric (free y), with the runs
+  on the x axis and samples as points (QC samples as triangles). It adds a
+  box per run, or (`type = "line"`) a line through the run medians.
+  `color_by = "Condition"` colours the points.
+* `05_quality_score`'s exported `<Subset>_scores.csv` gained a `Condition`
+  column (additive; existing columns unchanged), so a stacked table can be
+  coloured or filtered by it.
+
+# HowMaHiCo 0.23.0
+
+## Relicensed: MIT -> GPL (>= 2)
+
+The first Tier-A item of the EuPA-2026 worklist ("open-source R package" must be
+true as printed). `DESCRIPTION` declared **MIT**, but several hard `Imports`
+are copyleft, so MIT could not describe the installed work:
+
+* `Peptides`, `gplots` and `ggcorrplot` are **GPL-2 only** (no "or later"),
+* `ggupset` is **GPL-3**, `limma` (Suggests) and `ggpubr` are GPL (>= 2).
+
+The worklist only named `Peptides` and `limma`; the other three turned up while
+auditing every dependency. A plain GPL-3 licence -- the option originally on the
+table -- would itself have clashed with the three GPL-2-only packages, so
+HowMaHiCo is now **`GPL (>= 2)`**, the same terms as R (`GPL-2 | GPL-3`), which
+is compatible with each dependency on its own terms. `LICENSE.md` now holds the
+GPL-2 text (via `usethis::use_gpl_license(2, include_future = TRUE)`), the MIT
+`LICENSE` stub is gone, and the README gained a License section explaining the
+choice. No code changes.
+
 # HowMaHiCo 0.22.0
 
 ## PEAKS Xpro actually works now

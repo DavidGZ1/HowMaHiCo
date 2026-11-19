@@ -517,3 +517,145 @@ score_sample_quality <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
   rownames(out) <- NULL
   out
 }
+
+#' Read the QC-control samples from an annotation file
+#'
+#' Returns the `Sample` values that the annotation flags as experiment QC
+#' controls in `qc_column` (`TRUE`, `T`, `1`, `QC`, `qc`, `yes` or `Yes`). This
+#' is how `05_quality_score` and `09_overview` turn their `QCColumn` param into
+#' the `qc_samples` of [score_sample_quality()]. A missing file, an unreadable
+#' annotation, an empty `qc_column` or a column the annotation does not have all
+#' give an empty vector, because QC tagging is optional.
+#'
+#' @param annotation_file Path to the annotation csv (read with [read_annot()]).
+#' @param qc_column Name of the flag column (default `"QC"`).
+#'
+#' @return A character vector of QC `Sample` names (possibly empty).
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' qc_samples_from_annotation("1_documentation/sample_annotation.csv", "QC")
+#' }
+qc_samples_from_annotation <- function(annotation_file, qc_column = "QC") {
+  if (is.null(qc_column) || !nzchar(qc_column) || !file.exists(annotation_file))
+    return(character(0))
+  annot <- tryCatch(read_annot(annotation_file), error = function(e) NULL)
+  if (is.null(annot) || !qc_column %in% names(annot)) return(character(0))
+  is_qc <- as.character(annot[[qc_column]]) %in%
+    c("TRUE", "T", "1", "QC", "qc", "yes", "Yes")
+  unique(as.character(annot$Sample[is_qc]))
+}
+
+#' Plain-language red flags for the overview report
+#'
+#' Turns a [score_sample_quality()] table into a short list of problems worth a
+#' biologist's attention, each with a severity and a sentence of detail. It
+#' powers the "Red flags" section of `09_overview`. The rules are deliberately
+#' few and transparent:
+#'
+#' * a sample whose composite score is **Fail** (< 40, `High`) or **Warning**
+#'   (40-70, `Medium`);
+#' * any **scored** quality dimension (weight > 0) whose sub-score falls below
+#'   50, i.e. past its amber threshold. This is `High` when the sub-score is 0
+#'   and `Medium` otherwise, and it covers cross-class contamination, tryptic
+#'   background, length-window fidelity and the rest;
+#' * a sample with fewer than `depth_ratio` times the experiment's median number
+#'   of unique peptides (`Medium`). This is a relative test, so it needs at
+#'   least two samples;
+#' * with `pep_all`, a Condition with a single BioReplicate (`Low`), where
+#'   replicate variability cannot be judged. `Sample` is `NA` for this
+#'   experiment-level flag.
+#'
+#' @param scores Output of [score_sample_quality()].
+#' @param thresholds The scoring table the scores were computed with (default
+#'   [quality_thresholds_default()]); supplies the labels, weights and cut-offs.
+#' @param depth_ratio Fraction of the median unique-peptide count below which a
+#'   sample is flagged as shallow (default 0.5).
+#' @param pep_all Optional `pep_all` table, used for the replicate check.
+#'
+#' @return A data frame with columns `Sample`, `Severity` (factor `High` >
+#'   `Medium` > `Low`), `Flag` and `Detail`, ordered by severity. It has zero rows
+#'   when nothing is flagged.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' scores <- score_sample_quality(pep_all, c(8, 13), "MHC1")
+#' overview_red_flags(scores, pep_all = pep_all)
+#' }
+overview_red_flags <- function(scores, thresholds = quality_thresholds_default(),
+                               depth_ratio = 0.5, pep_all = NULL) {
+  flags <- list()
+  add <- function(sample, severity, flag, detail) {
+    flags[[length(flags) + 1]] <<- data.frame(Sample = sample, Severity = severity,
+                                              Flag = flag, Detail = detail,
+                                              stringsAsFactors = FALSE)
+  }
+  fmt <- function(x) format(signif(x, 3), trim = TRUE)
+  samples <- as.character(scores$Sample)
+
+  # 1. composite category
+  for (i in seq_along(samples)) {
+    cat_i <- as.character(scores$category[i])
+    if (is.na(cat_i)) next
+    if (cat_i == "Fail")
+      add(samples[i], "High", "Low composite quality score",
+          paste0("Composite score ", scores$composite_score[i],
+                 " (below 40): this sample does not look like a typical immunopeptidome."))
+    if (cat_i == "Warning")
+      add(samples[i], "Medium", "Borderline composite quality score",
+          paste0("Composite score ", scores$composite_score[i], " (between 40 and 70)."))
+  }
+
+  # 2. scored dimensions past their amber threshold
+  scored <- thresholds[thresholds$weight > 0, , drop = FALSE]
+  for (k in seq_len(nrow(scored))) {
+    m <- scored$metric[k]
+    sc <- scores[[paste0("score_", m)]]
+    if (is.null(sc) || !m %in% names(scores)) next
+    for (i in which(!is.na(sc) & sc < 50)) {
+      add(samples[i], if (sc[i] == 0) "High" else "Medium", scored$label[k],
+          paste0("Value ", fmt(scores[[m]][i]), " is past the amber threshold (",
+                 fmt(scored$amber[k]), "; green ", fmt(scored$green[k]),
+                 if (scored$direction[k] == "lower_better") ", lower is better" else
+                   ", higher is better", ")."))
+    }
+  }
+
+  # 3. relative depth
+  if ("n_unique_pep" %in% names(scores) && sum(!is.na(scores$n_unique_pep)) >= 2) {
+    med <- stats::median(scores$n_unique_pep, na.rm = TRUE)
+    for (i in which(scores$n_unique_pep < depth_ratio * med)) {
+      add(samples[i], "Medium", "Low identification depth",
+          paste0(scores$n_unique_pep[i], " unique peptides, ",
+                 round(100 * scores$n_unique_pep[i] / med), "% of the experiment median (",
+                 fmt(med), ")."))
+    }
+  }
+
+  # 4. Conditions without biological replication
+  if (!is.null(pep_all) && all(c("Condition", "BioReplicate") %in% names(pep_all))) {
+    n_rep <- tapply(as.character(pep_all$BioReplicate), as.character(pep_all$Condition),
+                    function(x) length(unique(x)))
+    for (cond in names(n_rep)[n_rep < 2]) {
+      add(NA_character_, "Low", "Single biological replicate",
+          paste0("Condition '", cond, "' has one BioReplicate, so replicate ",
+                 "variability cannot be assessed."))
+    }
+  }
+
+  out <- if (length(flags) == 0) {
+    data.frame(Sample = character(0), Severity = character(0), Flag = character(0),
+               Detail = character(0), stringsAsFactors = FALSE)
+  } else {
+    do.call(rbind, flags)
+  }
+  out$Severity <- factor(out$Severity, levels = c("High", "Medium", "Low"))
+  sample_rank <- match(out$Sample, samples)
+  out <- out[order(out$Severity, sample_rank, na.last = TRUE), , drop = FALSE]
+  rownames(out) <- NULL
+  out
+}

@@ -128,9 +128,21 @@ reference:
   - score_curve
   - quality_thresholds_default
   - calibrate_thresholds_from_qc
+  - qc_samples_from_annotation
+  - overview_red_flags
   - plot_quality_heatmap
   - plot_quality_composite
   - plot_cross_class_length
+
+- title: Comparing runs
+  desc: >
+    Stack the per-sample score tables written by several 05_quality_score
+    renders (experiments, subsets, or one QC standard over time) and compare
+    them side by side or as a trend.
+  contents:
+  - compare_runs
+  - summarise_runs
+  - plot_run_trend
 
 - title: Advanced quantification & statistics
   desc: >
