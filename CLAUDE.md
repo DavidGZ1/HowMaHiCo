@@ -7,7 +7,14 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.22.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.23.0** — Phases 1–6 of the package conversion are complete.
+v0.23.0 **relicenses MIT → `GPL (>= 2)`** (Tier A of the EuPA worklist): hard
+`Imports` are copyleft — `Peptides`, `gplots`, `ggcorrplot` are **GPL-2 only**,
+`ggupset` is GPL-3 — so MIT could not describe the installed work, and plain
+GPL-3 would clash with the GPL-2-only three. `GPL (>= 2)` (R's own terms) is
+compatible with each. `LICENSE.md` holds the GPL-2 text; there is no `LICENSE`
+file any more. **Check a new dependency's licence before adding it** — a
+GPL-3-only *and* a GPL-2-only dependency together already sit uneasily.
 v0.22.0 closes **Tier C stage 4** and, in doing so, found that **the documented
 PEAKS entry point could not work at all**. `read_peaks_batch()` filtered the
 export *folders* by `annotation$Sample_peaks`, which is the **per-sample** key:
@@ -362,7 +369,7 @@ v0.3.0 was a best-practices pass: base-package imports declared, all exports mad
 public (no `@keywords internal`), `NEWS.md` added, internal code unified on the
 native `|>` pipe (R floor raised to 4.1.0).
 `project-style-guide.md` documents the target R-package + Docker + Shiny distribution
-pattern. The package layout is authoritative — `DESCRIPTION`, `LICENSE`/`LICENSE.md`,
+pattern. The package layout is authoritative — `DESCRIPTION`, `LICENSE.md` (GPL-2),
 `NAMESPACE`, `R/` (100+ exported functions plus the report entry point),
 `inst/rmarkdown/templates/` (the two Rmd report templates),
 `tests/testthat/` (hand-synthesized fixtures + a full testthat-edition-3 suite —

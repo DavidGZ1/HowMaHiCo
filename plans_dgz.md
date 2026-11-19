@@ -23,11 +23,8 @@ either by implementing or by re-wording the abstract.
   repo, so https://davidgz1.github.io/HowMaHiCo/ is dead too. While there: fill
   in the empty repo description + homepage field, add a CITATION.cff, and mint a
   Zenodo DOI so the poster has something citable.
-* resolve the license conflict (was already in standby, now blocking "open-source
-  R package"): DESCRIPTION says MIT but `Imports: Peptides` is GPL-2 and
-  `Suggests: limma` is GPL >= 2. Pick one — relicense to GPL-3, or drop
-  `Peptides` to Suggests / reimplement the two descriptors actually used (GRAVY,
-  pI; ~30 lines) and keep MIT.
+* **DONE (v0.23.0)** — license conflict resolved: relicensed to `GPL (>= 2)`
+  (not plain GPL-3: Peptides, gplots and ggcorrplot are GPL-2 *only*).
 * abstract housekeeping: the affiliation is still the placeholder
   `[Affiliation: institution, city, country]`; decide whether the submission
   carries the institutional address or DESCRIPTION's
@@ -111,7 +108,6 @@ either by implementing or by re-wording the abstract.
 * bioreplicate as numbers or text, without condition, gets merged afterwards
 * maybe generate a report in long format
 * include whole folder with dia-quant-output when diann
-* check and deal with license discrepancies between howmahico, peptides, limma
 
 
 
@@ -293,3 +289,4 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * check/add functionality for peaks Xpro: FOUND BROKEN and fixed - read\_peaks\_batch() filtered the export FOLDERS by annotation$Sample\_peaks, which is the PER-SAMPLE key (a PEAKS export folder holds several samples as Area#<sample> columns, and those suffixes are what annotate\_peaks() joins on), so an annotation that could be joined matched no folder at all (empty read -> "object 'Accession' not found" in parse\_peaks()) while one naming the folder gave a silent 0-row join; folder selection now uses Sample\_folder (falling back to Sample\_peaks for one-folder-per-sample layouts) and both halves of the trap error out naming the two keys. Second bug: read\_peaks(filedir = getwd(), folder\_peaks\_db = <indexed path>) pasted an ABSOLUTE FolderData behind the working directory (the reports document absolute paths, and system.file() returns them) - now split with dirname()/basename(). Both were invisible because PEAKS had no end-to-end fixture, so v0.22.0 ships inst/extdata/sim\_peaks\_xpro/ (462 simulated peptides x 6 samples in real PEAKS shape: one export folder, -10lgP, 1/k0 Range, Area#<sample>, PEAKS-style oxidation) + tests. get\_annot\_peaks() documents that one row per folder is not one row per sample. Remaining for DGZ: run it on a real PEAKS 11/Xpro export (v0.22.0)
 * corrected the v0.19.0 PTM documentation: PEAKS writes the modification NAME in its PTM column ("Oxidation (M)") and keeps the delta mass in the peptide string - it is FragPipe (delta mass) and DIA-NN (UniMod) that need translating. translate\_ptm() already passed names through unchanged; the docs, the two report notes and the test comments were wrong, and a test now pins the pass-through so a PEAKS name cannot be mangled into a mass match (v0.22.0)
 * abstract wording (example/abstract\_eupa2026\_v3.md): motif clarity now attributed to anchor information content for class 1 and nested binding cores for class 2, and the identification-QC sentence distinguishes DDA mass error from DIA retention-time/ion-mobility calibration error (v0.22.0)
+* resolve the license conflict: relicensed MIT -> GPL (>= 2). Auditing every dependency found more than Peptides/limma: Peptides, gplots and ggcorrplot are GPL-2 ONLY, ggupset is GPL-3, limma/ggpubr GPL (>= 2). Plain GPL-3 (the option on the table) would itself have clashed with the GPL-2-only three, so the package now uses R's own terms, GPL-2 or later, compatible with each. LICENSE.md = GPL-2 text (usethis::use_gpl_license(2, include_future = TRUE)), MIT LICENSE stub removed, README License section explains the choice; also closes the standby "license discrepancies" item (v0.23.0)

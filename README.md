@@ -427,3 +427,13 @@ The same table is printed in every report, both generated from
   (maintainer-facing)
 - `project-style-guide.md` — the longer-term R-package/Docker/Shiny distribution
   pattern this project is expected to graduate into
+
+## License
+
+HowMaHiCo is free software, licensed under the **GNU General Public License,
+version 2 or (at your option) any later version** — `GPL (>= 2)`, the same terms
+R itself uses (see `LICENSE.md`). This choice is dictated by the dependencies:
+`Peptides`, `gplots` and `ggcorrplot` are GPL-2 only, `ggupset` is GPL-3 and
+`limma` is GPL (>= 2), so a permissive licence such as MIT could not describe the
+installed work, and a GPL-3-only one would be incompatible with the GPL-2-only
+packages. "GPL-2 or later" is compatible with each of them.

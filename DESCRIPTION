@@ -1,6 +1,6 @@
 Package: HowMaHiCo
 Title: LC-Immunopeptidomics QC Reporting Workflow
-Version: 0.22.0
+Version: 0.23.0
 Authors@R:
     person("David", "Gomez-Zepeda", , "davidgz.science@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-9467-1213"))
@@ -9,7 +9,7 @@ Description: Ingests LC-MS search-engine output (FragPipe, DIA-NN, PEAKS) for
     unified long-format peptide table, and renders self-contained interactive
     HTML QC reports plus csv/xlsx/png result exports via a parameterized
     RMarkdown template.
-License: MIT + file LICENSE
+License: GPL (>= 2)
 URL: https://github.com/DavidGZ1/HowMaHiCo, https://davidgz1.github.io/HowMaHiCo/
 BugReports: https://github.com/DavidGZ1/HowMaHiCo/issues
 Encoding: UTF-8

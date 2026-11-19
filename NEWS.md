@@ -1,3 +1,23 @@
+# HowMaHiCo 0.23.0
+
+## Relicensed: MIT -> GPL (>= 2)
+
+The first Tier-A item of the EuPA-2026 worklist ("open-source R package" must be
+true as printed). `DESCRIPTION` declared **MIT**, but several hard `Imports`
+are copyleft, so MIT could not describe the installed work:
+
+* `Peptides`, `gplots` and `ggcorrplot` are **GPL-2 only** (no "or later"),
+* `ggupset` is **GPL-3**, `limma` (Suggests) and `ggpubr` are GPL (>= 2).
+
+The worklist only named `Peptides` and `limma`; the other three turned up while
+auditing every dependency. A plain GPL-3 licence -- the option originally on the
+table -- would itself have clashed with the three GPL-2-only packages, so
+HowMaHiCo is now **`GPL (>= 2)`**, the same terms as R (`GPL-2 | GPL-3`), which
+is compatible with each dependency on its own terms. `LICENSE.md` now holds the
+GPL-2 text (via `usethis::use_gpl_license(2, include_future = TRUE)`), the MIT
+`LICENSE` stub is gone, and the README gained a License section explaining the
+choice. No code changes.
+
 # HowMaHiCo 0.22.0
 
 ## PEAKS Xpro actually works now
