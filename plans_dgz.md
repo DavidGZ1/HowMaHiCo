@@ -25,9 +25,12 @@ the abstract.
   <https://github.com/DavidGZ1/HowMaHiCo>, which currently 404s
   (`gh repo view`: `isPrivate: true`), and GitHub Pages will not serve
   `gh-pages` from a private repo, so
-  <https://davidgz1.github.io/HowMaHiCo/> is dead too. While there: fill
-  in the empty repo description + homepage field, add a CITATION.cff,
-  and mint a Zenodo DOI so the poster has something citable.
+  <https://davidgz1.github.io/HowMaHiCo/> is dead too. While there: add
+  a CITATION.cff, and mint a Zenodo DOI so the poster has something
+  citable. **Partly done (2026-11-19):** repo description, homepage (the
+  pkgdown URL) and topics are set via `gh repo edit`. Still for DGZ:
+  flip the visibility to public, CITATION.cff / Zenodo DOI / first
+  GitHub release.
 - **DONE (v0.23.0)** — license conflict resolved: relicensed to
   `GPL (>= 2)` (not plain GPL-3: Peptides, gplots and ggcorrplot are
   GPL-2 *only*).
