@@ -16,7 +16,7 @@ batch-rendering example below) and Docker-idiomatic ("one container run
 run_howmahico_report(
   template = c("00_mhc_report", "00_mhc_upsets", "01_id_counts", "02_overlaps",
     "03_lcms_qc", "04_quant", "05_quality_score", "06_quant_stats", "07_pepchem",
-    "08_prot_all"),
+    "08_prot_all", "09_overview"),
   params,
   output_file,
   ...
@@ -45,7 +45,9 @@ run_howmahico_report(
   residue frequency and descriptors such as GRAVY, compared between
   Conditions) and `"08_prot_all"` (protein level: source proteins per
   sample, ligands per protein, and any protein-level values the search
-  engine reported).
+  engine reported) and `"09_overview"` (one-page overview for the
+  biologically focused user: ligands per sample, length fidelity,
+  quality score and plain-language red flags).
 
 - params:
 

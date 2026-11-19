@@ -195,6 +195,7 @@ The templates on offer:
 | `06_quant_stats` | Differential abundance between Conditions |
 | `07_pepchem` | Amino-acid composition, positional motifs, GRAVY and other descriptors |
 | `08_prot_all` | Source proteins: ligands per protein, and engine-reported protein values |
+| `09_overview` | One-page overview for biologists: counts, lengths, quality score, red flags |
 
 Each focused report gets `pep_all` via its `PepAllSource` parameter:
 `"cached"` (the default — load `<Subset>_pep_all.rda`), `"rda"` (load an
@@ -215,6 +216,29 @@ Written to `<FolderResults>/<Subset>/` on every run:
 `CsvSave = TRUE` adds the intermediate tables; `PlotsSave = TRUE` writes
 every figure as png to `<FolderFigures>/<Subset>/`. The HTML report goes
 to `output_file`.
+
+## Comparing runs
+
+Each `05_quality_score` render writes a per-sample
+`<Subset>_scores.csv`.
+[`compare_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_runs.md)
+stacks several of them — results folders, csv paths or
+[`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md)
+data frames — into one table, and
+[`plot_run_trend()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_run_trend.md)
+puts the runs side by side, one panel per metric:
+
+``` r
+
+runs <- compare_runs(c(jy = "3_results/dda_jy", plasma = "3_results/dda_plasma"))
+summarise_runs(runs)
+plot_run_trend(runs)
+```
+
+With `order = "timestamp"` the runs follow their render time, which
+turns the same plot (`type = "line"`) into a longitudinal view of a QC
+standard. A warning is raised when the runs were scored with different
+`MHCclass` or `ThresholdMode`.
 
 ## A tool with no built-in loader
 

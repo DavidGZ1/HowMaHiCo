@@ -312,6 +312,10 @@ and the weighted 0-100 composite.
   : Default quality-score thresholds and weights
 - [`calibrate_thresholds_from_qc()`](https://davidgz1.github.io/HowMaHiCo/reference/calibrate_thresholds_from_qc.md)
   : Derive QC-relative thresholds from tagged quality-control samples
+- [`qc_samples_from_annotation()`](https://davidgz1.github.io/HowMaHiCo/reference/qc_samples_from_annotation.md)
+  : Read the QC-control samples from an annotation file
+- [`overview_red_flags()`](https://davidgz1.github.io/HowMaHiCo/reference/overview_red_flags.md)
+  : Plain-language red flags for the overview report
 - [`plot_quality_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_heatmap.md)
   : Traffic-light heatmap of per-sample quality sub-scores
 - [`plot_quality_composite()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_composite.md)
@@ -319,6 +323,19 @@ and the weighted 0-100 composite.
 - [`plot_cross_class_length()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_cross_class_length.md)
   : Per-sample peptide-length histogram highlighting cross-class
   contamination
+
+## Comparing runs
+
+Stack the per-sample score tables written by several 05_quality_score
+renders (experiments, subsets, or one QC standard over time) and compare
+them side by side or as a trend.
+
+- [`compare_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_runs.md)
+  : Stack the quality scores of several runs into one table
+- [`summarise_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_runs.md)
+  : Summarise stacked quality scores per run
+- [`plot_run_trend()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_run_trend.md)
+  : Compare quality metrics across runs
 
 ## Advanced quantification & statistics
 

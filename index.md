@@ -9,7 +9,7 @@ plus csv/xlsx result exports.
 
 **Distributed as an R package.**
 [`library(HowMaHiCo)`](https://github.com/DavidGZ1/HowMaHiCo) gives you
-the full function library and all nine report templates. See
+the full function library and all ten report templates. See
 `project-style-guide.md` for the longer-term R-package + Docker + Shiny
 distribution pattern.
 
@@ -54,7 +54,7 @@ experimental conditions and replicates.
 | Folder | Contents |
 |----|----|
 | `R/` | Package source — 100+ exported functions (loaders, annotation, counting, statistics, plotting, export) plus the [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)/[`derive_filtered_annotation()`](https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.md) entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats`/`07_pepchem`/`08_prot_all` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats`/`07_pepchem`/`08_prot_all`/`09_overview` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `inst/scripts/` | The guided pipeline script handed out by [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md) |
 | `vignettes/` | [`vignette("howmahico")`](https://davidgz1.github.io/HowMaHiCo/articles/howmahico.md) — the narrated walkthrough |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
@@ -235,7 +235,8 @@ for (tmpl in c("01_id_counts",     # ID counts, size distributions, motifs, PTM
                "05_quality_score", # per-sample immunopeptidomics quality score
                "06_quant_stats",   # differential abundance between Conditions
                "07_pepchem",       # amino-acid composition, motifs, GRAVY & co.
-               "08_prot_all")) {   # source proteins, ligands per protein
+               "08_prot_all",      # source proteins, ligands per protein
+               "09_overview")) {   # one-page overview: counts, lengths, score, red flags
   run_howmahico_report(tmpl,
                        params = list(SampleSet = "project_id", Subset = "dda_all",
                                      FolderData = "2_data", FolderResults = "3_results",
@@ -288,8 +289,9 @@ are written under `<FolderResults>/<subset>/` and
 | `06_quant_stats` | Differential abundance between Conditions: normalization, completeness, PCA, heatmaps, volcano/MA, plus a presence/absence track for condition-exclusive ligands | cache; limma optional |
 | `07_pepchem` | Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions | cache |
 | `08_prot_all` | Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported | cache |
+| `09_overview` | **Start here.** One-page overview for the biologist: ligands per sample, whether the lengths look like MHC ligands, the quality score, and a plain-language list of red flags, with pointers to the focused report for each topic | cache |
 
-The seven focused reports each render one slice of the analysis and are
+The focused reports each render one slice of the analysis and are
 independent — render only the ones you need. `00_mhc_report` covers most
 of `01`–`04` in a single document.
 
@@ -388,6 +390,31 @@ Plus each report’s own result tables (`quant_stats_results.csv`,
 also writes the `<Subset>_pep_all.rda` cache into `FolderData`, which is
 what the focused reports read.
 
+## Comparing runs
+
+One render scores one subset. To compare several — two experiments, the
+subsets of one, or the same QC standard measured week after week — stack
+the `<Subset>_scores.csv` tables that `05_quality_score` writes:
+
+``` r
+
+runs <- compare_runs(c(jy     = "3_results/dda_jy",       # results folders,
+                       plasma = "3_results/dda_plasma"))  # csv paths, or data frames
+summarise_runs(runs)                  # per-run median / IQR + Pass/Warning/Fail counts
+plot_run_trend(runs)                  # one panel per metric, runs on the x axis
+
+# longitudinal view of a QC standard, in render order
+compare_runs(list.dirs("3_results/qc", recursive = FALSE), order = "timestamp") |>
+  plot_run_trend(type = "line")
+```
+
+[`compare_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_runs.md)
+reads the companion `*_05_quality_score_input_params.csv` to label each
+run (`SampleSet | Subset`) and to record its `MHCclass`, `ThresholdMode`
+and render time. It warns when runs were scored with different
+`MHCclass` or `ThresholdMode`, because their composite scores are then
+not directly comparable.
+
 ## Glossary
 
 The reports distinguish **peptides** (distinct peptidoforms - one
@@ -462,3 +489,14 @@ from
   gotchas (maintainer-facing)
 - `project-style-guide.md` — the longer-term R-package/Docker/Shiny
   distribution pattern this project is expected to graduate into
+
+## License
+
+HowMaHiCo is free software, licensed under the **GNU General Public
+License, version 2 or (at your option) any later version** —
+`GPL (>= 2)`, the same terms R itself uses (see `LICENSE.md`). This
+choice is dictated by the dependencies: `Peptides`, `gplots` and
+`ggcorrplot` are GPL-2 only, `ggupset` is GPL-3 and `limma` is GPL (\>=
+2), so a permissive licence such as MIT could not describe the installed
+work, and a GPL-3-only one would be incompatible with the GPL-2-only
+packages. “GPL-2 or later” is compatible with each of them.
