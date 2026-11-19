@@ -1,3 +1,20 @@
+#' Precursor charge as a number
+#'
+#' `pep_all$Charge` is a factor of labels such as `"+ 2"`. `as.numeric()` on a
+#' factor returns its level CODES, not the charges, so a dataset with no 1+
+#' precursors would read 2+ as 1, 3+ as 2, and so on. This parses the digits
+#' out of the label instead, and also accepts a plain number.
+#'
+#' @param x Charge vector (factor, character or numeric).
+#'
+#' @return Numeric vector of charges (`NA` where no number can be read).
+#'
+#' @noRd
+.charge_number <- function(x) {
+  if (is.numeric(x)) return(as.numeric(x))
+  suppressWarnings(as.numeric(gsub("[^0-9]", "", as.character(x))))
+}
+
 # Internal helpers shared by the FragPipe / DIA-NN / PEAKS loaders.
 # Keeping the shared logic in one place means the three loader families stay
 # consistent (same zero-Area semantics, same run-name extraction, same

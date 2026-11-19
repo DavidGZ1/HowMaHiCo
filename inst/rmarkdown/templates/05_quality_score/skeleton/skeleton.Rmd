@@ -200,7 +200,11 @@ thresholds_used |>
   length range, outside the current window (MHC-II co-enrichment in an MHC-I run, or
   vice versa). Low weight (a small tail is biologically normal) and `NA` for custom
   length windows.
-- **Charge 1+/2+** — short HLA-I ligands ionise predominantly as 1+/2+.
+- **Charge 1+/2+ (class I) / Charge 2+ to 4+ (class II)** — short HLA-I
+  ligands ionise predominantly as 1+/2+, while the longer HLA-II ligands carry
+  more basic residues and come mostly as 2+ to 4+. The metric counts the
+  class-appropriate charges; the class-II cut-offs (green 0.80, amber 0.60) are
+  **provisional**.
 - **Depth** — unique peptides / in-window peptides / source proteins; scored only
   in `qc_relative` mode (absolute yield is not comparable without per-input
   normalisation).

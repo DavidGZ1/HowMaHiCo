@@ -16,6 +16,7 @@
 ^HowMaHiCo\.bat$
 ^0_code$
 ^example$
+^demo$
 ^1_documentation$
 ^2_data$
 ^3_results$

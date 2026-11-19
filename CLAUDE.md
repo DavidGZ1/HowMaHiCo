@@ -7,7 +7,21 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.25.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.26.0** — Phases 1–6 of the package conversion are complete.
+v0.26.0 came out of the **EuPA demonstration** (`demo/eupa2026_demo.R`,
+Rbuildignored; renders the simulated `example/2_data/sim_fragpipe_dda_hla1|hla2`
+and simulates a tryptic titration + cross-class mix with MaHiCoInSilico). It
+found (a) **`frac_charge_1_2` was MHC-I-only**: class-II ligands are mostly
+2+ to 4+, so a genuine class-II sample scored 0 there. The metric now counts
+**2+ to 4+ for `MHC2`** (same key; label "Charge 2+ to 4+", provisional
+0.80/0.60) via the internal `.plausible_charges()`. (b) **Charges were read
+from factor level codes**: `pep_all$Charge` is a `"+ n"` factor, and
+`as.numeric()` on it gives level codes, so with no 1+ present 2+ read as 1+.
+That hit `get_charge_group()` and the PEAKS `PeptideID`/`Peptide_charge`. Use
+the internal **`.charge_number()`** (`R/utils-loaders.R`), never
+`as.numeric(Charge)` on `pep_all`. Known, not fixed: anchor information
+content rewards tryptic K/R C-termini (it rebounds at 100 % tryptic), and the
+simulator makes no nested HLA-II families (`frac_nested_core` ~0 on sim data).
 v0.25.0 adds the **general-overview report `09_overview`** (Tier B), the
 "biologically focused user" half of the abstract's two-audience promise
 (`03_lcms_qc` is the expert half). One page: an at-a-glance table, ligands per
@@ -424,7 +438,8 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | `inst/extdata/dictionaries/` | YAML parser dictionaries for the `software = "custom"` path: `custom_template.yaml` (fill-in) + `fragpipe.yaml`/`diann.yaml`/`peaks.yaml` (reference) |
 | `tests/testthat/` | testthat-edition-3 test suite + hand-synthesized fixtures |
 | `man/` | Roxygen-generated Rd files |
-| `example/` | Legacy `0_code/`, `1_documentation/` pre-migration reference copies (gitignored) |
+| `example/` | Legacy `0_code/`, `1_documentation/` pre-migration reference copies, plus the EuPA-2026 demo data/outputs (`2_data/sim_fragpipe_dda_*`, `3_results/eupa2026/`, `4_figures/eupa2026/`) (gitignored) |
+| `demo/` | `eupa2026_demo.R` — reproducible EuPA-2026 demonstration: renders the simulated class-1/class-2 datasets, simulates a tryptic-contamination titration + cross-class mix with MaHiCoInSilico, and builds the poster panels via `compare_runs()`. Tracked but `.Rbuildignore`d (not part of the package; MaHiCoInSilico is not a dependency) |
 | `2_data/` | Raw search-engine output (FragPipe `psm.tsv`, DIA-NN `report.tsv`) + cached `*_pep_all.rda` (gitignored) |
 | `3_results/<subset>/` | Per-subset csv + xlsx outputs (`pep_all.csv`, `counts_pep_all_condition.csv`, `seq_by_condition.xlsx`, ...) (gitignored) |
 | `4_figures/` | Optional PNG plot exports (only when `PlotsSave = TRUE`) (gitignored) |

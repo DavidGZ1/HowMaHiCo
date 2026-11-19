@@ -31,7 +31,7 @@ read_peaks <- function(filedir, folder_peaks_db, instrument = "tims_tof"){
     dplyr::rename_with(~ gsub(patt = "X_", rep = "n_", .x), dplyr::everything()) |>
     dplyr::mutate(Sequence = gsub("\\s*\\([^\\)]+\\)", "", as.character(Peptide)), # Get striped sequences
                   Charge = as.factor(paste0("+ ", round(Mass / m_z, 0))),
-                  Peptide_charge = paste(Peptide, as.numeric(Charge), sep = "_"),
+                  Peptide_charge = paste(Peptide, .charge_number(Charge), sep = "_"),
                   Nter = as.factor(stringr::str_sub(Peptide, 1, 1)),
                   Cter = as.factor(stringr::str_sub(Peptide, -1, -1))) |>
     dplyr::select(-dplyr::starts_with("n_Feature_"))
@@ -280,7 +280,7 @@ parse_peaks <- function(input, shortpep_range = c(8, 13)){
                     fill = "right", extra = "drop") |>
     dplyr::arrange(ProteinFirst, m_z) |>
     dplyr::mutate(
-      PeptideID = paste0(ProteinFirst, "_", round(m_z, 1), "_", as.numeric(Charge)),
+      PeptideID = paste0(ProteinFirst, "_", round(m_z, 1), "_", .charge_number(Charge)),
       Log2Area = compute_log2area(Area),
       Length_range = dplyr::case_when(
         Length >= shortpep_range[1] & Length <= shortpep_range[2] ~

@@ -220,3 +220,41 @@ test_that("every scored metric exists in the metrics table (composite would erro
     expect_true(is.na(s$composite_score) || (s$composite_score >= 0 && s$composite_score <= 100))
   }
 })
+
+# ---- class-aware charge plausibility (v0.26.0) -------------------------------
+
+test_that("frac_charge_1_2 counts 1+/2+ for MHC1 but 2+ to 4+ for MHC2", {
+  seqs <- c("AAAAAAAAAAAAAK", "CCCCCCCCCCCCCK", "DDDDDDDDDDDDDK",
+            "EEEEEEEEEEEEEK", "FFFFFFFFFFFFFK")            # all 14-mers
+  pep <- data.frame(Sample = factor("S1"), Peptide = seqs, Sequence = seqs,
+                    Length = nchar(seqs), Cter = "K", Accession = "P1",
+                    Charge = factor(c("+ 2", "+ 3", "+ 3", "+ 4", "+ 5")),
+                    stringsAsFactors = FALSE)
+  m2 <- qc_metrics_by_sample(pep, shortpep_range = c(12, 25), mhcclass = "MHC2")
+  expect_equal(m2$frac_charge_1_2, 4 / 5)                  # 2+, 3+, 3+, 4+
+  m1 <- qc_metrics_by_sample(pep, shortpep_range = c(12, 25), mhcclass = "MHC1")
+  expect_equal(m1$frac_charge_1_2, 1 / 5)                  # only the 2+
+})
+
+test_that("the charge metric is not fooled by a factor without a 1+ level", {
+  # level codes of c("+ 2", "+ 3") are 1 and 2, which used to count as 1+/2+
+  seqs <- c("AAAAAAAAV", "CCCCCCCCV", "DDDDDDDDV", "EEEEEEEEV")
+  pep <- data.frame(Sample = factor("S1"), Peptide = seqs, Sequence = seqs,
+                    Length = 9L, Cter = "V", Accession = "P1",
+                    Charge = factor(c("+ 2", "+ 3", "+ 3", "+ 3")),
+                    stringsAsFactors = FALSE)
+  m <- qc_metrics_by_sample(pep, shortpep_range = c(8, 13), mhcclass = "MHC1")
+  expect_equal(m$frac_charge_1_2, 1 / 4)
+})
+
+test_that("MHC2 relabels the charge row with its own cut-offs; MHC1 is unchanged", {
+  th1 <- quality_thresholds_default("MHC1")
+  th2 <- quality_thresholds_default("MHC2")
+  r1 <- th1[th1$metric == "frac_charge_1_2", ]
+  r2 <- th2[th2$metric == "frac_charge_1_2", ]
+  expect_equal(r1$label, "Charge 1+/2+")
+  expect_equal(c(r1$green, r1$amber), c(0.85, 0.70))
+  expect_equal(r2$label, "Charge 2+ to 4+")
+  expect_equal(c(r2$green, r2$amber), c(0.80, 0.60))
+  expect_equal(r2$weight, r1$weight)
+})
