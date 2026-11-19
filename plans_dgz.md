@@ -44,6 +44,20 @@ either by implementing or by re-wording the abstract.
   separating a genuine immunopeptidome from a failed pulldown / whole-proteome
   negative control — that is the figure that demonstrates "how MHC is the
   dataset".
+  dataset class 1: annotation in example\1_documentation, data in \2_data\sim_fragpipe_dda_hla1
+  dataset class 2: annotation in example\1_documentation, data in \2_data\sim_fragpipe_dda_hla2
+  **Simulated demonstration DONE (v0.26.0)**: both datasets above are
+  MaHiCoInSilico simulations, not the real JY data. `demo/eupa2026_demo.R`
+  (tracked, Rbuildignored) renders all reports for both and simulates a
+  tryptic-contamination titration (class-1 pulldown blended with whole-proteome
+  peptides, p = 0 ... 1, LOD 1e6) plus a class-1 + 25 % class-2 mix. Outputs:
+  example/3_results/eupa2026/ (34 html reports, demo\_summary.md,
+  runs\_summary.csv) and example/4_figures/eupa2026/panel\_A\_titration.png +
+  panel\_B\_classes.png. Numbers (median composite): class 1 90.7 Pass, class 2
+  70 Pass, titration 90.7 / 88.9 / 82.5 / 75.3 / 62 / 49.2 / 35 at 0 / 5 / 10 /
+  25 / 50 / 75 / 100 % tryptic (Pass -> Warning at 50 %, Fail at 100 %),
+  class 1 + 25 % class 2 80.6 with cross-class 0.28 (vs 0.04). **Still open:
+  the REAL dataset** (JY hla1/hla2, ideally with a PRIDE accession).
 * **DONE (v0.25.0, `09_overview`)** — general-overview report for the biologically focused user (the
   advanced-plans "Simple summary of HowMaHiCo ala HowDirty" item). The abstract
   promises "a general-overview report for biologically focused users and another
@@ -192,6 +206,24 @@ either by implementing or by re-wording the abstract.
   gplots, ggcorrplot are GPL-2 only; ggupset is GPL-3). If the abstract or
   poster says "MIT" or just "open-source", align it. Remember to check a new
   dependency's licence before adding it
+* **check the EuPA demo panels and numbers** (v0.26.0):
+  example/4_figures/eupa2026/panel\_A\_titration.png, panel\_B\_classes.png and
+  example/3_results/eupa2026/demo\_summary.md. Choices to confirm: LOD = 1e6
+  for the mixed runs (picked so the per-sample tryptic share tracks the blend
+  proportion), the titration steps, and the panel metrics/titles. They are
+  simulated data, so say so on the poster
+* **anchor motif clarity rewards tryptic C-termini** (found v0.26.0): in the
+  titration it falls 3.9 -> 2.9 bits up to 75 % tryptic, then REBOUNDS to 3.5
+  bits at 100 %, because pure tryptic 9-mers all end in K/R, which looks like a
+  sharp PΩ anchor. The composite still falls monotonically (other dimensions
+  dominate). Decide whether to fix (e.g. compute it on 9-mers not ending in
+  K/R, or P2 only; both cost alleles with K/R anchors such as HLA-A\*03/A\*11
+  some signal) or keep and mention it
+* **review the class-II charge cut-offs** (v0.26.0): for MHCclass = "MHC2",
+  frac\_charge\_1\_2 now counts 2+ to 4+ (label "Charge 2+ to 4+") with
+  provisional green 0.80 / amber 0.60 - not literature values. The simulated
+  class-2 data has 0.81, so it lands exactly at Pass (composite 70.0); check
+  the charge distribution of your real HLA-II data
 
 
 
@@ -199,6 +231,10 @@ either by implementing or by re-wording the abstract.
 
 * include MaHiCoBench dataset for LFQbench-style plots
 * Dataset: use the JY hla1 and hla2 from Annica and Julian
+* MaHiCoInSilico: simulate NESTED HLA-II families (ragged length variants around a
+  shared 9-mer core). It currently draws class-II peptides independently, so
+  frac\_nested\_core is ~0 on simulated class-2 data and that weight-3 dimension
+  cannot be demonstrated (found by the v0.26.0 EuPA demo)
 * Simple summary of HowMaHiCo ala HowDirty
 * Push a v1 and publication with this dataset before adding many more functionalities
 * Maybe switch TechRep to InjRep
@@ -321,3 +357,4 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * resolve the license conflict: relicensed MIT -> GPL (>= 2). Auditing every dependency found more than Peptides/limma: Peptides, gplots and ggcorrplot are GPL-2 ONLY, ggupset is GPL-3, limma/ggpubr GPL (>= 2). Plain GPL-3 (the option on the table) would itself have clashed with the GPL-2-only three, so the package now uses R's own terms, GPL-2 or later, compatible with each. LICENSE.md = GPL-2 text (usethis::use_gpl_license(2, include_future = TRUE)), MIT LICENSE stub removed, README License section explains the choice; also closes the standby "license discrepancies" item (v0.23.0)
 * cross-experiment comparison: new R/compare-runs.R with compare_runs() (stacks the <Subset>_scores.csv tables of N 05_quality_score renders - csv paths, results folders or score data frames; labels runs from the companion *_05_quality_score_input_params.csv as "SampleSet | Subset" and attaches MHCclass/ThresholdMode/render_timestamp/package_version; input or timestamp order; column union; WARNS on mixed MHCclass/ThresholdMode since composites are then not comparable) + summarise_runs() (per run x metric n/median/IQR + Pass/Warning/Fail counts) + plot_run_trend() (panel per metric, runs on x, box or median-trend line, QC samples as triangles, optional color_by). The 05 score csv gained a Condition column. No report template for it yet - the function + plot make the abstract's sentence true (v0.24.0)
 * general-overview report for the biologically focused user: new `09_overview` template, one page for the biologist - at-a-glance table (samples, Conditions, unique peptides all/in-window, source proteins, median score, Pass/Warning/Fail, red-flag counts), ligands per sample in/out of the length window, length histogram, composite quality score, a plain-language Red flags section and a "where to go next" table pointing at 01-08. New exported overview_red_flags() (Fail/Warning composite; any SCORED dimension past amber, worded by its label, High at sub-score 0; sample < 0.5 x median unique peptides; Condition with a single BioReplicate) and qc_samples_from_annotation() (the QCColumn lookup 05 inlined, now shared by 05 and 09). Writes <Subset>_red_flags.csv. Render test in test-sim-fragpipe.R + unit tests in test-overview.R (v0.25.0)
+* demonstration dataset, simulated part: demo/eupa2026_demo.R renders the simulated class-1/class-2 FragPipe datasets (all reports) and simulates with MaHiCoInSilico a tryptic-contamination titration (0-100 %, LOD 1e6) and a class-1 + 25 % class-2 mix, then builds the poster panels with compare_runs()/plot_run_trend() and writes demo_summary.md. The composite falls monotonically 90.7 -> 35 along the titration (Fail only for the pure proteome) and cross-class rises to 0.28 in the mix. Running it found two bugs, both fixed: frac_charge_1_2 was MHC-I-only (class II is mostly 2+ to 4+, so genuine class-II scored 0 there; now class-aware, class 2 composite 55 -> 70), and charges were read from factor LEVEL CODES (as.numeric on the "+ n" factor) so with no 1+ present 2+ read as 1+, in get_charge_group() and the PEAKS PeptideID; now .charge_number(). The real dataset stays open (v0.26.0)

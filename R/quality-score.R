@@ -96,6 +96,11 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 # murine H-2.
 .canonical_lengths <- function(mhcclass) if (identical(mhcclass, "MHC1_mouse")) c(8L, 9L) else 9L
 
+# Plausible precursor charges of in-window ligands: 1+/2+ for the short MHC-I
+# ligands (and custom windows), 2+ to 4+ for the 12-25-mers of MHC-II, which
+# carry more basic residues and are rarely singly charged.
+.plausible_charges <- function(mhcclass) if (identical(mhcclass, "MHC2")) 2:4 else 1:2
+
 # The most frequent of `candidates` in `lengths` (first candidate on a tie or
 # when none is present), so anchor scoring always uses one aligned length set.
 .modal_length <- function(lengths, candidates) {
@@ -172,7 +177,10 @@ anchor_information_content <- function(sequences, positions = c(2, -1), min_n = 
 #'   [quality_thresholds_default()] gives it the anchor metric's weight there.
 #'   For `"MHC1_mouse"`, `frac_9mer` counts 8- **and** 9-mers (both canonical for
 #'   murine H-2) and the anchor motif is scored on whichever of the two the
-#'   sample has more of.
+#'   sample has more of. `frac_charge_1_2` is the fraction of in-window
+#'   observations at a plausible charge: 1+/2+ for MHC-I (and custom windows),
+#'   but **2+ to 4+ for `"MHC2"`**, whose 12-25-mers are rarely singly charged.
+#'   The key is the same for every class.
 #'
 #' @return A data frame with one row per `Sample` and columns: `frac_in_window`,
 #'   `frac_9mer`, `frac_cterm_KR`, `frac_cterm_KR_longonly`, `anchor_information`,
@@ -209,10 +217,12 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
     cter <- toupper(as.character(pep$Cter))
     kr <- cter %in% c("K", "R")
 
-    # charge plausibility among in-window peptide observations
-    short_obs <- get_charge_group(d[d$Length >= lo & d$Length <= hi, , drop = FALSE])
-    frac_charge_1_2 <- if (nrow(short_obs) == 0) NA_real_ else
-      mean(short_obs$Charge_group %in% c("+ 1", "+ 2"))
+    # charge plausibility among in-window peptide observations (1+/2+ for
+    # MHC-I, 2+ to 4+ for MHC-II; the metric key is the same for both)
+    short_charge <- .charge_number(d$Charge[d$Length >= lo & d$Length <= hi])
+    short_charge <- short_charge[!is.na(short_charge)]
+    frac_charge_1_2 <- if (length(short_charge) == 0) NA_real_ else
+      mean(short_charge %in% .plausible_charges(mhcclass))
 
     # mass accuracy; DIA-NN reports ppm as a hardcoded dummy (all 0) -> NA
     if (has_ppm) {
@@ -278,7 +288,9 @@ qc_metrics_by_sample <- function(pep_all, shortpep_range = c(8, 13), mhcclass = 
 #'   `frac_9mer` row to "8/9-mer fraction" and raises its green/amber cut-offs,
 #'   because that metric counts two canonical lengths for murine H-2. `"MHC2"`
 #'   promotes `frac_nested_core` from a weight-0 diagnostic to the motif
-#'   dimension (weight 3), since the anchor metric is undefined there.
+#'   dimension (weight 3), since the anchor metric is undefined there, and
+#'   relabels `frac_charge_1_2` to "Charge 2+ to 4+" with provisional cut-offs
+#'   (green 0.80, amber 0.60), matching what that metric counts for class II.
 #'
 #' @return A data frame with columns `metric`, `label`, `direction`
 #'   (`"higher_better"`/`"lower_better"`), `green`, `amber`, `weight`.
@@ -326,6 +338,13 @@ quality_thresholds_default <- function(mhcclass = "MHC1") {
     out$green[i]  <- 0.50
     out$amber[i]  <- 0.30
     out$weight[i] <- 3
+    # `frac_charge_1_2` counts 2+ to 4+ for MHC-II (see qc_metrics_by_sample()):
+    # 12-25-mers are rarely singly charged, so the MHC-I 1+/2+ expectation
+    # would fail every genuine class-II sample. Provisional cut-offs.
+    i <- match("frac_charge_1_2", out$metric)
+    out$label[i] <- "Charge 2+ to 4+"
+    out$green[i] <- 0.80
+    out$amber[i] <- 0.60
   }
 
   # Murine H-2 ligands peak at BOTH 8- and 9-mers, so `frac_9mer` counts two

@@ -144,7 +144,7 @@ count_ids_condition_bylengthrange <- function(input, group_var = "Condition"){
 #' }
 get_charge_group <- function(input){
   input |>
-    dplyr::mutate(Charge = as.numeric(Charge)) |>
+    dplyr::mutate(Charge = .charge_number(Charge)) |>
     dplyr::mutate(Charge_group = factor(dplyr::case_when(Charge < 3 ~ paste0("+ ", Charge),
                                                           TRUE ~ "\u2265 +3"),
                                         c("+ 1", "+ 2", "\u2265 +3")))

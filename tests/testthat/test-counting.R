@@ -115,3 +115,12 @@ test_that("get_mat_log2area survives a dataset where every Area is zero", {
   expect_gt(nrow(mat_ok), 0)
   expect_equal(colnames(mat_ok), levels(make_pep_all()$Sample))
 })
+
+test_that("get_charge_group reads the charge from a factor label, not its level code", {
+  # pep_all$Charge is a factor of "+ n" labels; as.numeric() on it returns
+  # level CODES, so a dataset with no 1+ read 2+ as 1+ (and 3+ as 2+)
+  x <- data.frame(Charge = factor(c("+ 2", "+ 3", "+ 4")))
+  out <- get_charge_group(x)
+  expect_equal(out$Charge, c(2, 3, 4))
+  expect_equal(as.character(out$Charge_group), c("+ 2", "≥ +3", "≥ +3"))
+})

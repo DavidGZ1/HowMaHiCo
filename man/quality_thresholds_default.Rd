@@ -11,7 +11,9 @@ quality_thresholds_default(mhcclass = "MHC1")
 \code{frac_9mer} row to "8/9-mer fraction" and raises its green/amber cut-offs,
 because that metric counts two canonical lengths for murine H-2. \code{"MHC2"}
 promotes \code{frac_nested_core} from a weight-0 diagnostic to the motif
-dimension (weight 3), since the anchor metric is undefined there.}
+dimension (weight 3), since the anchor metric is undefined there, and
+relabels \code{frac_charge_1_2} to "Charge 2+ to 4+" with provisional cut-offs
+(green 0.80, amber 0.60), matching what that metric counts for class II.}
 }
 \value{
 A data frame with columns \code{metric}, \code{label}, \code{direction}

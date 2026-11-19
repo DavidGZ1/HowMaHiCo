@@ -23,7 +23,10 @@ fixed-length anchor model), so they drop out of the composite downstream —
 \code{\link[=quality_thresholds_default]{quality_thresholds_default()}} gives it the anchor metric's weight there.
 For \code{"MHC1_mouse"}, \code{frac_9mer} counts 8- \strong{and} 9-mers (both canonical for
 murine H-2) and the anchor motif is scored on whichever of the two the
-sample has more of.}
+sample has more of. \code{frac_charge_1_2} is the fraction of in-window
+observations at a plausible charge: 1+/2+ for MHC-I (and custom windows),
+but \strong{2+ to 4+ for \code{"MHC2"}}, whose 12-25-mers are rarely singly charged.
+The key is the same for every class.}
 }
 \value{
 A data frame with one row per \code{Sample} and columns: \code{frac_in_window},
