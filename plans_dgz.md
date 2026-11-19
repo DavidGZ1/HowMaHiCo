@@ -163,6 +163,33 @@ either by implementing or by re-wording the abstract.
 * check way sample\_annotation is named in the reports, should be the same as in the example
 * check which column is used as quant for each software
 * get\_report\_template change param order, start with template then file
+* **review the 09\_overview red-flag rules** (v0.25.0): overview\_red\_flags()
+  in R/quality-score.R flags (a) a Fail (High) / Warning (Medium) composite,
+  (b) any scored dimension with a sub-score < 50, i.e. past amber (High at 0),
+  (c) a sample with < 0.5 x the experiment median of unique peptides
+  (depth\_ratio = 0.5 is my choice, not a literature value) and (d) a Condition
+  with a single BioReplicate (Low). On the simulated MHC-I data the only flags
+  are Medium "Charge 1+/2+" (0.66 vs amber 0.70) - likely a quirk of the
+  simulation, but check that rule against your real data. Are these the flags
+  a biologist needs, and is the severity right?
+* **read the 09\_overview prose** (v0.25.0): all captions were written by Claude
+  and state biology - e.g. "MHC class I ligands pile up at 8-11 amino acids,
+  usually with a sharp 9-mer peak", "MHC class II ... typically 13-17 amino
+  acids", Pass >= 70 = "a typical immunopeptidome", Fail < 40 = "a failed
+  pulldown or a non-MHC sample". Also check the "Where to go next" table and
+  whether 09\_overview is the right name/number for the report you would hand
+  out first
+* **try compare\_runs() on real runs** (v0.24.0): render 05\_quality\_score for
+  two or more real subsets, then compare\_runs(<results folders>) |>
+  plot\_run\_trend(). Check that the default run labels ("SampleSet | Subset")
+  and the default metrics (composite score, length in window, unique peptides in
+  window) are the ones you want, and whether a dedicated cross-run report
+  template is worth adding
+* **confirm the license wording** (v0.23.0): DESCRIPTION is now GPL (>= 2) and
+  LICENSE.md the GPL-2 text; the README License section explains why (Peptides,
+  gplots, ggcorrplot are GPL-2 only; ggupset is GPL-3). If the abstract or
+  poster says "MIT" or just "open-source", align it. Remember to check a new
+  dependency's licence before adding it
 
 
 
