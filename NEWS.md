@@ -1,3 +1,41 @@
+# HowMaHiCo 0.25.0
+
+## A one-page overview report for biologists
+
+The abstract promises "a general-overview report for biologically focused users
+and another for deeper evaluation by the LC-MS expert". The expert half existed
+(`03_lcms_qc` and the other focused reports), but the overview did not: the
+closest thing was the ~1300-line all-in-one `00_mhc_report`.
+
+* **New template `09_overview`** (`run_howmahico_report("09_overview", ...)`),
+  rendered against the `pep_all` cache like the other focused reports. It has
+  one page with plain-language captions:
+  * an at-a-glance table: samples, Conditions, unique peptides (all / in the
+    length window), source proteins, median quality score, Pass/Warning/Fail
+    counts and the number of red flags;
+  * ligands per sample, split in/out of the MHC length window;
+  * whether the lengths look like MHC ligands;
+  * the composite quality score with its traffic light;
+  * **red flags**;
+  * a "where to go next" table mapping each question to the focused report
+    (01–08) that answers it.
+
+  It always writes `<Subset>_red_flags.csv` next to the input params.
+* **New `overview_red_flags()`** turns a score table into a short list of
+  `Sample`, `Severity` (High > Medium > Low), `Flag` and `Detail`. It flags:
+  * a Fail (High) or Warning (Medium) composite;
+  * any *scored* quality dimension past its amber threshold, worded with that
+    dimension's label (High when its sub-score is 0). This covers cross-class
+    contamination, tryptic background, length fidelity and so on;
+  * a sample below half the experiment's median unique-peptide count;
+  * a Condition with a single BioReplicate.
+
+  The rules are few and transparent on purpose: a flag is a prompt to look, not
+  a verdict.
+* **New `qc_samples_from_annotation()`**: the `QCColumn` lookup that
+  `05_quality_score` inlined, now shared by 05 and 09. It returns an empty
+  vector for a missing file, an empty column name or an absent column.
+
 # HowMaHiCo 0.24.0
 
 ## Comparing runs

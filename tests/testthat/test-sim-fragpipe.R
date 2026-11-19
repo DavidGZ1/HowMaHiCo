@@ -342,6 +342,65 @@ test_that("05_quality_score renders end-to-end against the simulated data", {
   # and the plots reach the HTML (ggprint_rawr had the same scoping bug)
   html <- paste(readLines(out, warn = FALSE), collapse = "\n")
   expect_gt(length(gregexpr("<img", html)[[1]]), 0)
+
+  # the exported score table carries Condition (v0.24.0), for compare_runs()
+  sc <- utils::read.csv(file.path(proj, "scores.csv"))
+  expect_true("Condition" %in% names(sc))
+  expect_false(anyNA(sc$Condition))
+  expect_setequal(unique(sc$Condition), c("CTRL", "TREAT"))
+})
+
+test_that("09_overview renders end-to-end and writes its red-flag table", {
+  skip_on_cran()
+  skip_if_not_installed("rmarkdown")
+  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
+  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
+
+  proj <- tempfile("simoverview_"); dir.create(proj)
+  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
+  file.copy(sim_dir, proj, recursive = TRUE)
+  file.copy(sim_annot, proj)
+
+  out <- suppressWarnings(suppressMessages(
+    run_howmahico_report(
+      "09_overview",
+      params = list(
+        SampleSet           = "sim",
+        Software            = "fragpipe_dda_individual",
+        Instrument          = "tims_tof",
+        FolderDocumentation = proj,
+        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
+        FolderData          = file.path(proj, "sim_fragpipe_dda"),
+        FolderResults       = proj,
+        FolderFigures       = proj,
+        ProjectDir          = proj,
+        PepAllSource        = "build",
+        Subset              = "",
+        MHCclass            = "MHC1",
+        ResultsOverwrite    = TRUE,
+        PlotsSave           = FALSE,
+        CsvSave             = FALSE
+      ),
+      output_file = "sim_09_overview.html",
+      quiet = TRUE)))
+
+  expect_true(file.exists(out))
+  expect_true(file.exists(file.path(proj, "09_overview_input_params.csv")))
+  flags <- utils::read.csv(file.path(proj, "red_flags.csv"))
+  expect_named(flags, c("Sample", "Severity", "Flag", "Detail"))
+
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  for (heading in c("At a glance", "How many ligands per sample", "Red flags",
+                    "Where to go next"))
+    expect_true(grepl(heading, html, fixed = TRUE), info = heading)
+  # the three overview plots reach the HTML
+  expect_gte(length(gregexpr("<img", html)[[1]]), 3)
+  # the red-flag section shows either the table or the explicit all-clear
+  if (nrow(flags) == 0) {
+    expect_true(grepl("No red flags.", html, fixed = TRUE))
+  } else {
+    expect_true(grepl(flags$Flag[1], html, fixed = TRUE))
+  }
 })
 
 # Provider guard (v0.17.0): the report header attribution moved from hardcoded

@@ -28,7 +28,9 @@
 #'   residue frequency and descriptors such as GRAVY, compared between
 #'   Conditions) and `"08_prot_all"` (protein level: source proteins per sample,
 #'   ligands per protein, and any protein-level values the search engine
-#'   reported).
+#'   reported) and `"09_overview"` (one-page overview for the biologically
+#'   focused user: ligands per sample, length fidelity, quality score and
+#'   plain-language red flags).
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`SampleSet`, `AnnotationFile`, `Subset`,
 #'   `FolderData`, `FolderResults`, `FolderFigures`, `Software`, `MHCclass`,
@@ -92,7 +94,8 @@ run_howmahico_report <- function(template = c("00_mhc_report", "00_mhc_upsets",
                                               "01_id_counts", "02_overlaps",
                                               "03_lcms_qc", "04_quant",
                                               "05_quality_score", "06_quant_stats",
-                                              "07_pepchem", "08_prot_all"),
+                                              "07_pepchem", "08_prot_all",
+                                              "09_overview"),
                                  params, output_file, ...){
   template <- match.arg(template)
   skeleton <- system.file("rmarkdown", "templates", template, "skeleton", "skeleton.Rmd",

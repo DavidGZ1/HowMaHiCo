@@ -1,0 +1,262 @@
+---
+output:
+  html_document:
+    toc: true
+    toc_float: false
+    theme: united
+    df_print: paged
+    number_sections: TRUE
+  editor_options:
+  chunk_output_type: inline
+params:
+  SampleSet: "example"
+  Provider: "" # organisation/person that produced the report; empty prints a generic attribution
+  DataAnalysisNames: "DGZ"
+  WetLabNames: "operator"
+  FolderDocumentation: "1_documentation"
+  AnnotationFile: "samples_annotation.csv"
+  Subset: "" # subset name; prefixes file names and the cached <Subset>_pep_all.rda
+  FolderData: "2_data" # holds the cached pep_all.rda built by build_pep_all()
+  PepAllSource: "cached" # how to obtain pep_all: "cached" (<Subset>_pep_all.rda), "rda" (PepAllFile), or "build" (parse raw via build_pep_all)
+  PepAllFile: "" # explicit .rda path; used only when PepAllSource = "rda"
+  FolderResults: "3_results"
+  FolderFigures: "4_figures"
+  ProjectDir: ~
+  Instrument: "tims_tof"
+  Software: "fragpipe_dda_combined"
+  MHCclass: "MHC1" # MHC1 (human, 8-13 AAs), MHC1_mouse (murine H-2, 7-11 AAs) or MHC2 (12-25 AAs); overrides ShortPeptideLengthMin/Max
+  ShortPeptideLengthMin: 8
+  ShortPeptideLengthMax: 13
+  QCColumn: "QC" # annotation column flagging experiment QC controls (TRUE/"QC"); empty disables QC tagging
+  ThresholdMode: "default" # "default" (literature thresholds) or "qc_relative" (calibrate from QC samples)
+  TestMode: FALSE # if TRUE, only the first ~100 rows PER RUN are kept (every run survives)
+  ResultsOverwrite: TRUE
+  PlotsSave: FALSE
+  InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets
+  CsvSave: FALSE
+title: "`r paste0('09_overview | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+---
+
+
+<style type="text/css">
+.main-container {
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+# Report information
+
+A **one-page overview** of the experiment, written for the biologist rather than
+the mass spectrometrist. It answers four questions: how many MHC ligands each
+sample gave, whether their lengths look like an MHC-bound peptidome, how each
+sample scores on the HowMaHiCo quality score, and what (if anything) deserves a
+closer look. Every section points to the focused report that goes into detail.
+
+`r HowMaHiCo::provider_line(params$Provider)`
+
+**Sample Set:** `r params$SampleSet`
+
+**Data Analysis: ** `r params$DataAnalysisNames`
+
+**Date:**  `r Sys.Date()`
+
+**Code version:** `r packageVersion("HowMaHiCo")`
+
+```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```
+
+```{r overview-data, echo=FALSE, message=FALSE, warning=TRUE}
+window_label <- paste0(shortpep_range[1], " to ", shortpep_range[2], " AAs")
+
+qc_samples <- qc_samples_from_annotation(
+  file.path(params$FolderDocumentation, params$AnnotationFile), params$QCColumn)
+threshold_mode <- if (params$ThresholdMode == "qc_relative" && length(qc_samples) > 0)
+  "qc_relative" else "default"
+if (params$ThresholdMode == "qc_relative" && length(qc_samples) == 0)
+  warning("ThresholdMode = 'qc_relative' but no QC samples were found; using default thresholds.")
+
+scores <- score_sample_quality(pep_all, shortpep_range = shortpep_range,
+                               mhcclass = params$MHCclass,
+                               qc_samples = qc_samples,
+                               threshold_mode = threshold_mode)
+thresholds_used <- if (threshold_mode == "qc_relative")
+  calibrate_thresholds_from_qc(qc_metrics_by_sample(pep_all, shortpep_range, params$MHCclass),
+                               qc_samples,
+                               thresholds = quality_thresholds_default(params$MHCclass)) else
+  quality_thresholds_default(params$MHCclass)
+
+red_flags <- overview_red_flags(scores, thresholds_used, pep_all = pep_all)
+```
+
+# At a glance
+
+```{r at-a-glance, echo=FALSE}
+n_cat <- table(factor(as.character(scores$category), levels = c("Pass", "Warning", "Fail")))
+data.frame(
+  Item = c("Samples", "Conditions", "Unique peptides (all lengths)",
+           paste0("Unique peptides (", window_label, ")"),
+           "Source proteins", "Median quality score (0-100)",
+           "Samples Pass / Warning / Fail", "Red flags (High / Medium / Low)"),
+  Value = c(length(samples),
+            paste0(n_conditions, " (", paste(conditions, collapse = ", "), ")"),
+            format(dplyr::n_distinct(pep_all$Peptide), big.mark = ","),
+            format(dplyr::n_distinct(pep_short$Peptide), big.mark = ","),
+            format(dplyr::n_distinct(pep_all$Accession), big.mark = ","),
+            format(stats::median(scores$composite_score, na.rm = TRUE)),
+            paste(n_cat, collapse = " / "),
+            paste(table(red_flags$Severity), collapse = " / "))
+) |>
+  kable(col.names = NULL) |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+# How many ligands per sample
+
+Unique peptides identified in each sample, split into those inside the expected
+ligand-length window for `r params$MHCclass` (`r window_label`) and all others.
+A good MHC pulldown puts most of its peptides inside the window; replicates of
+the same Condition should give similar totals.
+
+```{r plot-ligands-per-sample, echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE, message=FALSE}
+counts_sample <- dplyr::bind_rows(
+  pep_all |>
+    dplyr::group_by(Condition, BioReplicate, Sample) |>
+    dplyr::summarise(n_Peptides = dplyr::n_distinct(Peptide), .groups = "drop") |>
+    dplyr::mutate(Length_range = "All peptides"),
+  pep_all |>
+    dplyr::group_by(Condition, BioReplicate, Sample, Length_range) |>
+    dplyr::summarise(n_Peptides = dplyr::n_distinct(Peptide), .groups = "drop") |>
+    dplyr::mutate(Length_range = as.character(Length_range))) |>
+  dplyr::mutate(Length_range = factor(Length_range,
+                                      levels = c("All peptides", "others", window_label)))
+lim_sample <- ceiling(max(counts_sample$n_Peptides) * 1.2 / 100) * 100
+p_ligands_per_sample <- plot_bp_count_length(counts_sample, level = "Peptides",
+                                             lim_level = lim_sample,
+                                             shortpep_range = shortpep_range,
+                                             x_var = "Sample", palette = shortpep_colors)
+ggprint_rawr(p_ligands_per_sample, interactive = interactive_plots)
+```
+
+*More detail:* `01_id_counts` (counts per Condition, BioReplicate and Sample,
+by length and charge) and `02_overlaps` (how many ligands the replicates and
+Conditions share).
+
+# Do the lengths look like MHC ligands?
+
+Length distribution of the unique peptides per Condition. MHC class I ligands
+pile up at 8-11 amino acids, usually with a sharp 9-mer peak. MHC class II
+ligands are longer and spread more widely, typically 13-17 amino acids. A broad
+or long-tailed distribution suggests non-MHC background, such as tryptic or
+degradation peptides.
+
+```{r plot-length, echo=FALSE, fig.height=3.5, fig.width=8, warning=FALSE, message=FALSE}
+pep_all_unique <- pep_all |>
+  dplyr::select(Peptide, Sequence, Condition, Length) |>
+  unique()
+p_length_overview <- plot_peplength_hist(pep_all_unique, shortpep_range = shortpep_range,
+                                         type = "density", palette = shortpep_colors)
+ggprint_rawr(p_length_overview, interactive = interactive_plots)
+```
+
+*More detail:* `01_id_counts` (lengths, masses, sequence motifs) and
+`07_pepchem` (amino-acid composition and physicochemical properties).
+
+# How MHC is each sample? The quality score
+
+Each sample gets a score from 0 to 100 for how closely it resembles a genuine
+MHC immunopeptidome. The score combines length-window fidelity, motif clarity,
+low tryptic background, plausible charge states and, where available, mass or
+calibration accuracy. **Pass** (70 or more) is a typical immunopeptidome,
+**Warning** (40-70) is worth a look, and **Fail** (below 40) suggests a failed
+pulldown or a non-MHC sample. Threshold mode: **`r threshold_mode`**.
+`r if (length(qc_samples) > 0) paste0("QC control samples (marked *): ", paste(qc_samples, collapse = ", "), ".") else ""`
+
+```{r plot-quality, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
+p_quality_composite <- plot_quality_composite(scores)
+ggprint_rawr(p_quality_composite, interactive = interactive_plots)
+```
+
+*More detail:* `05_quality_score` (the score of every dimension, the raw
+metrics, cross-class contamination and the scoring method).
+
+# Red flags
+
+```{r red-flags, echo=FALSE}
+if (nrow(red_flags) == 0) {
+  knitr::asis_output(paste0(
+    "**No red flags.** Every sample passes the overview checks: no low composite ",
+    "score, no quality dimension past its amber threshold, no unusually shallow ",
+    "sample and no Condition without biological replicates."))
+} else {
+  red_flags |>
+    dplyr::mutate(Sample = ifelse(is.na(Sample), "(experiment)", Sample)) |>
+    kable() |>
+    kable_paper("hover", full_width = FALSE)
+}
+```
+
+Flags are rule-based and deliberately simple. A flag is a prompt to look, not a
+verdict: a low depth or borderline score can have a perfectly good biological
+reason, such as a low-input or low-HLA-expressing sample.
+
+# Where to go next
+
+| Question | Report |
+|---|---|
+| How many peptides, of which lengths and charges, per Condition / replicate / sample? | `01_id_counts` |
+| How reproducible are the replicates, and what do the Conditions share? | `02_overlaps` |
+| Did the LC-MS run behave (retention time, ion mobility, *m/z*, score, mass error)? | `03_lcms_qc` |
+| Do peptide intensities correlate between samples, and how variable are they? | `04_quant` |
+| Why did a sample score the way it did? | `05_quality_score` |
+| Which ligands change in abundance between Conditions? | `06_quant_stats` |
+| How do the ligands differ chemically (composition, motifs, hydrophobicity)? | `07_pepchem` |
+| Which source proteins do the ligands come from? | `08_prot_all` |
+
+```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
+# Always-written export: render parameters + the red-flag list
+write_input_params(params, folder = FolderResults, prefix = paste(c(result_prefix, "09_overview"), collapse = "_"))
+write.csv_rawr(red_flags, folder = FolderResults, prefix = result_prefix)
+
+if (params$PlotsSave) {
+  ggsave_rawr(p_ligands_per_sample, "p_ligands_per_sample", folder = FolderFigures,
+              width = nrow(scores) + 6, height = 10)
+  ggsave_rawr(p_length_overview, "p_length_overview", folder = FolderFigures,
+              width = 16, height = 8)
+  ggsave_rawr(p_quality_composite, "p_quality_composite", folder = FolderFigures,
+              width = nrow(scores) + 6, height = 10)
+}
+```
+
+# Glossary
+
+```{r child = system.file("rmarkdown", "shared", "glossary.Rmd", package = "HowMaHiCo")}
+```
+
+# Session & provenance
+
+The parameters used for this run (also written to `input_params.csv` in the
+results folder) and the full R session are recorded below so this HTML report is
+self-documenting and reproducible.
+
+**HowMaHiCo version:** `r packageVersion("HowMaHiCo")`
+
+```{r provenance-params, echo=FALSE, message=FALSE, warning=FALSE}
+data.frame(
+  Parameter = names(params),
+  Value = vapply(params, function(x) paste(format(x), collapse = ", "), character(1)),
+  row.names = NULL
+) |>
+  kable() |>
+  kable_paper("hover", full_width = FALSE)
+```
+
+<details>
+<summary>R session info</summary>
+
+```{r provenance-session, echo=FALSE}
+sessionInfo()
+```
+
+</details>

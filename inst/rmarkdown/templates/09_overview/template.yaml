@@ -1,0 +1,9 @@
+name: 09_overview
+description: >
+  One-page general overview for the biologically focused user: how many
+  ligands each sample yielded, whether their lengths fit the expected MHC
+  window, the per-sample quality score with its traffic light, and a short
+  list of plain-language red flags, with pointers to the focused reports for
+  each topic. Renders against a cached `pep_all` table built by
+  build_pep_all() (or by 00_mhc_report).
+create_dir: false

@@ -7,7 +7,7 @@ peptide) data analysis. It ingests LC-MS search-engine output from multiple tool
 result exports.
 
 **Distributed as an R package.** `library(HowMaHiCo)` gives you the full
-function library and all nine report templates. See `project-style-guide.md` for
+function library and all ten report templates. See `project-style-guide.md` for
 the longer-term R-package + Docker + Shiny distribution pattern.
 
 ## Quickstart
@@ -50,7 +50,7 @@ conditions and replicates.
 | Folder | Contents |
 |---|---|
 | `R/` | Package source — 100+ exported functions (loaders, annotation, counting, statistics, plotting, export) plus the `run_howmahico_report()`/`derive_filtered_annotation()` entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats`/`07_pepchem`/`08_prot_all` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats`/`07_pepchem`/`08_prot_all`/`09_overview` — packaged for `rmarkdown::draft()`/`run_howmahico_report()`. Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `inst/scripts/` | The guided pipeline script handed out by `get_pipeline_script()` |
 | `vignettes/` | `vignette("howmahico")` — the narrated walkthrough |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
@@ -215,7 +215,8 @@ for (tmpl in c("01_id_counts",     # ID counts, size distributions, motifs, PTM
                "05_quality_score", # per-sample immunopeptidomics quality score
                "06_quant_stats",   # differential abundance between Conditions
                "07_pepchem",       # amino-acid composition, motifs, GRAVY & co.
-               "08_prot_all")) {   # source proteins, ligands per protein
+               "08_prot_all",      # source proteins, ligands per protein
+               "09_overview")) {   # one-page overview: counts, lengths, score, red flags
   run_howmahico_report(tmpl,
                        params = list(SampleSet = "project_id", Subset = "dda_all",
                                      FolderData = "2_data", FolderResults = "3_results",
@@ -261,8 +262,9 @@ under `<FolderResults>/<subset>/` and `<FolderFigures>/<subset>/`.
 | `06_quant_stats` | Differential abundance between Conditions: normalization, completeness, PCA, heatmaps, volcano/MA, plus a presence/absence track for condition-exclusive ligands | cache; limma optional |
 | `07_pepchem` | Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions | cache |
 | `08_prot_all` | Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported | cache |
+| `09_overview` | **Start here.** One-page overview for the biologist: ligands per sample, whether the lengths look like MHC ligands, the quality score, and a plain-language list of red flags, with pointers to the focused report for each topic | cache |
 
-The seven focused reports each render one slice of the analysis and are
+The focused reports each render one slice of the analysis and are
 independent — render only the ones you need. `00_mhc_report` covers most of
 `01`–`04` in a single document.
 

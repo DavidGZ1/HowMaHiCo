@@ -7,7 +7,7 @@
 run_howmahico_report(
   template = c("00_mhc_report", "00_mhc_upsets", "01_id_counts", "02_overlaps",
     "03_lcms_qc", "04_quant", "05_quality_score", "06_quant_stats", "07_pepchem",
-    "08_prot_all"),
+    "08_prot_all", "09_overview"),
   params,
   output_file,
   ...
@@ -30,7 +30,9 @@ and limma differential abundance between Conditions) and \code{"07_pepchem"}
 residue frequency and descriptors such as GRAVY, compared between
 Conditions) and \code{"08_prot_all"} (protein level: source proteins per sample,
 ligands per protein, and any protein-level values the search engine
-reported).}
+reported) and \code{"09_overview"} (one-page overview for the biologically
+focused user: ligands per sample, length fidelity, quality score and
+plain-language red flags).}
 
 \item{params}{Named list of report parameters, as declared in the
 template's YAML header (\code{SampleSet}, \code{AnnotationFile}, \code{Subset},

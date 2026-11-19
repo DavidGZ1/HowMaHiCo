@@ -166,6 +166,7 @@ The templates on offer:
 | `06_quant_stats` | Differential abundance between Conditions |
 | `07_pepchem` | Amino-acid composition, positional motifs, GRAVY and other descriptors |
 | `08_prot_all` | Source proteins: ligands per protein, and engine-reported protein values |
+| `09_overview` | One-page overview for biologists: counts, lengths, quality score, red flags |
 
 Each focused report gets `pep_all` via its `PepAllSource` parameter:
 `"cached"` (the default — load `<Subset>_pep_all.rda`), `"rda"` (load an explicit

@@ -69,17 +69,8 @@ HowDirty contamination score but inverted (goodness rather than badness).
 
 ```{r quality-score-data, echo=FALSE, message=FALSE, warning=TRUE}
 # Derive the QC-control sample set from the annotation QC column (optional).
-qc_samples <- character(0)
-if (nzchar(params$QCColumn)) {
-  annot_qc <- tryCatch(
-    read_annot(file.path(params$FolderDocumentation, params$AnnotationFile)),
-    error = function(e) NULL)
-  if (!is.null(annot_qc) && params$QCColumn %in% names(annot_qc)) {
-    flag <- annot_qc[[params$QCColumn]]
-    is_qc <- as.character(flag) %in% c("TRUE", "T", "1", "QC", "qc", "yes", "Yes")
-    qc_samples <- unique(as.character(annot_qc$Sample[is_qc]))
-  }
-}
+qc_samples <- qc_samples_from_annotation(
+  file.path(params$FolderDocumentation, params$AnnotationFile), params$QCColumn)
 
 threshold_mode <- if (params$ThresholdMode == "qc_relative" && length(qc_samples) > 0)
   "qc_relative" else "default"
