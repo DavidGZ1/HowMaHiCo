@@ -185,6 +185,24 @@ Written to `<FolderResults>/<Subset>/` on every run:
 figure as png to `<FolderFigures>/<Subset>/`. The HTML report goes to
 `output_file`.
 
+## Comparing runs
+
+Each `05_quality_score` render writes a per-sample `<Subset>_scores.csv`.
+`compare_runs()` stacks several of them — results folders, csv paths or
+`score_sample_quality()` data frames — into one table, and `plot_run_trend()`
+puts the runs side by side, one panel per metric:
+
+```{r compare, eval = FALSE}
+runs <- compare_runs(c(jy = "3_results/dda_jy", plasma = "3_results/dda_plasma"))
+summarise_runs(runs)
+plot_run_trend(runs)
+```
+
+With `order = "timestamp"` the runs follow their render time, which turns the
+same plot (`type = "line"`) into a longitudinal view of a QC standard. A warning
+is raised when the runs were scored with different `MHCclass` or
+`ThresholdMode`.
+
 ## A tool with no built-in loader
 
 For a tabular export HowMaHiCo does not know, describe it in a YAML dictionary

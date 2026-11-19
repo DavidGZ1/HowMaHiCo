@@ -2378,3 +2378,81 @@ plot_ligand_vs_protein_quant <- function(prot_all, quant_col = NULL,
     ggplot2::ggtitle(if (is.null(title))
       paste0("Ligand intensity vs. ", quant_col) else title)
 }
+
+#' Compare quality metrics across runs
+#'
+#' Plots the stacked score table from [compare_runs()] with one panel per
+#' metric (free y axes) and the runs on the x axis, in their factor order:
+#' input order, or render time for `compare_runs(order = "timestamp")`. Each
+#' sample is a point, and QC samples are drawn as triangles. `type = "box"` adds
+#' a box per run. `type = "line"` instead joins the run medians, which reads as
+#' a trend when the runs are repeated measurements of the same standard.
+#'
+#' @param runs_tbl Output of [compare_runs()].
+#' @param metrics Metric columns to plot (default: composite score, length-window
+#'   fidelity and in-window depth). Panels are labelled with the metric names of
+#'   [quality_thresholds_default()].
+#' @param type `"box"` (default) or `"line"`.
+#' @param color_by Optional column to colour the points by (e.g. `"Condition"`,
+#'   which `05_quality_score` writes into its score csv). `NULL` for none.
+#'
+#' @return A ggplot2 object.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' runs <- compare_runs(c("3_results/qc_week1", "3_results/qc_week2"),
+#'                      order = "timestamp")
+#' plot_run_trend(runs, type = "line")
+#' }
+plot_run_trend <- function(runs_tbl,
+                           metrics = c("composite_score", "frac_in_window",
+                                       "n_unique_pep_in_window"),
+                           type = c("box", "line"),
+                           color_by = NULL) {
+  type <- match.arg(type)
+  missing <- setdiff(metrics, names(runs_tbl))
+  if (length(missing) > 0)
+    stop("Metric(s) not in the run table: ", paste(missing, collapse = ", "))
+  if (!is.null(color_by) && !color_by %in% names(runs_tbl))
+    stop("'color_by' column '", color_by, "' is not in the run table.")
+  labels <- .run_metric_labels(runs_tbl)
+  panel <- ifelse(metrics %in% names(labels), labels[metrics], metrics)
+
+  df <- runs_tbl
+  df$is_QC <- if ("is_QC" %in% names(df)) as.logical(df$is_QC) %in% TRUE else FALSE
+  df$Colour <- if (is.null(color_by)) "all" else as.character(df[[color_by]])
+  long <- df |>
+    dplyr::select(Run, Sample, is_QC, Colour, dplyr::all_of(metrics)) |>
+    tidyr::pivot_longer(dplyr::all_of(metrics), names_to = "metric", values_to = "value") |>
+    dplyr::filter(!is.na(value)) |>
+    dplyr::mutate(Metric = factor(unname(panel[match(metric, metrics)]), levels = unname(panel)))
+
+  p <- ggplot2::ggplot(long, ggplot2::aes(x = Run, y = value))
+  if (type == "box") {
+    p <- p + ggplot2::geom_boxplot(outlier.shape = NA, fill = "grey92", width = 0.6)
+  } else {
+    p <- p + ggplot2::stat_summary(ggplot2::aes(group = 1), fun = stats::median,
+                                   geom = "line", colour = "grey40") +
+      ggplot2::stat_summary(fun = stats::median, geom = "point",
+                            shape = 95, size = 8, colour = "grey40")
+  }
+  p <- p +
+    ggplot2::geom_point(ggplot2::aes(shape = is_QC, colour = Colour),
+                        position = ggplot2::position_jitter(width = 0.12, height = 0, seed = 1),
+                        size = 1.8, alpha = 0.8) +
+    ggplot2::scale_shape_manual(values = c(`FALSE` = 16, `TRUE` = 17),
+                                labels = c(`FALSE` = "Sample", `TRUE` = "QC sample"),
+                                name = NULL) +
+    ggplot2::facet_wrap(~Metric, scales = "free_y") +
+    ggplot2::xlab("Run") + ggplot2::ylab(NULL) +
+    theme_howmahico() +
+    ggpubr::rotate_x_text(45) +
+    ggplot2::ggtitle("Quality metrics across runs")
+  if (is.null(color_by)) {
+    p + ggplot2::scale_colour_manual(values = c(all = "black"), guide = "none")
+  } else {
+    p + ggplot2::labs(colour = color_by)
+  }
+}

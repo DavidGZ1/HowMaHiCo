@@ -1,3 +1,32 @@
+# HowMaHiCo 0.24.0
+
+## Comparing runs
+
+The abstract's Conclusions claimed cross-experiment comparison, but one render
+scores one subset and nothing read more than one score table. Now:
+
+* **`compare_runs()`** stacks the per-sample score tables of several
+  `05_quality_score` renders into one long table. It accepts score csvs,
+  results folders (every `*scores.csv` in them), or `score_sample_quality()`
+  data frames. It reads the companion `*_05_quality_score_input_params.csv`
+  to label each run (`SampleSet | Subset`) and to attach `MHCclass`,
+  `ThresholdMode`, `render_timestamp` and `package_version`. Runs are kept in
+  input order, or ordered by render time with `order = "timestamp"` for a
+  longitudinal view. Columns are unioned, so a metric missing from one run is
+  `NA` there. It **warns** when the runs were scored with different `MHCclass`
+  or `ThresholdMode`: the class selects the threshold table, and QC-relative
+  thresholds are calibrated per run, so their composite scores are not directly
+  comparable.
+* **`summarise_runs()`** reports, per run and metric, `n`, median and IQR,
+  plus the Pass/Warning/Fail counts of each run.
+* **`plot_run_trend()`** draws one panel per metric (free y), with the runs
+  on the x axis and samples as points (QC samples as triangles). It adds a
+  box per run, or (`type = "line"`) a line through the run medians.
+  `color_by = "Condition"` colours the points.
+* `05_quality_score`'s exported `<Subset>_scores.csv` gained a `Condition`
+  column (additive; existing columns unchanged), so a stacked table can be
+  coloured or filtered by it.
+
 # HowMaHiCo 0.23.0
 
 ## Relicensed: MIT -> GPL (>= 2)

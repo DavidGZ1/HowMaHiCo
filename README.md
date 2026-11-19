@@ -359,6 +359,29 @@ The HTML report itself goes to `output_file`.
 `build_pep_all()` also writes the `<Subset>_pep_all.rda` cache into
 `FolderData`, which is what the focused reports read.
 
+## Comparing runs
+
+One render scores one subset. To compare several — two experiments, the
+subsets of one, or the same QC standard measured week after week — stack the
+`<Subset>_scores.csv` tables that `05_quality_score` writes:
+
+```r
+runs <- compare_runs(c(jy     = "3_results/dda_jy",       # results folders,
+                       plasma = "3_results/dda_plasma"))  # csv paths, or data frames
+summarise_runs(runs)                  # per-run median / IQR + Pass/Warning/Fail counts
+plot_run_trend(runs)                  # one panel per metric, runs on the x axis
+
+# longitudinal view of a QC standard, in render order
+compare_runs(list.dirs("3_results/qc", recursive = FALSE), order = "timestamp") |>
+  plot_run_trend(type = "line")
+```
+
+`compare_runs()` reads the companion `*_05_quality_score_input_params.csv` to
+label each run (`SampleSet | Subset`) and to record its `MHCclass`,
+`ThresholdMode` and render time. It warns when runs were scored with different
+`MHCclass` or `ThresholdMode`, because their composite scores are then not
+directly comparable.
+
 ## Glossary
 
 The reports distinguish **peptides** (distinct peptidoforms - one sequence with

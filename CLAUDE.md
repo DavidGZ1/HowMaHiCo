@@ -7,7 +7,16 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.23.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.24.0** — Phases 1–6 of the package conversion are complete.
+v0.24.0 adds **cross-run comparison** (Tier B): `compare_runs()`
+(`R/compare-runs.R`) stacks the `<Subset>_scores.csv` tables several
+`05_quality_score` renders wrote (csv paths, results folders, or score data
+frames), labels runs from the companion `*_05_quality_score_input_params.csv`
+(`SampleSet | Subset`), orders by input or `render_timestamp`, and **warns on
+mixed `MHCclass`/`ThresholdMode`** (composites then not comparable);
+`summarise_runs()` + `plot_run_trend()` (`R/plots.R`) summarise/plot it. The
+05 score csv gained a `Condition` column (export only). No report template for
+it yet.
 v0.23.0 **relicenses MIT → `GPL (>= 2)`** (Tier A of the EuPA worklist): hard
 `Imports` are copyleft — `Peptides`, `gplots`, `ggcorrplot` are **GPL-2 only**,
 `ggupset` is GPL-3 — so MIT could not describe the installed work, and plain
@@ -516,6 +525,10 @@ note above.
   (`plot_proteins_per_sample()`, `plot_peptides_per_protein()`,
   `plot_top_proteins()`, `plot_protein_detection()`,
   `plot_ligand_vs_protein_quant()`) live in `R/plots.R`
+- **`R/compare-runs.R`** — `compare_runs()` (stack N `05_quality_score`
+  score csvs / folders / data frames + their input_params metadata),
+  `summarise_runs()`, and the internals `.score_file_prefix()` /
+  `.run_metric_labels()`; its plot `plot_run_trend()` lives in `R/plots.R`
 - **`R/ptm.R`** — `ptm_reference()` (curated UniMod accession / name /
   monoisotopic delta-mass table, ordered by commonness so the first match within
   tolerance wins on mass-degenerate pairs) + `translate_ptm()` (vectorised over
