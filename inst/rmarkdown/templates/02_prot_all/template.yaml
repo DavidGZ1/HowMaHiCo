@@ -1,4 +1,4 @@
-name: 08_prot_all
+name: 02_prot_all
 description: >
   Focused protein-level report: condenses the peptide table to one row per
   source protein and sample (the `prot_all` table). Reports source proteins per

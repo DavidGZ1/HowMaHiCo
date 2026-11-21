@@ -46,7 +46,7 @@ params:
   PlotsSave: FALSE
   InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
-title: "`r paste0('06_quant_stats | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+title: "`r paste0('05_quant_stats | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 
@@ -557,7 +557,7 @@ comparison admits only 10 of them, so its smallest attainable p-value is about
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written exports: render parameters + the statistical results
 write_input_params(params, folder = FolderResults,
-                   prefix = paste(c(result_prefix, "06_quant_stats"), collapse = "_"))
+                   prefix = paste(c(result_prefix, "05_quant_stats"), collapse = "_"))
 if (can_test) {
   write.csv_rawr(quant_stats_results, folder = FolderResults, prefix = result_prefix)
   write.csv_rawr(quant_stats_summary, folder = FolderResults, prefix = result_prefix)

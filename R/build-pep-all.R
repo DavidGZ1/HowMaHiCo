@@ -4,7 +4,7 @@
 #' long-format `pep_all` table, dispatching on `software` to the right loader
 #' family (FragPipe / DIA-NN / PEAKS). This is the parsing step that the
 #' `00_mhc_report` template runs inline; extracting it here lets the focused
-#' report templates (`01_id_counts`, `02_overlaps`, `03_lcms_qc`, `04_quant`)
+#' report templates (`01_mhc_overview`, `02_prot_all`, `03_lcms_qc`, `04_pepchem`, `05_quant_stats`)
 #' share one cached `pep_all` instead of each re-parsing the raw files: run
 #' `build_pep_all()` once (writing the `.rda` via `file_rda`), then render any
 #' subset of those reports, each of which simply `load()`s the cache.
@@ -50,7 +50,7 @@
 #'   file_rda       = "2_data/dda_all_pep_all.rda"
 #' )
 #' # then render any focused report against the cache:
-#' run_howmahico_report("01_id_counts", params = list(...), output_file = "01.html")
+#' run_howmahico_report("01_mhc_overview", params = list(...), output_file = "01.html")
 #' }
 build_pep_all <- function(software, folder_data, annotation,
                           shortpep_range = c(8, 13), instrument = "tims_tof",

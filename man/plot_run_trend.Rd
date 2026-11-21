@@ -21,7 +21,7 @@ fidelity and in-window depth). Panels are labelled with the metric names of
 \item{type}{\code{"box"} (default) or \code{"line"}.}
 
 \item{color_by}{Optional column to colour the points by (e.g. \code{"Condition"},
-which \verb{05_quality_score} writes into its score csv). \code{NULL} for none.}
+which \verb{01_mhc_overview} writes into its score csv). \code{NULL} for none.}
 }
 \value{
 A ggplot2 object.

@@ -1,5 +1,5 @@
 # overview_red_flags() and qc_samples_from_annotation(): the logic behind the
-# 09_overview report's "Red flags" section and the shared QC-sample lookup.
+# 01_mhc_overview report's "Red flags" section (formerly 09_overview) and the shared QC-sample lookup.
 
 # a score table in score_sample_quality()'s shape; every sample clean by default
 flag_scores <- function(n = 4, ...) {

@@ -26,7 +26,7 @@ test_that("shared setup.Rmd has no chunk fence inside its leading HTML comment",
 
 # Registration guard: run_howmahico_report() dispatches through match.arg(), so a
 # template shipped in inst/rmarkdown/templates but missing from its `template`
-# choices is unreachable (this is how 05_quality_score slipped through v0.10.0).
+# choices is unreachable (this is how the old 05_quality_score slipped through v0.10.0).
 
 test_that("every shipped report template is offered by run_howmahico_report()", {
   dir_templates <- system.file("rmarkdown", "templates", package = "HowMaHiCo")
@@ -40,6 +40,34 @@ test_that("every shipped report template is offered by run_howmahico_report()", 
   # and each of them really has a skeleton to render
   for (tpl in shipped)
     expect_true(file.exists(file.path(dir_templates, tpl, "skeleton", "skeleton.Rmd")))
+  # the template.yaml name matches its directory (RStudio's template picker)
+  for (tpl in shipped) {
+    yml <- yaml::read_yaml(file.path(dir_templates, tpl, "template.yaml"))
+    expect_equal(yml$name, tpl, info = tpl)
+  }
+})
+
+# Renaming guard (v0.27.0): 01/02/04/05/09 were merged into 01_mhc_overview and
+# 06/07/08 renumbered. The old names keep working through an alias table, so
+# existing user scripts and the demo do not break; every alias must point at a
+# template that really ships, and every old name must be covered.
+test_that("pre-v0.27.0 template names resolve to a shipped report, with a warning", {
+  offered <- eval(formals(run_howmahico_report)$template)
+  aliases <- HowMaHiCo:::.template_aliases
+
+  expect_setequal(names(aliases),
+                  c("01_id_counts", "02_overlaps", "04_quant", "05_quality_score",
+                    "09_overview", "06_quant_stats", "07_pepchem", "08_prot_all"))
+  expect_true(all(aliases %in% offered))
+  expect_false(any(names(aliases) %in% offered))
+
+  for (old in names(aliases))
+    expect_warning(res <- HowMaHiCo:::.resolve_template_alias(old), "renamed in HowMaHiCo 0.27.0")
+  expect_equal(HowMaHiCo:::.resolve_template_alias("07_pepchem") |> suppressWarnings(),
+               "04_pepchem")
+  # current names and the default choice vector pass through silently
+  expect_silent(expect_equal(HowMaHiCo:::.resolve_template_alias("03_lcms_qc"), "03_lcms_qc"))
+  expect_silent(HowMaHiCo:::.resolve_template_alias(offered))
 })
 
 # Param-consistency guard (v0.17.0): the templates share a common param block, but

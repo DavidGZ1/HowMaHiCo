@@ -1,8 +1,0 @@
-name: 01_id_counts
-description: >
-  Focused general identification-QC report: total IDs (with decoys/contaminants),
-  identification counts (mean±sd, by length range, by charge, by sample),
-  peptide size distributions (length/mass/m_z), peptide motifs, and the PTM
-  profile (all and selected peptides). Renders against a cached `pep_all` table
-  built by build_pep_all() (or by 00_mhc_report).
-create_dir: false

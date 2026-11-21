@@ -18,7 +18,7 @@ and \code{Computed}, one row per descriptor column of \code{\link[=peptide_prope
 \description{
 One row per descriptor column of \code{\link[=peptide_properties]{peptide_properties()}}: what it measures,
 how to read it for MHC ligands, and how it is computed. It is the single
-source of the descriptor documentation the \verb{07_pepchem} report renders in
+source of the descriptor documentation the \verb{04_pepchem} report renders in
 its glossary (through \code{inst/rmarkdown/shared/glossary.Rmd}), next to the
 \code{\link[=pep_all_glossary]{pep_all_glossary()}} table.
 }

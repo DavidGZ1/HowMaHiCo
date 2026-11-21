@@ -19,7 +19,7 @@ A data frame with one row per \strong{unique} sequence: \code{Sequence},
 amino-acid class. Zero rows when no usable sequence is supplied.
 }
 \description{
-Computes the peptide-chemistry descriptors behind the \verb{07_pepchem} report.
+Computes the peptide-chemistry descriptors behind the \verb{04_pepchem} report.
 Duplicated sequences are computed once and returned once, so this is safe to
 call with the whole \code{Sequence} column of a long \code{pep_all} table.
 }

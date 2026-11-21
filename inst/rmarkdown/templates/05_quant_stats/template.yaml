@@ -1,4 +1,4 @@
-name: 06_quant_stats
+name: 05_quant_stats
 description: >
   Focused advanced-quantification report: multivariate and differential
   statistical comparison of peptide Area between Conditions. Builds a

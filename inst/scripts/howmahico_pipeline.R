@@ -213,15 +213,12 @@ report_params <- list(
 # only the ones you need — they are independent.
 
 focused <- c(
-  "01_id_counts",     # identification counts, length/charge distributions, motifs, PTM profile
-  "02_overlaps",      # replicate, cross-condition and pairwise overlap (UpSet plots)
-  "03_lcms_qc",       # RT / ion mobility / m z distributions, Score and mass-error QC
-  "04_quant",         # log2(Area) correlation between samples, Area %CV
-  "05_quality_score", # per-sample immunopeptidomics quality score, traffic-light overview
-  "06_quant_stats",   # differential abundance between Conditions (limma / Welch t)
-  "07_pepchem",       # amino-acid composition, positional motifs, GRAVY and other descriptors
-  "08_prot_all",      # source proteins: ligands per protein, engine-reported protein values
-  "09_overview"       # one-page overview for biologists: counts, lengths, score, red flags
+  "01_mhc_overview", # main report: at a glance + red flags, ID counts, lengths, quality score,
+                     #   overlaps, log2(Area) correlation / %CV, motifs, PTM profile
+  "02_prot_all",     # source proteins: ligands per protein, engine-reported protein values
+  "03_lcms_qc",      # RT / ion mobility / m z distributions, Score and mass-error QC
+  "04_pepchem",      # amino-acid composition, positional motifs, GRAVY and other descriptors
+  "05_quant_stats"   # differential abundance between Conditions (limma / Welch t)
 )
 
 for (tmpl in focused) {

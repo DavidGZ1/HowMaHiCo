@@ -1,7 +1,7 @@
 # Advanced quantitative statistics for immunopeptidomics
 #
 # Turns the long `pep_all` table into a feature x unit log2(Area) matrix, then
-# runs the differential-abundance workflow behind the 06_quant_stats report:
+# runs the differential-abundance workflow behind the 05_quant_stats report:
 # filtering -> between-sample normalization -> (optional) left-censored
 # imputation -> moderated-t (limma) or ordinary Welch t testing per condition
 # pair, complemented by a presence/absence (Fisher exact) track for the

@@ -20,7 +20,7 @@ A ggplot object, or \code{NULL} when \code{freq} has no rows.
 \description{
 Tile map of the \code{\link[=aa_position_frequency]{aa_position_frequency()}} table: position on the x axis,
 residue on the y axis, one facet per group. This is the numeric complement to
-the sequence logos in the \verb{01_id_counts} report — a logo scales letters by
+the sequence logos in the \verb{01_mhc_overview} report — a logo scales letters by
 information content and so hides which residue a flat position prefers, while
 the heatmap keeps every frequency readable and comparable across Conditions.
 }

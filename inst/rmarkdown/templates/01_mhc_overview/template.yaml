@@ -1,0 +1,11 @@
+name: 01_mhc_overview
+description: >
+  Main HowMaHiCo report for both the biologist and the LC-MS expert: an
+  at-a-glance summary with plain-language red flags, identification counts
+  and size distributions, the per-sample immunopeptidomics quality score
+  (with cross-class contamination), replicate and Condition overlaps,
+  log2(Area) correlation and %CV, sequence motifs and the PTM profile.
+  Renders against a cached `pep_all` table built by build_pep_all() (or by
+  00_mhc_report). Replaces 01_id_counts, 02_overlaps, 04_quant,
+  05_quality_score and 09_overview.
+create_dir: false

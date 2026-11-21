@@ -1,7 +1,7 @@
 # Protein-level view of the peptide repertoire
 #
 # Condenses the peptide-level `pep_all` table to one row per (protein, Sample):
-# the `prot_all` table behind the 08_prot_all report. Everything else in the
+# the `prot_all` table behind the 02_prot_all report. Everything else in the
 # package is peptide-centric; protein information existed only as `n_Proteins`
 # columns inside the ID-count tables and two protein x sample log2 matrices.
 #
@@ -16,7 +16,7 @@
 #    Note the existing reports count proteins as n_distinct(Accession)
 #    (count_ids(), check_ids_global(), qc_metrics_by_sample()), so a prot_all
 #    keyed on ProteinFirst does not always reproduce the protein count shown in
-#    01_id_counts. The report says so rather than letting the two disagree.
+#    01_mhc_overview. The report says so rather than letting the two disagree.
 #
 # 2. A SHORT NON-TRYPTIC LIGAND OFTEN MAPS TO SEVERAL PROTEINS, and neither
 #    convention for handling that is right: "leading" attributes it to one
@@ -209,7 +209,7 @@ expand_mapped_proteins <- function(input, protein = "ProteinFirst") {
 
 #' Condense `pep_all` to one row per protein and sample
 #'
-#' Builds the `prot_all` table behind the `08_prot_all` report: for every
+#' Builds the `prot_all` table behind the `02_prot_all` report: for every
 #' (protein, `Sample`) pair, how many ligands it contributes and their summed
 #' intensity, plus the protein annotation and any protein-level value the search
 #' engine itself reported.
@@ -217,7 +217,7 @@ expand_mapped_proteins <- function(input, protein = "ProteinFirst") {
 #' `Area` is summed on the **linear** scale within a sample and log2-transformed
 #' afterwards, matching [build_quant_matrix()]. Note that the older
 #' `get_mat_log2area(pep_all, ProteinFirst, ...)` route used by `00_mhc_report`
-#' and `04_quant` instead *averages* `Log2Area`; the two are not interchangeable.
+#' and `01_mhc_overview` instead *averages* `Log2Area`; the two are not interchangeable.
 #'
 #' @param input A `pep_all`-shaped data frame.
 #' @param protein Grouping column: `"ProteinFirst"` (default), `"GeneFirst"` or

@@ -13,24 +13,27 @@
 #' inside an installed package and can be rendered from anywhere.
 #'
 #' @param template Which report template to render. `"00_mhc_report"` is the
-#'   all-in-one QC report (it parses the raw search files itself). The remaining
-#'   templates are focused reports that render against a `pep_all` cache built
-#'   once by [build_pep_all()] (or by `00_mhc_report`):
-#'   `"00_mhc_upsets"` (per-sample overlap/UpSet), `"01_id_counts"` (general
-#'   identification QC: counts, size distributions, motifs, PTM), `"02_overlaps"`
-#'   (intra-Condition / cross-Condition / pairwise overlap), `"03_lcms_qc"`
-#'   (RT/1k0/mz distributions, Score/ppm QC), `"04_quant"`
-#'   (log2(Area) correlation, Area %CV), `"05_quality_score"` (per-sample
-#'   immunopeptidomics quality score with a traffic-light overview) and
-#'   `"06_quant_stats"` (advanced quantification: normalization, PCA/clustering
-#'   and limma differential abundance between Conditions) and `"07_pepchem"`
+#'   all-in-one QC report (it parses the raw search files itself) and
+#'   `"00_mhc_upsets"` its per-sample overlap/UpSet companion; both are kept
+#'   frozen for backward compatibility. The other templates render against a
+#'   `pep_all` cache built once by [build_pep_all()] (or by `00_mhc_report`):
+#'   `"01_mhc_overview"` (the main report: at-a-glance summary and red flags,
+#'   identification counts and size distributions, the per-sample quality
+#'   score, overlaps, log2(Area) correlation and %CV, motifs and PTMs),
+#'   `"02_prot_all"` (protein level: source proteins per sample, ligands per
+#'   protein, and any protein-level values the search engine reported),
+#'   `"03_lcms_qc"` (RT/1k0/mz distributions, Score/ppm QC), `"04_pepchem"`
 #'   (peptide physicochemical properties: amino-acid composition, per-position
 #'   residue frequency and descriptors such as GRAVY, compared between
-#'   Conditions) and `"08_prot_all"` (protein level: source proteins per sample,
-#'   ligands per protein, and any protein-level values the search engine
-#'   reported) and `"09_overview"` (one-page overview for the biologically
-#'   focused user: ligands per sample, length fidelity, quality score and
-#'   plain-language red flags).
+#'   Conditions) and `"05_quant_stats"` (advanced quantification:
+#'   normalization, PCA/clustering and limma differential abundance between
+#'   Conditions).
+#'
+#'   The names used before v0.27.0 still work, with a deprecation warning:
+#'   `"01_id_counts"`, `"02_overlaps"`, `"04_quant"`, `"05_quality_score"`
+#'   and `"09_overview"` render `"01_mhc_overview"`; `"06_quant_stats"`,
+#'   `"07_pepchem"` and `"08_prot_all"` render `"05_quant_stats"`,
+#'   `"04_pepchem"` and `"02_prot_all"`.
 #' @param params Named list of report parameters, as declared in the
 #'   template's YAML header (`SampleSet`, `AnnotationFile`, `Subset`,
 #'   `FolderData`, `FolderResults`, `FolderFigures`, `Software`, `MHCclass`,
@@ -75,8 +78,8 @@
 #' focused_params <- list(SampleSet = "MEGF_035", Subset = "dda_all",
 #'                        FolderData = "2_data", FolderResults = "3_results",
 #'                        FolderFigures = "4_figures", Software = "fragpipe_dda_combined")
-#' for (tmpl in c("01_id_counts", "02_overlaps", "03_lcms_qc", "04_quant",
-#'                 "05_quality_score", "06_quant_stats", "07_pepchem")) {
+#' for (tmpl in c("01_mhc_overview", "02_prot_all", "03_lcms_qc",
+#'                 "04_pepchem", "05_quant_stats")) {
 #'   run_howmahico_report(tmpl, params = focused_params,
 #'                        output_file = paste0(tmpl, "__dda_all.html"))
 #' }
@@ -91,12 +94,11 @@
 #' }
 #' }
 run_howmahico_report <- function(template = c("00_mhc_report", "00_mhc_upsets",
-                                              "01_id_counts", "02_overlaps",
-                                              "03_lcms_qc", "04_quant",
-                                              "05_quality_score", "06_quant_stats",
-                                              "07_pepchem", "08_prot_all",
-                                              "09_overview"),
+                                              "01_mhc_overview", "02_prot_all",
+                                              "03_lcms_qc", "04_pepchem",
+                                              "05_quant_stats"),
                                  params, output_file, ...){
+  template <- .resolve_template_alias(template)
   template <- match.arg(template)
   skeleton <- system.file("rmarkdown", "templates", template, "skeleton", "skeleton.Rmd",
                           package = "HowMaHiCo")
@@ -113,6 +115,32 @@ run_howmahico_report <- function(template = c("00_mhc_report", "00_mhc_upsets",
   rmarkdown::render(input = skeleton, output_file = output_file, params = params,
                     knit_root_dir = knit_root_dir,
                     envir = new.env(parent = globalenv()), ...)
+}
+
+# Template names used before v0.27.0, mapped to the report that now holds
+# their content (01/02/04/05/09 were merged into 01_mhc_overview; 06/07/08
+# were renumbered).
+.template_aliases <- c(
+  "01_id_counts"     = "01_mhc_overview",
+  "02_overlaps"      = "01_mhc_overview",
+  "04_quant"         = "01_mhc_overview",
+  "05_quality_score" = "01_mhc_overview",
+  "09_overview"      = "01_mhc_overview",
+  "06_quant_stats"   = "05_quant_stats",
+  "07_pepchem"       = "04_pepchem",
+  "08_prot_all"      = "02_prot_all")
+
+# Map a pre-v0.27.0 template name to its current one, with a warning; anything
+# else (including the full default choice vector) passes through unchanged.
+.resolve_template_alias <- function(template) {
+  if (length(template) == 1 && template %in% names(.template_aliases)) {
+    new <- unname(.template_aliases[[template]])
+    warning("Report template '", template, "' was renamed in HowMaHiCo 0.27.0; ",
+            "rendering '", new, "' instead. Use the new name to silence this warning.",
+            call. = FALSE)
+    return(new)
+  }
+  template
 }
 
 #' Derive a Condition-filtered copy of a sample annotation file

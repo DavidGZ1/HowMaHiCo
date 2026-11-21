@@ -226,7 +226,7 @@ pep_all_glossary <- function() {
 #'
 #' One row per descriptor column of [peptide_properties()]: what it measures,
 #' how to read it for MHC ligands, and how it is computed. It is the single
-#' source of the descriptor documentation the `07_pepchem` report renders in
+#' source of the descriptor documentation the `04_pepchem` report renders in
 #' its glossary (through `inst/rmarkdown/shared/glossary.Rmd`), next to the
 #' [pep_all_glossary()] table.
 #'

@@ -37,7 +37,7 @@ params:
   PlotsSave: FALSE
   InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
-title: "`r paste0('08_prot_all | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+title: "`r paste0('02_prot_all | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 
@@ -116,7 +116,7 @@ Each row of the exported `prot_all` table is one (protein, sample) pair: how man
 ligands that protein contributed to that sample, their summed intensity, and the
 protein's annotation.
 
-> **This count and the one in `01_id_counts` need not agree.** The identification
+> **This count and the one in `01_mhc_overview` need not agree.** The identification
 > reports count proteins as distinct `Accession` values
 > (`r format(n_accessions, big.mark = ",")` here); this report groups on
 > **`r params$ProteinFeature`** (`r format(n_proteins, big.mark = ",")` here). For
@@ -280,7 +280,7 @@ if (!has_engine_quant) {
 **What the table is.** One row per (protein, `Sample`). Peptides are grouped by
 **`r params$ProteinFeature`**; `Area` is summed on the linear scale within a
 sample and log2-transformed afterwards, matching `build_quant_matrix()`. Note
-that the protein matrices in `00_mhc_report`/`04_quant` take a different route —
+that the protein matrices in `00_mhc_report`/`01_mhc_overview` take a different route —
 `get_mat_log2area()` *averages* `Log2Area` — so those numbers are not comparable
 with these.
 
@@ -306,17 +306,17 @@ conventions. This run used **`r params$MultiMapping`**:
 `r if (params$MultiMapping == "leading") "each peptide was counted once, for its leading protein, so per-protein ligand counts still sum to the number of peptides — at the cost of attributing shared ligands somewhat arbitrarily." else "each peptide was counted for every protein it maps to, so no candidate is discarded — but per-protein ligand counts deliberately exceed the number of peptides in the dataset, and promiscuous regions inflate their proteins."`
 
 **Protein counts differ between reports.** See the note in *Source proteins*:
-`01_id_counts` counts distinct `Accession` values, this report groups on
+`01_mhc_overview` counts distinct `Accession` values, this report groups on
 `r params$ProteinFeature`.
 
 **Decoys and contaminants are carried through** unless they were filtered
-upstream. `check_ids_global()`, shown in `01_id_counts`, is the view of that
+upstream. `check_ids_global()`, shown in `01_mhc_overview`, is the view of that
 split.
 
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written exports: render parameters + the protein table and its summary
 write_input_params(params, folder = FolderResults,
-                   prefix = paste(c(result_prefix, "08_prot_all"), collapse = "_"))
+                   prefix = paste(c(result_prefix, "02_prot_all"), collapse = "_"))
 write.csv_rawr(prot_all, folder = FolderResults, prefix = result_prefix)
 write.csv_rawr(prot_summary, folder = FolderResults, prefix = result_prefix)
 

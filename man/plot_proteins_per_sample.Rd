@@ -17,7 +17,7 @@ A ggplot object, or \code{NULL} when \code{prot_all} has no rows.
 \description{
 How many distinct source proteins each sample contributes, grouped by
 Condition. The protein counterpart of the identification counts in
-\verb{01_id_counts}, and the first thing to check before reading anything else at
+\verb{01_mhc_overview}, and the first thing to check before reading anything else at
 protein level: a sample with far fewer source proteins is usually a depth
 problem, not a biological one.
 }

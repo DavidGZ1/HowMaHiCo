@@ -1,3 +1,40 @@
+# HowMaHiCo 0.27.0
+
+## Breaking: the reports are restructured
+
+The focused reports had become too modular, and the one-page `09_overview`
+mostly repeated them. Five reports are merged into one main report, and the
+others are renumbered (their names are unchanged):
+
+| Before | Now |
+|---|---|
+| `01_id_counts`, `02_overlaps`, `04_quant`, `05_quality_score`, `09_overview` | **`01_mhc_overview`** |
+| `08_prot_all` | `02_prot_all` |
+| `03_lcms_qc` | `03_lcms_qc` |
+| `07_pepchem` | `04_pepchem` |
+| `06_quant_stats` | `05_quant_stats` |
+
+* **`01_mhc_overview`** is the report for both audiences. It opens with
+  **At a glance** and **Red flags** (from `09_overview`), then identification
+  counts, the peptide size distribution, the quality score (composite,
+  per-metric breakdown, raw metrics, cross-class contamination), overlaps,
+  log2(Area) correlation and %CV, motifs and the PTM profile. It ends with
+  "Where to go next", the scoring method as an appendix, the glossary and the
+  session record. The duplicated parts of `09_overview` were dropped: its
+  ligands-per-sample chart, its length histogram and its copy of the composite
+  plot. The scores and red flags are computed once.
+* It writes the always-written tier of all five old reports in one go
+  (`pep_all.csv`, `counts_pep_all_condition.csv`, `seq_by_condition.xlsx`,
+  `scores.csv`, `red_flags.csv`) plus `<Subset>_01_mhc_overview_input_params.csv`.
+* **Old names keep working.** `run_howmahico_report("05_quality_score", ...)`
+  and the other pre-0.27.0 names render the report that now holds their content,
+  with a deprecation warning.
+* `compare_runs()` reads `*_01_mhc_overview_input_params.csv` and, for results
+  written before this release, the old `*_05_quality_score_input_params.csv`, so
+  old and new runs stack together.
+* The pipeline script, vignette, README, demo script and pkgdown index use the
+  new names. `00_mhc_report` and `00_mhc_upsets` are unchanged.
+
 # HowMaHiCo 0.26.1
 
 ## The clustered heatmap now shows its clusters

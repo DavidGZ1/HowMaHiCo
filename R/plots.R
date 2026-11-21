@@ -1343,7 +1343,7 @@ plot_cross_class_length <- function(pep_all, shortpep_range = c(8, 13), mhcclass
     ggplot2::ggtitle("Peptide length distribution and cross-class contamination")
 }
 
-# ---- quantitative-statistics plots (06_quant_stats) -------------------------
+# ---- quantitative-statistics plots (05_quant_stats) -------------------------
 
 #' Data completeness of a quantitative matrix
 #'
@@ -2010,7 +2010,7 @@ plot_sig_summary <- function(summary_df) {
     ggplot2::ggtitle("Significant features per contrast")
 }
 
-# ---- physicochemical-property plots (07_pepchem) ----------------------------
+# ---- physicochemical-property plots (04_pepchem) ----------------------------
 
 #' Amino-acid composition across groups
 #'
@@ -2087,7 +2087,7 @@ plot_aa_composition <- function(comp, type = c("bar", "heatmap", "enrichment"),
 #'
 #' Tile map of the [aa_position_frequency()] table: position on the x axis,
 #' residue on the y axis, one facet per group. This is the numeric complement to
-#' the sequence logos in the `01_id_counts` report — a logo scales letters by
+#' the sequence logos in the `01_mhc_overview` report — a logo scales letters by
 #' information content and so hides which residue a flat position prefers, while
 #' the heatmap keeps every frequency readable and comparable across Conditions.
 #'
@@ -2301,13 +2301,13 @@ plot_property_effectsize <- function(stats, fdr = NULL, title = NULL) {
       paste0("Effect size per contrast (outlined: BH p < ", fdr, ")") else title)
 }
 
-# ---- protein-level plots (08_prot_all) --------------------------------------
+# ---- protein-level plots (02_prot_all) --------------------------------------
 
 #' Source proteins identified per sample
 #'
 #' How many distinct source proteins each sample contributes, grouped by
 #' Condition. The protein counterpart of the identification counts in
-#' `01_id_counts`, and the first thing to check before reading anything else at
+#' `01_mhc_overview`, and the first thing to check before reading anything else at
 #' protein level: a sample with far fewer source proteins is usually a depth
 #' problem, not a biological one.
 #'
@@ -2587,7 +2587,7 @@ plot_ligand_vs_protein_quant <- function(prot_all, quant_col = NULL,
 #'   [quality_thresholds_default()].
 #' @param type `"box"` (default) or `"line"`.
 #' @param color_by Optional column to colour the points by (e.g. `"Condition"`,
-#'   which `05_quality_score` writes into its score csv). `NULL` for none.
+#'   which `01_mhc_overview` writes into its score csv). `NULL` for none.
 #'
 #' @return A ggplot2 object.
 #'

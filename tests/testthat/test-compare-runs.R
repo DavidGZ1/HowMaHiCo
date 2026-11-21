@@ -1,5 +1,5 @@
 # compare_runs() / summarise_runs() / plot_run_trend(): stacking the per-sample
-# score tables that several 05_quality_score renders write.
+# score tables that several 01_mhc_overview renders write (or, before v0.27.0, 05_quality_score).
 
 # a minimal score table in the shape score_sample_quality() returns
 fake_scores <- function(samples, composite, extra = list()) {
@@ -15,18 +15,34 @@ fake_scores <- function(samples, composite, extra = list()) {
   df
 }
 
-# write a score csv (+ optional companion params) the way 05_quality_score does
-write_run <- function(dir, subset, scores, params = NULL) {
+# write a score csv (+ optional companion params) the way 01_mhc_overview does;
+# report = "05_quality_score" writes the pre-v0.27.0 params name instead
+write_run <- function(dir, subset, scores, params = NULL, report = "01_mhc_overview") {
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   prefix <- if (nzchar(subset)) paste0(subset, "_") else ""
   utils::write.csv(scores, file.path(dir, paste0(prefix, "scores.csv")), row.names = FALSE)
   if (!is.null(params)) {
     utils::write.csv(data.frame(Parameter = names(params), Value = unlist(params)),
-                     file.path(dir, paste0(prefix, "05_quality_score_input_params.csv")),
+                     file.path(dir, paste0(prefix, report, "_input_params.csv")),
                      row.names = FALSE)
   }
   invisible(dir)
 }
+
+test_that("results written by the old 05_quality_score report still stack", {
+  root <- tempfile("runs_legacy_"); dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  meta <- list(SampleSet = "OLD", Subset = "jy", MHCclass = "MHC2",
+               ThresholdMode = "default")
+  d_old <- write_run(file.path(root, "old"), "jy", fake_scores(c("s1", "s2"), c(80, 60)),
+                     meta, report = "05_quality_score")
+  d_new <- write_run(file.path(root, "new"), "jy", fake_scores(c("s1", "s2"), c(70, 50)),
+                     utils::modifyList(meta, list(SampleSet = "NEW")))
+
+  out <- compare_runs(c(d_old, d_new))
+  expect_equal(levels(out$Run), c("OLD | jy", "NEW | jy"))
+  expect_equal(unique(out$MHCclass), "MHC2")
+})
 
 test_that("data frames stack with label precedence names > runN and a column union", {
   a <- fake_scores(c("s1", "s2"), c(80, 60))
