@@ -236,3 +236,25 @@ test_that("pepchem_properties exposes the two PropertySet choices", {
   expect_true(all(ext %in% names(peptide_properties("SIINFEKL"))))
   expect_error(pepchem_properties("nope"))
 })
+
+test_that("pepchem_glossary documents every descriptor exactly once", {
+  gl <- pepchem_glossary(ph = 7)
+  descriptors <- setdiff(names(peptide_properties("SIINFEKL")), "Sequence")
+  expect_setequal(gl$Descriptor, descriptors)
+  expect_false(anyDuplicated(gl$Descriptor) > 0)
+  expect_named(gl, c("Descriptor", "Meaning", "Interpretation", "Computed"))
+  expect_true(all(nzchar(gl$Meaning)))
+  expect_match(gl$Meaning[gl$Descriptor == "Charge"], "pH 7")
+})
+
+test_that("plot_property_distribution draws integer descriptors as histograms", {
+  props <- pepchem_by_sample(make_props_input(n = 20))
+  props$Length[1:10] <- 10L  # two distinct whole-number values
+  geom_of <- function(p) class(p$layers[[1]]$geom)[1]
+
+  expect_equal(geom_of(plot_property_distribution(props, "Length")), "GeomBar")
+  expect_equal(geom_of(plot_property_distribution(props, "GRAVY")), "GeomDensity")
+  # the violin view is unaffected by the switch
+  expect_equal(geom_of(plot_property_distribution(props, "Length", type = "violin")),
+               "GeomViolin")
+})

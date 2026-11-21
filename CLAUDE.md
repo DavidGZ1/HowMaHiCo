@@ -7,7 +7,18 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.26.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.26.1** — Phases 1–6 of the package conversion are complete.
+v0.26.1: `plot_quant_heatmap(cluster = TRUE)` now *shows* its clustering (unit
+dendrogram over a Condition bar, feature dendrogram, `n_clusters` labelled
+blocks, `attr(p, "clusters")`; a `ggarrange` composite, so static) with the
+`06_quant_stats` param `HeatmapClusters`; `plot_property_distribution()` draws
+integer descriptors (Length) as histograms; new `pepchem_glossary()` rendered by
+the shared glossary only when the parent sets `glossary_pepchem <- TRUE`.
+**Render tests read the shared children (`setup.Rmd`, `glossary.Rmd`) from the
+INSTALLED package** (the knit env's `system.file()` is not pkgload's shim), so
+reinstall (`devtools::install(quick = TRUE)`) before trusting a render test of
+a changed child. Inside a `results='asis'` chunk, `cat(as.character(kable))`;
+`print()` of a kableExtra table goes to the viewer, not the document.
 v0.26.0 came out of the **EuPA demonstration** (`demo/eupa2026_demo.R`,
 Rbuildignored; renders the simulated `example/2_data/sim_fragpipe_dda_hla1|hla2`
 and simulates a tryptic titration + cross-class mix with MaHiCoInSilico). It

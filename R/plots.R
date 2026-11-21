@@ -1605,8 +1605,15 @@ plot_pca <- function(mat, coldata, type = c("scores", "scree", "loadings"),
 #' given by the annotation table (`cluster = FALSE`) — the two views answer
 #' different questions: whether the data cluster by condition on their own, and
 #' how the conditions look side by side as designed. Unlike [plot_heatmap()],
-#' which writes a png through `gplots::heatmap.2`, this returns a ggplot object
-#' that can be printed inside a knitted tabset.
+#' which writes a png through `gplots::heatmap.2`, this returns an object that
+#' can be printed inside a knitted tabset.
+#'
+#' The clustered view makes the clustering visible rather than only using it to
+#' order the tiles: the unit (column) dendrogram is drawn above a Condition
+#' colour bar, the feature (row) dendrogram on the left, and the features are
+#' cut into `n_clusters` groups ([stats::cutree()]), separated by white lines and
+#' labelled `C1`, `C2`, ... from top to bottom. The feature-to-cluster
+#' assignment is attached as `attr(p, "clusters")` so a report can export it.
 #'
 #' @param mat Numeric matrix of log2 intensities.
 #' @param coldata Matching column metadata (`Unit`, `Condition`).
@@ -1615,18 +1622,26 @@ plot_pca <- function(mat, coldata, type = c("scores", "scree", "loadings"),
 #' @param top_n Number of most variable features to show. Default `500`.
 #' @param center_rows Subtract the feature mean, so the colour encodes the log2
 #'   ratio to the feature average rather than absolute abundance. Default `TRUE`.
+#' @param n_clusters Number of feature clusters drawn in the clustered view
+#'   (capped at the number of features). Default `4`.
 #' @param title Plot title. Default `NULL` (auto-generated).
 #'
-#' @return A ggplot object, or `NULL` (with a warning) when the matrix is empty.
+#' @return For `cluster = FALSE` (or when clustering is not possible: fewer than
+#'   three features or units), a ggplot object. For the clustered view, a
+#'   `ggpubr::ggarrange()` composite (dendrogram + Condition bar over the
+#'   heatmap) carrying `attr(, "clusters")`, a data frame with `Feature` and
+#'   `Cluster` in display order. `NULL` (with a warning) when the matrix is
+#'   empty.
 #'
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' plot_quant_heatmap(mat_n, qm$coldata, cluster = TRUE, top_n = 300)
+#' p <- plot_quant_heatmap(mat_n, qm$coldata, cluster = TRUE, top_n = 300)
+#' head(attr(p, "clusters"))
 #' }
 plot_quant_heatmap <- function(mat, coldata, cluster = TRUE, top_n = 500,
-                               center_rows = TRUE, title = NULL) {
+                               center_rows = TRUE, n_clusters = 4, title = NULL) {
   if (nrow(mat) == 0 || ncol(mat) == 0) {
     warning("plot_quant_heatmap(): empty matrix.", call. = FALSE)
     return(NULL)
@@ -1637,42 +1652,195 @@ plot_quant_heatmap <- function(mat, coldata, cluster = TRUE, top_n = 500,
   if (center_rows)
     sub_mat <- sweep(sub_mat, 1, rowMeans(sub_mat, na.rm = TRUE), FUN = "-")
 
-  feature_order <- rownames(sub_mat)
-  unit_order <- colnames(sub_mat)
+  lim <- suppressWarnings(max(abs(sub_mat), na.rm = TRUE))
+  if (!is.finite(lim) || lim == 0) lim <- 1
+  fill_scale <- ggplot2::scale_fill_gradientn(
+    colours = rev(RColorBrewer::brewer.pal(11, "RdBu")),
+    limits = c(-lim, lim), na.value = "grey88",
+    name = if (center_rows) "log2 ratio\nto feature mean" else "log2(Area)")
+
+  hr <- hc <- NULL
   if (cluster && nrow(sub_mat) > 2 && ncol(sub_mat) > 2) {
     # hclust cannot take NAs; fill them with the feature minimum for the
     # ordering only (the plotted values keep their NAs)
     filled <- sub_mat
-    row_min <- apply(filled, 1, min, na.rm = TRUE)
+    row_min <- suppressWarnings(apply(filled, 1, min, na.rm = TRUE))
     row_min[!is.finite(row_min)] <- 0
     filled[is.na(filled)] <- row_min[row(filled)[is.na(filled)]]
     hr <- tryCatch(stats::hclust(stats::dist(filled)), error = function(e) NULL)
     hc <- tryCatch(stats::hclust(stats::dist(t(filled))), error = function(e) NULL)
-    if (!is.null(hr)) feature_order <- rownames(sub_mat)[hr$order]
-    if (!is.null(hc)) unit_order <- colnames(sub_mat)[hc$order]
   }
 
+  if (is.null(hr) || is.null(hc))
+    return(.quant_heatmap_plain(sub_mat, fill_scale, center_rows,
+                                title = if (is.null(title))
+                                  paste0(if (cluster) "Clustered" else "Unclustered", " heatmap")
+                                else title))
+
+  .quant_heatmap_clustered(sub_mat, coldata, hr, hc, fill_scale,
+                           n_clusters = n_clusters,
+                           title = if (is.null(title)) "Clustered heatmap" else title)
+}
+
+# The unclustered (annotation-order) heatmap: one ggplot, so it stays
+# convertible by ggplotly() when InteractivePlots is on.
+.quant_heatmap_plain <- function(sub_mat, fill_scale, center_rows, title) {
   df <- expand.grid(Feature = rownames(sub_mat), Unit = colnames(sub_mat),
                     stringsAsFactors = FALSE)
   df$Value <- as.vector(sub_mat)
-  df$Feature <- factor(df$Feature, levels = feature_order)
-  df$Unit <- factor(df$Unit, levels = unit_order)
-
-  lim <- max(abs(df$Value), na.rm = TRUE)
-  if (!is.finite(lim) || lim == 0) lim <- 1
+  df$Feature <- factor(df$Feature, levels = rownames(sub_mat))
+  df$Unit <- factor(df$Unit, levels = colnames(sub_mat))
 
   ggplot2::ggplot(df, ggplot2::aes(x = Unit, y = Feature, fill = Value)) +
     ggplot2::geom_raster() +
-    ggplot2::scale_fill_gradientn(
-      colours = rev(RColorBrewer::brewer.pal(11, "RdBu")),
-      limits = c(-lim, lim), na.value = "grey88",
-      name = if (center_rows) "log2 ratio\nto feature mean" else "log2(Area)") +
+    fill_scale +
     ggplot2::xlab(NULL) +
     ggplot2::ylab(paste0("Top ", nrow(sub_mat), " variable features")) +
     theme_howmahico() + ggpubr::rotate_x_text(70) +
     ggplot2::theme(axis.text.y = ggplot2::element_blank(),
                    axis.ticks.y = ggplot2::element_blank()) +
-    ggplot2::ggtitle(if (is.null(title)) paste0(if (cluster) "Clustered" else "Unclustered", " heatmap") else title)
+    ggplot2::ggtitle(title)
+}
+
+# Segment coordinates of an hclust dendrogram: leaves sit at 1..n in
+# `hc$order` (height 0), each merge at the midpoint of its two children and at
+# its merge height. Returns x, y, xend, yend (x = leaf axis, y = height).
+.dendro_segments <- function(hc) {
+  n <- length(hc$order)
+  pos <- integer(n)
+  pos[hc$order] <- seq_len(n)
+  m <- hc$merge
+  node_x <- numeric(nrow(m))
+  node_y <- hc$height
+  coord <- function(i) if (i < 0) c(pos[-i], 0) else c(node_x[i], node_y[i])
+  segs <- vector("list", nrow(m))
+  for (j in seq_len(nrow(m))) {
+    a <- coord(m[j, 1])
+    b <- coord(m[j, 2])
+    h <- node_y[j]
+    node_x[j] <- (a[1] + b[1]) / 2
+    segs[[j]] <- data.frame(x = c(a[1], b[1], a[1]), y = c(a[2], b[2], h),
+                            xend = c(a[1], b[1], b[1]), yend = c(h, h, h))
+  }
+  do.call(rbind, segs)
+}
+
+# The clustered heatmap: column dendrogram + Condition bar on top, row
+# dendrogram + cluster bands inside the heatmap panel. Two plots are needed
+# because the Condition bar and the value gradient both use the fill scale.
+.quant_heatmap_clustered <- function(sub_mat, coldata, hr, hc, fill_scale,
+                                     n_clusters, title) {
+  nr <- nrow(sub_mat)
+  nc <- ncol(sub_mat)
+  # first feature of hr$order drawn at the top
+  feature_order <- rownames(sub_mat)[hr$order]
+  unit_order <- colnames(sub_mat)[hc$order]
+  feature_y <- stats::setNames(rev(seq_len(nr)), feature_order)
+
+  k <- max(1L, min(as.integer(n_clusters), nr))
+  cl <- stats::cutree(hr, k = k)[feature_order]
+  # renumber so C1 is the top block, C2 the next, ...
+  cl_lab <- match(cl, unique(cl))
+  clusters <- data.frame(Feature = feature_order,
+                         Cluster = factor(paste0("C", cl_lab),
+                                          levels = paste0("C", seq_len(k))),
+                         stringsAsFactors = FALSE)
+
+  # x layout shared by both panels: row dendrogram | tiles | cluster labels
+  dend_w <- max(nc * 0.25, 0.8)
+  gap <- max(nc * 0.02, 0.05)
+  lab_w <- max(nc * 0.10, 0.6)
+  x_lim <- c(0.5 - gap - dend_w, nc + 0.5 + lab_w)
+
+  df <- expand.grid(Feature = rownames(sub_mat), Unit = colnames(sub_mat),
+                    stringsAsFactors = FALSE)
+  df$Value <- as.vector(sub_mat)
+  df$x <- match(df$Unit, unit_order)
+  df$y <- unname(feature_y[df$Feature])
+
+  # row dendrogram: leaf position -> y, height -> leftwards x
+  rseg <- .dendro_segments(hr)
+  rmax <- max(c(rseg$y, rseg$yend), 1e-12)
+  row_dend <- data.frame(
+    x    = 0.5 - gap - rseg$y / rmax * dend_w,
+    xend = 0.5 - gap - rseg$yend / rmax * dend_w,
+    y    = nr + 1 - rseg$x,
+    yend = nr + 1 - rseg$xend)
+
+  # cluster bands: boundaries between runs + a label at each run's middle
+  runs <- rle(cl_lab)
+  ends <- cumsum(runs$lengths)
+  starts <- ends - runs$lengths + 1
+  bounds <- if (length(ends) > 1) nr - ends[-length(ends)] + 0.5 else numeric(0)
+  lab_df <- data.frame(x = nc + 0.5 + lab_w * 0.15,
+                       y = nr + 1 - (starts + ends) / 2,
+                       label = paste0("C", runs$values))
+
+  p_main <- ggplot2::ggplot(df, ggplot2::aes(x = x, y = y, fill = Value)) +
+    ggplot2::geom_raster() +
+    fill_scale +
+    ggplot2::geom_segment(data = row_dend, inherit.aes = FALSE,
+                          ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
+                          linewidth = 0.2, colour = "grey30") +
+    ggplot2::geom_text(data = lab_df, inherit.aes = FALSE,
+                       ggplot2::aes(x = x, y = y, label = label),
+                       hjust = 0, size = 3.2) +
+    ggplot2::scale_x_continuous(breaks = seq_len(nc), labels = unit_order) +
+    ggplot2::coord_cartesian(xlim = x_lim, ylim = c(0.5, nr + 0.5), expand = FALSE) +
+    ggplot2::xlab(NULL) + ggplot2::ylab(NULL) +
+    theme_howmahico() + ggpubr::rotate_x_text(70) +
+    ggplot2::theme(axis.text.y = ggplot2::element_blank(),
+                   axis.ticks.y = ggplot2::element_blank(),
+                   axis.line = ggplot2::element_blank(),
+                   panel.grid = ggplot2::element_blank(),
+                   legend.position = "bottom",
+                   plot.margin = ggplot2::margin(0, 5.5, 5.5, 5.5))
+  if (length(bounds) > 0)
+    p_main <- p_main +
+      ggplot2::annotate("segment", x = 0.5, xend = nc + 0.5, y = bounds,
+                        yend = bounds, colour = "white", linewidth = 0.8)
+
+  # column dendrogram (y 1.15 .. 4) over the Condition bar (y 0 .. 1)
+  cseg <- .dendro_segments(hc)
+  cmax <- max(c(cseg$y, cseg$yend), 1e-12)
+  col_dend <- data.frame(x = cseg$x, xend = cseg$xend,
+                         y = 1.15 + cseg$y / cmax * 2.85,
+                         yend = 1.15 + cseg$yend / cmax * 2.85)
+  cond <- if (!is.null(coldata) && all(c("Unit", "Condition") %in% names(coldata)))
+    as.character(coldata$Condition[match(unit_order, as.character(coldata$Unit))])
+  else rep(NA_character_, nc)
+  cond_levels <- if (!is.null(coldata) && "Condition" %in% names(coldata))
+    unique(as.character(if (is.factor(coldata$Condition)) levels(coldata$Condition)
+                        else coldata$Condition))
+  else character(0)
+  cond_levels <- intersect(cond_levels, cond)
+  if (length(cond_levels) == 0) cond_levels <- unique(cond)
+  bar_df <- data.frame(x = seq_len(nc), y = 0.5,
+                       Condition = factor(cond, levels = cond_levels))
+
+  p_top <- ggplot2::ggplot() +
+    ggplot2::geom_tile(data = bar_df,
+                       ggplot2::aes(x = x, y = y, fill = Condition),
+                       height = 1, colour = "white", linewidth = 0.3) +
+    ggplot2::geom_segment(data = col_dend,
+                          ggplot2::aes(x = x, y = y, xend = xend, yend = yend),
+                          linewidth = 0.3, colour = "grey30") +
+    viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL,
+                                na.value = "grey70") +
+    ggplot2::coord_cartesian(xlim = x_lim, ylim = c(0, 4.1), expand = FALSE) +
+    ggplot2::theme_void() +
+    ggplot2::theme(legend.position = "top",
+                   plot.title = ggplot2::element_text(face = "bold", size = 14),
+                   plot.margin = ggplot2::margin(5.5, 5.5, 0, 5.5)) +
+    ggplot2::ggtitle(title,
+                     subtitle = paste0("Top ", nr, " variable features, cut into ",
+                                       k, " cluster", if (k > 1) "s" else "",
+                                       " (C1 = top block)"))
+
+  p <- ggpubr::ggarrange(p_top, p_main, ncol = 1, heights = c(0.3, 1),
+                         align = "v")
+  attr(p, "clusters") <- clusters
+  p
 }
 
 #' Volcano plot of a differential-abundance result
@@ -1965,6 +2133,11 @@ plot_aa_position_heatmap <- function(freq, ncol = 3, title = NULL) {
 #' value, so the spread is between-peptide, not between-replicate — read
 #' [plot_property_sample_summary()] alongside it for the replicate view.
 #'
+#' With `type = "density"`, a descriptor that only takes whole-number values
+#' (peptide `Length`) is drawn as a histogram with one bar per value, scaled so
+#' each Condition's bars sum to 1. A kernel density would draw bumps between
+#' values that cannot occur. Continuous descriptors keep the density curve.
+#'
 #' @param props Output of [pepchem_by_sample()].
 #' @param var Name (string) of the descriptor column to draw.
 #' @param type `"density"` (default) or `"violin"`.
@@ -1997,6 +2170,19 @@ plot_property_distribution <- function(props, var, type = c("density", "violin")
       viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
       ggplot2::xlab(NULL) + ggplot2::ylab(var) +
       ggpubr::rotate_x_text(70)
+  } else if (.is_whole_number(df[[var]])) {
+    # integer-valued descriptor (e.g. Length): a kernel density would draw
+    # bumps between values that cannot occur, so draw one bar per value; the
+    # density scaling (binwidth 1) makes each Condition's bars sum to 1
+    ggplot2::ggplot(df, ggplot2::aes(x = .data[[var]],
+                                     fill = .data[["Condition"]])) +
+      ggplot2::geom_histogram(ggplot2::aes(y = ggplot2::after_stat(density)),
+                              binwidth = 1, position = "dodge",
+                              color = "black", linewidth = 0.2) +
+      viridis::scale_fill_viridis(discrete = TRUE, end = 0.9, name = NULL) +
+      ggplot2::scale_x_continuous(breaks = scales::breaks_width(
+        max(1, ceiling(diff(range(df[[var]])) / 15)))) +
+      ggplot2::xlab(var) + ggplot2::ylab("Fraction of peptides")
   } else {
     ggplot2::ggplot(df, ggplot2::aes(x = .data[[var]],
                                      color = .data[["Condition"]])) +
@@ -2007,6 +2193,13 @@ plot_property_distribution <- function(props, var, type = c("density", "violin")
 
   p + ggplot2::scale_y_continuous(n.breaks = 5) + theme_howmahico() +
     ggplot2::ggtitle(title)
+}
+
+# TRUE when every (non-missing) value is a whole number, i.e. the descriptor
+# can only take integer values and is better drawn as a histogram.
+.is_whole_number <- function(x, tol = 1e-8) {
+  x <- x[is.finite(x)]
+  length(x) > 0 && all(abs(x - round(x)) < tol)
 }
 
 #' Per-Condition mean +/- sd of a descriptor across samples

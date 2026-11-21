@@ -221,3 +221,70 @@ pep_all_glossary <- function() {
   names(out) <- c("Column", "Meaning", "Notes")
   out
 }
+
+#' Glossary of the physicochemical descriptors
+#'
+#' One row per descriptor column of [peptide_properties()]: what it measures,
+#' how to read it for MHC ligands, and how it is computed. It is the single
+#' source of the descriptor documentation the `07_pepchem` report renders in
+#' its glossary (through `inst/rmarkdown/shared/glossary.Rmd`), next to the
+#' [pep_all_glossary()] table.
+#'
+#' The `frac_*` rows are generated from the amino-acid classes the composition
+#' code uses, so the residues listed can never drift from what is computed.
+#'
+#' @param ph pH quoted for the net `Charge` descriptor (the report's
+#'   `ChargePh` param). Default `7.4`.
+#'
+#' @return A data frame with columns `Descriptor`, `Meaning`, `Interpretation`
+#'   and `Computed`, one row per descriptor column of [peptide_properties()]
+#'   (all but `Sequence`).
+#'
+#' @export
+#'
+#' @examples
+#' pepchem_glossary()
+#' subset(pepchem_glossary(), Descriptor == "GRAVY")
+pepchem_glossary <- function(ph = 7.4) {
+  g <- function(descriptor, meaning, interpretation, computed)
+    c(descriptor, meaning, interpretation, computed)
+  rows <- list(
+    g("Length", "Number of amino acids",
+      "MHC-I ligands peak at 9 AAs (8-11 for most alleles; 8 for mouse H-2Kb); MHC-II ligands are 12-25 AAs and ragged",
+      "nchar(Sequence)"),
+    g("GRAVY", "Grand average of hydropathy: mean Kyte-Doolittle hydropathy of the residues",
+      "Positive = hydrophobic, negative = hydrophilic. Shifts with allele anchor preferences and with LC retention",
+      "Peptides::hydrophobicity(scale = \"KyteDoolittle\") (Kyte & Doolittle 1982)"),
+    g("MW", "Molecular weight in Da",
+      "Tracks Length closely; useful mainly to spot unusual composition at fixed length",
+      "Peptides::mw() (average masses)"),
+    g("pI", "Isoelectric point: the pH at which the net charge is zero",
+      "Basic anchors (K/R, e.g. HLA-A*03/A*11) raise it; acidic residues lower it",
+      "Peptides::pI() (EMBOSS pK scale)"),
+    g("Charge", paste0("Theoretical net charge at pH ", ph),
+      "Related to, but not the same as, the precursor charge state the instrument sees",
+      paste0("Peptides::charge(pH = ", ph, ") (Lehninger pK scale); set by ChargePh")),
+    g("Boman", "Boman index: potential to bind other proteins (sum of residue solubility values / length)",
+      "Higher (about > 2.5) suggests higher protein-binding potential; low or negative for hydrophobic peptides",
+      "Peptides::boman() (Boman 2003)"),
+    g("HydrophobicMoment", "Amphipathicity: hydrophobic moment of the sequence as an alpha-helix",
+      "High values mean one face hydrophobic, the other polar. Mostly descriptive for short linear ligands",
+      "Peptides::hmoment() (Eisenberg scale, 100 degrees per residue, window 11)"),
+    g("InstabilityIndex", "Guruprasad instability index, from dipeptide composition",
+      "Above 40 is called 'unstable' for proteins; the cut-off was not derived for short peptides, so compare between Conditions rather than against 40",
+      "Peptides::instaIndex() (Guruprasad et al. 1990)"),
+    g("AliphaticIndex", "Relative volume occupied by aliphatic side chains (A, V, I, L)",
+      "Higher with I/L/V-rich peptides, e.g. hydrophobic C-terminal anchors",
+      "Peptides::aIndex() (Ikai 1980)")
+  )
+  classes <- .aa_classes()
+  frac_rows <- lapply(names(classes), function(cl)
+    g(paste0("frac_", cl),
+      paste0("Fraction of residues in the ", cl, " class (",
+             paste(classes[[cl]], collapse = ", "), ")"),
+      "Compare between Conditions; classes overlap, so fractions do not sum to 1",
+      "Residue counts / number of standard residues (X, B, Z, U ignored)"))
+  out <- as.data.frame(do.call(rbind, c(rows, frac_rows)), stringsAsFactors = FALSE)
+  names(out) <- c("Descriptor", "Meaning", "Interpretation", "Computed")
+  out
+}

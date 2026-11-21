@@ -36,6 +36,7 @@ reference:
   - condition_pairs
   - provider_line
   - pep_all_glossary
+  - pepchem_glossary
 
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema

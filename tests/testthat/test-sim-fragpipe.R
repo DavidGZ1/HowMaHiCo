@@ -94,9 +94,10 @@ test_that("06_quant_stats renders end-to-end against the simulated data", {
         NormMethod          = "median",
         ImputeMethod        = "none",
         PermutationTest     = TRUE,
+        HeatmapClusters     = 3,
         ResultsOverwrite    = TRUE,
         PlotsSave           = FALSE,
-        CsvSave             = FALSE
+        CsvSave             = TRUE
       ),
       output_file = "sim_06_quant_stats.html",
       quiet = TRUE)))
@@ -109,6 +110,11 @@ test_that("06_quant_stats renders end-to-end against the simulated data", {
   summ <- utils::read.csv(file.path(proj, "quant_stats_summary.csv"))
   expect_equal(nrow(summ), 1L)             # one contrast: TREAT vs CTRL
   expect_gt(summ$n_tested, 0)
+
+  # the clustered heatmap's feature clusters reach the CsvSave export
+  cl <- utils::read.csv(file.path(proj, "heatmap_clusters.csv"))
+  expect_named(cl, c("Feature", "Cluster"))
+  expect_setequal(unique(cl$Cluster), c("C1", "C2", "C3"))
 })
 
 test_that("a single-Condition subset renders (combn(conditions, 2) regression)", {
@@ -247,6 +253,12 @@ test_that("07_pepchem renders end-to-end against the simulated data", {
   expect_equal(unique(stats$Level), "sample")
   # the descriptors really were compared across the 3 vs 3 samples
   expect_equal(unique(c(stats$n1, stats$n2)), 3L)
+
+  # the shared glossary carries the descriptor table in this report only
+  # (pandoc re-wraps the HTML, so match on whitespace-collapsed text)
+  html <- gsub("\\s+", " ", paste(readLines(out, warn = FALSE), collapse = " "))
+  expect_match(html, "<caption> ?Physicochemical descriptors ?</caption>")
+  expect_match(html, "Kyte-Doolittle hydropathy of the residues", fixed = TRUE)
 })
 
 test_that("07_pepchem renders for a single Condition (no comparison possible)", {

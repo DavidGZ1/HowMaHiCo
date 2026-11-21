@@ -84,6 +84,7 @@ peptide_set_label <- if (params$PeptideSet == "all") "all peptides" else
 # Descriptors are sequence-intrinsic: computed once over the unique sequences,
 # then attached to each (Sample, Sequence) pair.
 props <- pepchem_by_sample(pepchem_input, ph = params$ChargePh)
+glossary_pepchem <- TRUE # the shared glossary adds the descriptor table
 property_cols <- pepchem_properties(params$PropertySet)
 property_cols <- intersect(property_cols, names(props))
 
@@ -265,7 +266,7 @@ questions and are meant to be read together.
 ```{r plot-properties, results='asis', echo=FALSE, fig.width=8, fig.height=4, warning=FALSE, message=FALSE}
 property_plots <- list()
 for (prop in property_cols) {
-  cat("\n## ", prop, " {.tabset}\n\n")
+  cat("\n\n## ", prop, " {.tabset}\n\n")
   p_dist <- plot_property_distribution(props, prop, type = "density")
   p_summ <- plot_property_sample_summary(pepchem_condition, prop,
                                          points = pepchem_summary)
@@ -273,9 +274,9 @@ for (prop in property_cols) {
     cat("_No usable value for this descriptor._\n\n")
     next
   }
-  cat("\n### Distribution (per peptide)\n\n")
+  cat("\n\n### Distribution\n\n")
   if (is.null(p_dist)) cat("_Not available._\n\n") else print(p_dist)
-  cat("\n### Mean +/- sd (per sample)\n\n")
+  cat("\n\n### Mean +/- sd (per sample)\n\n")
   if (is.null(p_summ)) cat("_Not available._\n\n") else print(p_summ)
   property_plots[[prop]] <- list(distribution = p_dist, summary = p_summ)
 }

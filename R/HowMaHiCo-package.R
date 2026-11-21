@@ -21,6 +21,7 @@ NULL
 # plot_upset_batch's grouping-column argument, not stats::var.)
 utils::globalVariables(c(
   ".", "..density..",
+  "xend", "yend", "label", # plot_quant_heatmap()'s dendrogram/cluster layers
   "Accession", "AccessionFirst", "All.Mapped.Genes", "All.Mapped.Proteins",
   "Area", "Area_CV", "Area_mean", "Area_sd", "Assigned_Modifications",
   "Average", "Averagine",

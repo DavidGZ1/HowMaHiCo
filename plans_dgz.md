@@ -7,6 +7,12 @@ Plans by DGZ to improve HowMaHiCo.
 Instructions: when prompted, you can read this file and provide a plan to do the pending tasks in "to do". When something is done, move it to the end of "Done". Do not consider the points in "In standby", until they are moved to "to do"
 
 ## To do
+* reports became too modular and the overview is now redundant. merge reports 1,2,4, 5, 9 and reduce redundancy, then becomes report 01_mhc_overview. Then reorder the other reports, do not change their names:
+  * 8 becomes report 2
+  * 3 remains 3
+  * 7 becomes 4
+  * 6 becomes 5
+
 
 ### Road to the EuPA 2026 abstract (example/abstract_eupa2026_v3.md)
 
@@ -128,7 +134,6 @@ either by implementing or by re-wording the abstract.
 
 
 ### to be done by DGZ
-
 * Check and complete glosary - NOW GENERATED: the 30 column descriptions live in
   pep\_all\_glossary() (R/report-helpers.R) and feed both the in-report glossary
   (inst/rmarkdown/shared/glossary.Rmd, in all ten templates) and the README
@@ -358,3 +363,5 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * cross-experiment comparison: new R/compare-runs.R with compare_runs() (stacks the <Subset>_scores.csv tables of N 05_quality_score renders - csv paths, results folders or score data frames; labels runs from the companion *_05_quality_score_input_params.csv as "SampleSet | Subset" and attaches MHCclass/ThresholdMode/render_timestamp/package_version; input or timestamp order; column union; WARNS on mixed MHCclass/ThresholdMode since composites are then not comparable) + summarise_runs() (per run x metric n/median/IQR + Pass/Warning/Fail counts) + plot_run_trend() (panel per metric, runs on x, box or median-trend line, QC samples as triangles, optional color_by). The 05 score csv gained a Condition column. No report template for it yet - the function + plot make the abstract's sentence true (v0.24.0)
 * general-overview report for the biologically focused user: new `09_overview` template, one page for the biologist - at-a-glance table (samples, Conditions, unique peptides all/in-window, source proteins, median score, Pass/Warning/Fail, red-flag counts), ligands per sample in/out of the length window, length histogram, composite quality score, a plain-language Red flags section and a "where to go next" table pointing at 01-08. New exported overview_red_flags() (Fail/Warning composite; any SCORED dimension past amber, worded by its label, High at sub-score 0; sample < 0.5 x median unique peptides; Condition with a single BioReplicate) and qc_samples_from_annotation() (the QCColumn lookup 05 inlined, now shared by 05 and 09). Writes <Subset>_red_flags.csv. Render test in test-sim-fragpipe.R + unit tests in test-overview.R (v0.25.0)
 * demonstration dataset, simulated part: demo/eupa2026_demo.R renders the simulated class-1/class-2 FragPipe datasets (all reports) and simulates with MaHiCoInSilico a tryptic-contamination titration (0-100 %, LOD 1e6) and a class-1 + 25 % class-2 mix, then builds the poster panels with compare_runs()/plot_run_trend() and writes demo_summary.md. The composite falls monotonically 90.7 -> 35 along the titration (Fail only for the pure proteome) and cross-class rises to 0.28 in the mix. Running it found two bugs, both fixed: frac_charge_1_2 was MHC-I-only (class II is mostly 2+ to 4+, so genuine class-II scored 0 there; now class-aware, class 2 composite 55 -> 70), and charges were read from factor LEVEL CODES (as.numeric on the "+ n" factor) so with no 1+ present 2+ read as 1+, in get_charge_group() and the PEAKS PeptideID; now .charge_number(). The real dataset stays open (v0.26.0)
+* report 6, clustered heatmap did not show the clusters: plot\_quant\_heatmap(cluster = TRUE) only reordered the tiles. It now draws the unit dendrogram over a Condition colour bar, the feature dendrogram on the left, and cuts the features into n\_clusters groups (new HeatmapClusters param, default 4) separated by white lines and labelled C1 (top) onwards; the assignment comes back as attr(p, "clusters") and is exported as heatmap\_clusters.csv with CsvSave. The clustered view is a ggarrange composite (static even with InteractivePlots); the unclustered view is unchanged and still plotly-convertible. No new dependency (dendrogram segments from hclust by the internal .dendro\_segments()) (v0.26.1)
+* report 7: integer-valued descriptors (Length) are drawn as histograms (one bar per value, each Condition summing to 1) instead of a kernel density; continuous descriptors keep the density. New exported pepchem\_glossary() (meaning, how to read it for MHC ligands, how it is computed, for every peptide\_properties() column; frac\_* rows generated from the residue classes actually used) rendered by the shared glossary child in 07\_pepchem only (v0.26.1)

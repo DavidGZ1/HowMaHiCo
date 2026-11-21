@@ -1,3 +1,33 @@
+# HowMaHiCo 0.26.1
+
+## The clustered heatmap now shows its clusters
+
+* `plot_quant_heatmap(cluster = TRUE)` used the clustering only to order the
+  tiles, so no cluster was visible. It now draws the unit dendrogram above a
+  Condition colour bar and the feature dendrogram on the left. It also cuts the
+  features into `n_clusters` groups (default 4), separated by white lines and
+  labelled `C1` (top block) onwards. The feature-to-cluster table comes back as
+  `attr(p, "clusters")`.
+* `06_quant_stats` gained a `HeatmapClusters` param (default 4). With
+  `CsvSave = TRUE` it also writes `heatmap_clusters.csv`.
+* The clustered view is now a `ggpubr::ggarrange()` composite, because the
+  Condition bar and the value gradient both need a fill scale. It therefore
+  stays static when `InteractivePlots` is on. The unclustered view is unchanged
+  and can still be made interactive. No new dependency: the dendrogram segments
+  are computed from `hclust` directly.
+
+## Peptide chemistry (`07_pepchem`)
+
+* `plot_property_distribution()` draws a descriptor that only takes whole-number
+  values (peptide `Length`) as a histogram, one bar per value, with each
+  Condition summing to 1. A kernel density drew bumps between lengths that
+  cannot occur. Continuous descriptors keep the density curve.
+* New exported `pepchem_glossary()`: what each `peptide_properties()` descriptor
+  measures, how to read it for MHC ligands, and how it is computed. The `frac_*`
+  rows are generated from the residue classes actually used. The shared
+  glossary renders it as a "Physicochemical descriptors" table in `07_pepchem`
+  only.
+
 # HowMaHiCo 0.26.0
 
 Found by running the EuPA-2026 demonstration (`demo/eupa2026_demo.R`) on
