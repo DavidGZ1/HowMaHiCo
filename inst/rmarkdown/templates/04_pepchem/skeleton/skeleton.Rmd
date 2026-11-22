@@ -39,7 +39,7 @@ params:
   PlotsSave: FALSE
   InteractivePlots: FALSE # TRUE renders the convertible plots as interactive plotly widgets (ordinary chunks only; tabset-loop plots stay static)
   CsvSave: FALSE
-title: "`r paste0('07_pepchem | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
+title: "`r paste0('04_pepchem | ', params$SampleSet, if (nzchar(params$Subset)) paste0(' | ', params$Subset) else '', ' | ', params$MHCclass, ' | ', Sys.Date())`"
 ---
 
 
@@ -84,6 +84,7 @@ peptide_set_label <- if (params$PeptideSet == "all") "all peptides" else
 # Descriptors are sequence-intrinsic: computed once over the unique sequences,
 # then attached to each (Sample, Sequence) pair.
 props <- pepchem_by_sample(pepchem_input, ph = params$ChargePh)
+glossary_pepchem <- TRUE # the shared glossary adds the descriptor table
 property_cols <- pepchem_properties(params$PropertySet)
 property_cols <- intersect(property_cols, names(props))
 
@@ -222,7 +223,7 @@ if (is.null(aa_stats) || nrow(aa_stats) == 0) {
 # Positional amino acid frequency {.tabset}
 
 Residue frequency at each aligned position. This is the numeric complement to
-the sequence logos in the `01_id_counts` report: a logo scales its letters by
+the sequence logos in the `01_mhc_overview` report: a logo scales its letters by
 information content, so a position with a mild but consistent preference almost
 disappears, while the heatmap keeps every frequency readable and directly
 comparable between Conditions.
@@ -265,7 +266,7 @@ questions and are meant to be read together.
 ```{r plot-properties, results='asis', echo=FALSE, fig.width=8, fig.height=4, warning=FALSE, message=FALSE}
 property_plots <- list()
 for (prop in property_cols) {
-  cat("\n## ", prop, " {.tabset}\n\n")
+  cat("\n\n## ", prop, " {.tabset}\n\n")
   p_dist <- plot_property_distribution(props, prop, type = "density")
   p_summ <- plot_property_sample_summary(pepchem_condition, prop,
                                          points = pepchem_summary)
@@ -273,9 +274,9 @@ for (prop in property_cols) {
     cat("_No usable value for this descriptor._\n\n")
     next
   }
-  cat("\n### Distribution (per peptide)\n\n")
+  cat("\n\n### Distribution\n\n")
   if (is.null(p_dist)) cat("_Not available._\n\n") else print(p_dist)
-  cat("\n### Mean +/- sd (per sample)\n\n")
+  cat("\n\n### Mean +/- sd (per sample)\n\n")
   if (is.null(p_summ)) cat("_Not available._\n\n") else print(p_summ)
   property_plots[[prop]] <- list(distribution = p_dist, summary = p_summ)
 }
@@ -377,7 +378,7 @@ where the replication is real.
 **Why both tracks are shown.** The honest test is also weak. A two-sided Wilcoxon
 rank-sum test on 3 vs 3 samples has a minimum attainable p-value of 0.1, so a
 perfectly separated descriptor cannot reach a 0.05 FDR — the same structural
-limit the `06_quant_stats` report documents for its Fisher presence/absence
+limit the `05_quant_stats` report documents for its Fisher presence/absence
 track. The peptide-level track is reported alongside, explicitly labelled
 descriptive, so the *size* of a difference stays visible when its p-value cannot
 clear the cut-off.
@@ -404,7 +405,7 @@ proteome background needs the search FASTA, which this report does not read.
 Peptide position within the parent protein is likewise out of scope. Descriptors
 are computed on the unmodified `Sequence`, so post-translational modifications do
 not shift the reported mass, charge or hydrophobicity; see the PTM profile in
-`01_id_counts` for those.
+`01_mhc_overview` for those.
 
 Kyte J & Doolittle RF (1982) *J Mol Biol* 157:105. Osorio D, Rondon-Villarreal P
 & Torres R (2015) *R Journal* 7:4 (the `Peptides` package). Boman HG (2003)
@@ -414,7 +415,7 @@ Hochberg Y (1995) *J R Stat Soc B* 57:289.
 ```{r export-results, echo=FALSE, message=FALSE, warning=FALSE}
 # Always-written exports: render parameters + the per-sample summary and stats
 write_input_params(params, folder = FolderResults,
-                   prefix = paste(c(result_prefix, "07_pepchem"), collapse = "_"))
+                   prefix = paste(c(result_prefix, "04_pepchem"), collapse = "_"))
 write.csv_rawr(pepchem_summary, folder = FolderResults, prefix = result_prefix)
 if (!is.null(pepchem_stats))
   write.csv_rawr(pepchem_stats, folder = FolderResults, prefix = result_prefix)

@@ -8,6 +8,7 @@ Instructions: when prompted, you can read this file and provide a plan to do the
 
 ## To do
 
+
 ### Road to the EuPA 2026 abstract (example/abstract_eupa2026_v3.md)
 
 Gap analysis of the package (v0.18.0) against the submitted abstract text, in
@@ -17,17 +18,15 @@ either by implementing or by re-wording the abstract.
 
 **Tier A — blocking, the abstract makes these promises explicitly**
 
-* make the GitHub repo public. The abstract prints
-  https://github.com/DavidGZ1/HowMaHiCo, which currently 404s (`gh repo view`:
-  `isPrivate: true`), and GitHub Pages will not serve `gh-pages` from a private
-  repo, so https://davidgz1.github.io/HowMaHiCo/ is dead too. While there: add a
-  CITATION.cff, and mint a Zenodo DOI so the poster has something citable.
-  **Partly done (2026-11-19):** repo description, homepage (the pkgdown URL) and
-  topics are set via `gh repo edit`. Still for DGZ: flip the visibility to
-  public, CITATION.cff / Zenodo DOI / first GitHub release.
+* **DONE (2026-11-22)** — the GitHub repo is public (`gh repo edit --visibility
+  public`); description, homepage and topics were set 2026-11-19. Still for DGZ:
+  enable GitHub Pages from the `gh-pages` branch (Settings > Pages; the Pages API
+  returned 404, i.e. never configured), otherwise
+  https://davidgz1.github.io/HowMaHiCo/ stays dead. CITATION.cff / Zenodo DOI /
+  first GitHub release moved to standby.
 * **DONE (v0.23.0)** — license conflict resolved: relicensed to `GPL (>= 2)`
   (not plain GPL-3: Peptides, gplots and ggcorrplot are GPL-2 *only*).
-* abstract housekeeping: the affiliation is still the placeholder
+* **DONE in abstract_eupa2026_v4.md** abstract housekeeping: the affiliation is still the placeholder
   `[Affiliation: institution, city, country]`; decide whether the submission
   carries the institutional address or DESCRIPTION's
   `davidgz.science@gmail.com`.
@@ -114,6 +113,7 @@ either by implementing or by re-wording the abstract.
 
 
 ## In standby
+* citability: add a CITATION.cff, cut a first GitHub release and mint a Zenodo DOI (connect the repo in Zenodo first, then each release gets a DOI) so the poster has something citable — moved from Tier A on 2026-11-22, after the repo went public
 * peptide position within the parent protein (the third part of the physicochemical-properties item) — deferred; it is the only part that needs a user-supplied search FASTA, since no loader carries a position column (FragPipe psm.tsv, DIA-NN report.tsv and PEAKS peptide.csv all lack one). Full design recorded in CLAUDE.md under "Deferred designs".
 * implement safeguard when some conditions or replicates give 0 areas, currently throwing error — moved to standby (no repro available; e.g. CHEB\_001 all dda dataset not in repo). The all-NA Area/CV and all-NA correlation cases are already guarded in the report chunks; the partial (some groups 0/NA) failure needs a repro to target.
 * InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04\_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot\_heatmap.
@@ -128,7 +128,6 @@ either by implementing or by re-wording the abstract.
 
 
 ### to be done by DGZ
-
 * Check and complete glosary - NOW GENERATED: the 30 column descriptions live in
   pep\_all\_glossary() (R/report-helpers.R) and feed both the in-report glossary
   (inst/rmarkdown/shared/glossary.Rmd, in all ten templates) and the README
@@ -358,3 +357,8 @@ get\_report\_template <- function(file = "HowMaHiCoReportTemplate", edit = FALSE
 * cross-experiment comparison: new R/compare-runs.R with compare_runs() (stacks the <Subset>_scores.csv tables of N 05_quality_score renders - csv paths, results folders or score data frames; labels runs from the companion *_05_quality_score_input_params.csv as "SampleSet | Subset" and attaches MHCclass/ThresholdMode/render_timestamp/package_version; input or timestamp order; column union; WARNS on mixed MHCclass/ThresholdMode since composites are then not comparable) + summarise_runs() (per run x metric n/median/IQR + Pass/Warning/Fail counts) + plot_run_trend() (panel per metric, runs on x, box or median-trend line, QC samples as triangles, optional color_by). The 05 score csv gained a Condition column. No report template for it yet - the function + plot make the abstract's sentence true (v0.24.0)
 * general-overview report for the biologically focused user: new `09_overview` template, one page for the biologist - at-a-glance table (samples, Conditions, unique peptides all/in-window, source proteins, median score, Pass/Warning/Fail, red-flag counts), ligands per sample in/out of the length window, length histogram, composite quality score, a plain-language Red flags section and a "where to go next" table pointing at 01-08. New exported overview_red_flags() (Fail/Warning composite; any SCORED dimension past amber, worded by its label, High at sub-score 0; sample < 0.5 x median unique peptides; Condition with a single BioReplicate) and qc_samples_from_annotation() (the QCColumn lookup 05 inlined, now shared by 05 and 09). Writes <Subset>_red_flags.csv. Render test in test-sim-fragpipe.R + unit tests in test-overview.R (v0.25.0)
 * demonstration dataset, simulated part: demo/eupa2026_demo.R renders the simulated class-1/class-2 FragPipe datasets (all reports) and simulates with MaHiCoInSilico a tryptic-contamination titration (0-100 %, LOD 1e6) and a class-1 + 25 % class-2 mix, then builds the poster panels with compare_runs()/plot_run_trend() and writes demo_summary.md. The composite falls monotonically 90.7 -> 35 along the titration (Fail only for the pure proteome) and cross-class rises to 0.28 in the mix. Running it found two bugs, both fixed: frac_charge_1_2 was MHC-I-only (class II is mostly 2+ to 4+, so genuine class-II scored 0 there; now class-aware, class 2 composite 55 -> 70), and charges were read from factor LEVEL CODES (as.numeric on the "+ n" factor) so with no 1+ present 2+ read as 1+, in get_charge_group() and the PEAKS PeptideID; now .charge_number(). The real dataset stays open (v0.26.0)
+* report 6, clustered heatmap did not show the clusters: plot\_quant\_heatmap(cluster = TRUE) only reordered the tiles. It now draws the unit dendrogram over a Condition colour bar, the feature dendrogram on the left, and cuts the features into n\_clusters groups (new HeatmapClusters param, default 4) separated by white lines and labelled C1 (top) onwards; the assignment comes back as attr(p, "clusters") and is exported as heatmap\_clusters.csv with CsvSave. The clustered view is a ggarrange composite (static even with InteractivePlots); the unclustered view is unchanged and still plotly-convertible. No new dependency (dendrogram segments from hclust by the internal .dendro\_segments()) (v0.26.1)
+* report 7: integer-valued descriptors (Length) are drawn as histograms (one bar per value, each Condition summing to 1) instead of a kernel density; continuous descriptors keep the density. New exported pepchem\_glossary() (meaning, how to read it for MHC ligands, how it is computed, for every peptide\_properties() column; frac\_* rows generated from the residue classes actually used) rendered by the shared glossary child in 07\_pepchem only (v0.26.1)
+* reports became too modular and the overview was redundant: 01\_id\_counts, 02\_overlaps, 04\_quant, 05\_quality\_score and 09\_overview merged into one main report, 01\_mhc\_overview (at a glance + red flags first, then counts, size distribution, quality score, overlaps, Area correlation/%CV, motifs, PTM, where to go next, scoring method as an appendix). The duplicates from 09 were dropped (ligands-per-sample chart, length histogram, second composite plot) and the scores/red flags are computed once. The others are renumbered, names unchanged: 08\_prot\_all -> 02\_prot\_all, 03\_lcms\_qc stays, 07\_pepchem -> 04\_pepchem, 06\_quant\_stats -> 05\_quant\_stats. The old names still render via an alias table with a deprecation warning, and compare\_runs() reads both the new and the legacy 05\_quality\_score input-params name. 00\_mhc\_report / 00\_mhc\_upsets untouched (v0.27.0)
+* 01 report, 4.5 Total by Sample: the Parent proteins "Total=" labels were missing. plot\_bp\_count\_length() nudged them by a fixed 300 + lim/10, which put them above the y-limit (silently dropped) whenever counts are small - proteins, but also small subsets in any tab. The label now sits just above the bar and the axis grows to make room. Peptides = Sequences in 4.5 is NOT a bug: in the simulated hla1 data no sample holds both the modified and unmodified form of a sequence; the real dda/dia caches differ (e.g. 835 vs 826) (v0.27.1)
+* 01 report, logo tabs: the motif loop emitted ### headings under a level-1 tabset (DGZ's ## fix kept), and it and both UpSet loops printed list slices ([i]), which wrote a stray $`8` / $Peptide line above each plot; now [[i]] (v0.27.1)

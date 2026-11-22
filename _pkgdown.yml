@@ -36,6 +36,7 @@ reference:
   - condition_pairs
   - provider_line
   - pep_all_glossary
+  - pepchem_glossary
 
 - title: Data loaders
   desc: Software-specific loader families that converge on the unified `pep_all` schema
@@ -116,7 +117,7 @@ reference:
 
 - title: Sample quality score
   desc: >
-    Per-sample immunopeptidomics quality score behind the 05_quality_score
+    Per-sample immunopeptidomics quality score behind the 01_mhc_overview
     report: raw signals (length-window fidelity, canonical-length dominance,
     anchor-motif clarity, non-tryptic specificity, charge plausibility, depth,
     mass accuracy, cross-class contamination), the threshold model, and the
@@ -136,7 +137,7 @@ reference:
 
 - title: Comparing runs
   desc: >
-    Stack the per-sample score tables written by several 05_quality_score
+    Stack the per-sample score tables written by several 01_mhc_overview
     renders (experiments, subsets, or one QC standard over time) and compare
     them side by side or as a trend.
   contents:
@@ -148,7 +149,7 @@ reference:
   desc: >
     Build the quantitative matrix and compare peptide Area between Conditions
     (filtering, normalization, imputation, limma moderated t / Welch t, Fisher
-    presence-absence, PERMANOVA) plus the plots of the 06_quant_stats report
+    presence-absence, PERMANOVA) plus the plots of the 05_quant_stats report
   contents:
   - build_quant_matrix
   - filter_quant
@@ -172,7 +173,7 @@ reference:
 
 - title: Physicochemical properties
   desc: >
-    Peptide-chemistry engine behind the 07_pepchem report: amino-acid
+    Peptide-chemistry engine behind the 04_pepchem report: amino-acid
     composition, per-position residue frequency and per-peptide descriptors
     (GRAVY, pI, charge, ...), summarised per sample and compared between
     Conditions.
@@ -196,7 +197,7 @@ reference:
 - title: Protein-level analysis
   desc: >
     Condenses the peptide table to source-protein level (the `prot_all` table
-    behind the 08_prot_all report), including the protein-level values the
+    behind the 02_prot_all report), including the protein-level values the
     search engine itself reported.
   contents:
   - build_prot_all

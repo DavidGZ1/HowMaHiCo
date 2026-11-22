@@ -170,7 +170,7 @@
 
 #' Per-sequence physicochemical descriptors
 #'
-#' Computes the peptide-chemistry descriptors behind the `07_pepchem` report.
+#' Computes the peptide-chemistry descriptors behind the `04_pepchem` report.
 #' Duplicated sequences are computed once and returned once, so this is safe to
 #' call with the whole `Sequence` column of a long `pep_all` table.
 #'
@@ -249,7 +249,7 @@ peptide_properties <- function(sequences, ph = 7.4) {
 
 #' Descriptor columns of a property set
 #'
-#' The named subsets of [peptide_properties()] the `07_pepchem` report offers
+#' The named subsets of [peptide_properties()] the `04_pepchem` report offers
 #' through its `PropertySet` param, so the choice lives in the package rather
 #' than in a hand-maintained list inside the template.
 #'
@@ -432,7 +432,7 @@ aa_position_frequency <- function(sequences, length = NULL, positions = NULL,
 
 #' Per-sample peptide physicochemical descriptors
 #'
-#' Entry point of the `07_pepchem` engine. Reduces a long `pep_all`-shaped table
+#' Entry point of the `04_pepchem` engine. Reduces a long `pep_all`-shaped table
 #' to its distinct `Sequence` per `Sample` — the properties are
 #' sequence-intrinsic, so counting every PSM would weight them by how often a
 #' peptide happened to be re-sequenced — and joins on [peptide_properties()],

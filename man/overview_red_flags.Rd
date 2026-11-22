@@ -30,7 +30,7 @@ when nothing is flagged.
 \description{
 Turns a \code{\link[=score_sample_quality]{score_sample_quality()}} table into a short list of problems worth a
 biologist's attention, each with a severity and a sentence of detail. It
-powers the "Red flags" section of \verb{09_overview}. The rules are deliberately
+powers the "Red flags" section of \verb{01_mhc_overview}. The rules are deliberately
 few and transparent:
 }
 \details{

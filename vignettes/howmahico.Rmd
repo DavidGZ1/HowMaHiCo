@@ -147,26 +147,26 @@ report_params <- list(
   MHCclass      = "MHC1"
 )
 
-run_howmahico_report("01_id_counts",
+run_howmahico_report("01_mhc_overview",
                      params = c(report_params, list(PepAllSource = "cached")),
-                     output_file = "01_id_counts.html")
+                     output_file = "01_mhc_overview.html")
 ```
 
 The templates on offer:
+
+Before v0.27.0 the main report was split over `01_id_counts`, `02_overlaps`,
+`04_quant`, `05_quality_score` and `09_overview`, and the other reports were
+numbered `06`-`08`. The old names still work, with a deprecation warning.
 
 | Template | What it gives you |
 |---|---|
 | `00_mhc_report` | All-in-one QC report; parses the raw files itself |
 | `00_mhc_upsets` | Overlap / UpSet plots only |
-| `01_id_counts` | ID counts, length and charge distributions, motifs, PTM profile |
-| `02_overlaps` | Replicate, cross-condition and pairwise overlap |
+| `01_mhc_overview` | The main report: at a glance and red flags, ID counts, length and charge distributions, the per-sample quality score, overlaps, log2(Area) correlation and %CV, motifs and PTM profile |
+| `02_prot_all` | Source proteins: ligands per protein, and engine-reported protein values |
 | `03_lcms_qc` | RT / ion mobility / *m/z* distributions, Score and mass-error QC |
-| `04_quant` | log2(Area) correlation between samples, Area %CV |
-| `05_quality_score` | Per-sample immunopeptidomics quality score |
-| `06_quant_stats` | Differential abundance between Conditions |
-| `07_pepchem` | Amino-acid composition, positional motifs, GRAVY and other descriptors |
-| `08_prot_all` | Source proteins: ligands per protein, and engine-reported protein values |
-| `09_overview` | One-page overview for biologists: counts, lengths, quality score, red flags |
+| `04_pepchem` | Amino-acid composition, positional motifs, GRAVY and other descriptors |
+| `05_quant_stats` | Differential abundance between Conditions |
 
 Each focused report gets `pep_all` via its `PepAllSource` parameter:
 `"cached"` (the default — load `<Subset>_pep_all.rda`), `"rda"` (load an explicit
@@ -188,7 +188,7 @@ figure as png to `<FolderFigures>/<Subset>/`. The HTML report goes to
 
 ## Comparing runs
 
-Each `05_quality_score` render writes a per-sample `<Subset>_scores.csv`.
+Each `01_mhc_overview` render writes a per-sample `<Subset>_scores.csv`.
 `compare_runs()` stacks several of them — results folders, csv paths or
 `score_sample_quality()` data frames — into one table, and `plot_run_trend()`
 puts the runs side by side, one panel per metric:

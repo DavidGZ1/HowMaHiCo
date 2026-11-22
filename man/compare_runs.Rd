@@ -27,7 +27,7 @@ run lacks is \code{NA} there. Labels default to the input names, then
 \code{SampleSet | Subset} from the companion params, then the file name.
 }
 \description{
-One \verb{05_quality_score} render scores one subset. \code{compare_runs()} stacks the
+One \verb{01_mhc_overview} render scores one subset. \code{compare_runs()} stacks the
 per-sample score tables of several renders (different experiments, subsets,
 or the same QC standard measured over time) into a single long table, so
 that they can be compared side by side with \code{\link[=summarise_runs]{summarise_runs()}} and
@@ -36,15 +36,16 @@ that they can be compared side by side with \code{\link[=summarise_runs]{summari
 \details{
 \code{runs} may mix three kinds of input:
 \itemize{
-\item a \strong{score csv} written by \verb{05_quality_score} (\verb{<Subset>_scores.csv}, or
+\item a \strong{score csv} written by \verb{01_mhc_overview} (\verb{<Subset>_scores.csv}, or
 \code{scores.csv} when no \code{Subset} was set);
 \item a \strong{results folder} holding one or more such files (e.g.
 \verb{<FolderResults>/<Subset>}); every \verb{*scores.csv} in it becomes a run;
 \item a \strong{data frame} returned by \code{\link[=score_sample_quality]{score_sample_quality()}}.
 }
 
-For a csv, the companion \verb{<Subset>_05_quality_score_input_params.csv} that
-the same render writes next to it is read when present, and its
+For a csv, the companion \verb{<Subset>_01_mhc_overview_input_params.csv} that
+the same render writes next to it is read when present (for results written
+before v0.27.0, the old \verb{<Subset>_05_quality_score_input_params.csv}), and its
 \code{SampleSet}, \code{Subset}, \code{MHCclass}, \code{ThresholdMode}, \code{render_timestamp} and
 \code{package_version} are attached as columns (\code{NA} when absent, and always for
 data-frame input).

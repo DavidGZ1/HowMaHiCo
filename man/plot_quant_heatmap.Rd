@@ -10,6 +10,7 @@ plot_quant_heatmap(
   cluster = TRUE,
   top_n = 500,
   center_rows = TRUE,
+  n_clusters = 4,
   title = NULL
 )
 }
@@ -26,10 +27,18 @@ annotation order (\code{FALSE}).}
 \item{center_rows}{Subtract the feature mean, so the colour encodes the log2
 ratio to the feature average rather than absolute abundance. Default \code{TRUE}.}
 
+\item{n_clusters}{Number of feature clusters drawn in the clustered view
+(capped at the number of features). Default \code{4}.}
+
 \item{title}{Plot title. Default \code{NULL} (auto-generated).}
 }
 \value{
-A ggplot object, or \code{NULL} (with a warning) when the matrix is empty.
+For \code{cluster = FALSE} (or when clustering is not possible: fewer than
+three features or units), a ggplot object. For the clustered view, a
+\code{ggpubr::ggarrange()} composite (dendrogram + Condition bar over the
+heatmap) carrying \code{attr(, "clusters")}, a data frame with \code{Feature} and
+\code{Cluster} in display order. \code{NULL} (with a warning) when the matrix is
+empty.
 }
 \description{
 ggplot2 tile heatmap of the most variable features, drawn either with
@@ -37,11 +46,20 @@ hierarchical clustering of both dimensions (\code{cluster = TRUE}) or in the ord
 given by the annotation table (\code{cluster = FALSE}) — the two views answer
 different questions: whether the data cluster by condition on their own, and
 how the conditions look side by side as designed. Unlike \code{\link[=plot_heatmap]{plot_heatmap()}},
-which writes a png through \code{gplots::heatmap.2}, this returns a ggplot object
-that can be printed inside a knitted tabset.
+which writes a png through \code{gplots::heatmap.2}, this returns an object that
+can be printed inside a knitted tabset.
+}
+\details{
+The clustered view makes the clustering visible rather than only using it to
+order the tiles: the unit (column) dendrogram is drawn above a Condition
+colour bar, the feature (row) dendrogram on the left, and the features are
+cut into \code{n_clusters} groups (\code{\link[stats:cutree]{stats::cutree()}}), separated by white lines and
+labelled \code{C1}, \code{C2}, ... from top to bottom. The feature-to-cluster
+assignment is attached as \code{attr(p, "clusters")} so a report can export it.
 }
 \examples{
 \dontrun{
-plot_quant_heatmap(mat_n, qm$coldata, cluster = TRUE, top_n = 300)
+p <- plot_quant_heatmap(mat_n, qm$coldata, cluster = TRUE, top_n = 300)
+head(attr(p, "clusters"))
 }
 }

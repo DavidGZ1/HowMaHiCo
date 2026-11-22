@@ -17,7 +17,7 @@ A character vector of QC \code{Sample} names (possibly empty).
 \description{
 Returns the \code{Sample} values that the annotation flags as experiment QC
 controls in \code{qc_column} (\code{TRUE}, \code{T}, \code{1}, \code{QC}, \code{qc}, \code{yes} or \code{Yes}). This
-is how \verb{05_quality_score} and \verb{09_overview} turn their \code{QCColumn} param into
+is how \verb{01_mhc_overview} turns its \code{QCColumn} param into
 the \code{qc_samples} of \code{\link[=score_sample_quality]{score_sample_quality()}}. A missing file, an unreadable
 annotation, an empty \code{qc_column} or a column the annotation does not have all
 give an empty vector, because QC tagging is optional.

@@ -20,7 +20,13 @@ test_that("build_pep_all on the simulated FragPipe data yields a valid 2-conditi
   expect_gt(nrow(pep_all), 0)
 })
 
-test_that("a focused report renders end-to-end against the simulated data (PepAllSource = build)", {
+# The main report, 01_mhc_overview (v0.27.0), merges what used to be 01_id_counts,
+# 02_overlaps, 04_quant, 05_quality_score and 09_overview, so this one render
+# carries all of their former assertions. Render guard (v0.16.0): the old
+# 05_quality_score had an inline `r ...` expression that was a syntax error and
+# had never rendered, because no test covered it. Inline expressions are only
+# parsed at render time, so every shipped template needs a render test.
+test_that("01_mhc_overview renders end-to-end against the simulated data (PepAllSource = build)", {
   skip_on_cran()
   skip_if_not_installed("rmarkdown")
   skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
@@ -35,7 +41,7 @@ test_that("a focused report renders end-to-end against the simulated data (PepAl
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "01_id_counts",
+      "01_mhc_overview",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -50,18 +56,72 @@ test_that("a focused report renders end-to-end against the simulated data (PepAl
         Subset              = "",
         MHCclass            = "MHC1",
         ResultsOverwrite    = TRUE,
-        PlotsSave           = FALSE,
-        CsvSave             = FALSE
+        PlotsSave           = TRUE,
+        CsvSave             = TRUE
       ),
-      output_file = "sim_01_id_counts.html",
+      output_file = "sim_01_mhc_overview.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
   # build mode also wrote the pep_all cache it parsed
   expect_true(file.exists(file.path(proj, "sim_fragpipe_dda", "pep_all.rda")))
+
+  # the always-written exports of all five former reports
+  expect_true(file.exists(file.path(proj, "01_mhc_overview_input_params.csv")))
+  for (f in c("pep_all.csv", "counts_pep_all_condition.csv", "scores.csv",
+              "red_flags.csv"))
+    expect_true(file.exists(file.path(proj, f)), info = f)
+  expect_true(file.exists(file.path(proj, "seq_by_condition.xlsx")))
+  # ... and the CsvSave tier of each section (counts, overlaps, quant)
+  for (f in c("counts_all.csv", "upset_table_unique.csv", "pep_overlap.csv",
+              "pep_all_log2area_tr.csv"))
+    expect_true(file.exists(file.path(proj, f)), info = f)
+
+  # PlotsSave really writes files: ggsave_rawr used to resolve the plot name from
+  # the package namespace outwards, never reaching the knit environment, so every
+  # report saved nothing at all under PlotsSave = TRUE
+  expect_gt(length(list.files(proj, pattern = "[.]png$")), 0)
+
+  # the exported score table carries Condition (v0.24.0), for compare_runs()
+  sc <- utils::read.csv(file.path(proj, "scores.csv"))
+  expect_true("Condition" %in% names(sc))
+  expect_false(anyNA(sc$Condition))
+  expect_setequal(unique(sc$Condition), c("CTRL", "TREAT"))
+  # ... and compare_runs() finds the new input-params name next to it
+  runs <- compare_runs(file.path(proj, "scores.csv"))
+  expect_equal(unique(runs$MHCclass), "MHC1")
+  expect_equal(unique(runs$SampleSet), "sim")
+
+  flags <- utils::read.csv(file.path(proj, "red_flags.csv"))
+  expect_named(flags, c("Sample", "Severity", "Flag", "Detail"))
+
+  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
+  # one heading from each merged report, in the order they now appear
+  headings <- c("At a glance", "Red flags", "Identification counts",
+                "Peptide size distribution", "Quality score",
+                "Overlap of identifications", "Correlation log2(Area)",
+                "Peptide motifs", "PTM profile", "Where to go next",
+                "Appendix: quality-score method", "Glossary")
+  # top-level headings as rendered (number_sections prefixes a numbered <span>)
+  h1 <- regmatches(html, gregexpr("(?s)<h1[^>]*>.*?</h1>", html, perl = TRUE))[[1]]
+  h1 <- gsub("<span[^>]*>[0-9.]+</span>", "", h1)
+  h1 <- trimws(gsub("\\s+", " ", gsub("<[^>]+>", "", h1)))
+  pos <- vapply(headings, function(h) match(TRUE, startsWith(h1, h)), integer(1))
+  expect_false(anyNA(pos), info = paste(headings[is.na(pos)], collapse = ", "))
+  expect_false(is.unsorted(pos, na.rm = TRUE))
+  # the plots reach the HTML (ggprint_rawr had the same scoping bug as ggsave_rawr)
+  expect_gt(length(gregexpr("<img", html)[[1]]), 10)
+  # the red-flag section shows either the table or the explicit all-clear
+  if (nrow(flags) == 0) {
+    expect_true(grepl("No red flags.", html, fixed = TRUE))
+  } else {
+    expect_true(grepl(flags$Flag[1], html, fixed = TRUE))
+  }
+  # the redundant 09_overview sections are gone
+  expect_false(grepl("How many ligands per sample", html, fixed = TRUE))
 })
 
-test_that("06_quant_stats renders end-to-end against the simulated data", {
+test_that("05_quant_stats renders end-to-end against the simulated data", {
   skip_on_cran()
   skip_if_not_installed("rmarkdown")
   skip_if_not_installed("limma")
@@ -75,7 +135,7 @@ test_that("06_quant_stats renders end-to-end against the simulated data", {
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "06_quant_stats",
+      "05_quant_stats",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -94,11 +154,12 @@ test_that("06_quant_stats renders end-to-end against the simulated data", {
         NormMethod          = "median",
         ImputeMethod        = "none",
         PermutationTest     = TRUE,
+        HeatmapClusters     = 3,
         ResultsOverwrite    = TRUE,
         PlotsSave           = FALSE,
-        CsvSave             = FALSE
+        CsvSave             = TRUE
       ),
-      output_file = "sim_06_quant_stats.html",
+      output_file = "sim_05_quant_stats.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
@@ -109,6 +170,11 @@ test_that("06_quant_stats renders end-to-end against the simulated data", {
   summ <- utils::read.csv(file.path(proj, "quant_stats_summary.csv"))
   expect_equal(nrow(summ), 1L)             # one contrast: TREAT vs CTRL
   expect_gt(summ$n_tested, 0)
+
+  # the clustered heatmap's feature clusters reach the CsvSave export
+  cl <- utils::read.csv(file.path(proj, "heatmap_clusters.csv"))
+  expect_named(cl, c("Feature", "Cluster"))
+  expect_setequal(unique(cl$Cluster), c("C1", "C2", "C3"))
 })
 
 test_that("a single-Condition subset renders (combn(conditions, 2) regression)", {
@@ -130,7 +196,7 @@ test_that("a single-Condition subset renders (combn(conditions, 2) regression)",
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "02_overlaps",
+      "01_mhc_overview",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -148,7 +214,7 @@ test_that("a single-Condition subset renders (combn(conditions, 2) regression)",
         PlotsSave           = FALSE,
         CsvSave             = FALSE
       ),
-      output_file = "sim_02_overlaps_one_condition.html",
+      output_file = "sim_01_mhc_overview_one_condition.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
@@ -167,7 +233,7 @@ test_that("the mouse MHC-I window reaches a rendered report", {
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "01_id_counts",
+      "01_mhc_overview",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -185,7 +251,7 @@ test_that("the mouse MHC-I window reaches a rendered report", {
         PlotsSave           = FALSE,
         CsvSave             = FALSE
       ),
-      output_file = "sim_01_id_counts_mouse.html",
+      output_file = "sim_01_mhc_overview_mouse.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
@@ -194,7 +260,7 @@ test_that("the mouse MHC-I window reaches a rendered report", {
   expect_true(any(grepl("MHC1_mouse", html, fixed = TRUE)))    # ... and named in the title
 })
 
-test_that("07_pepchem renders end-to-end against the simulated data", {
+test_that("04_pepchem renders end-to-end against the simulated data", {
   skip_on_cran()
   skip_if_not_installed("rmarkdown")
   skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
@@ -207,7 +273,7 @@ test_that("07_pepchem renders end-to-end against the simulated data", {
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "07_pepchem",
+      "04_pepchem",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -230,7 +296,7 @@ test_that("07_pepchem renders end-to-end against the simulated data", {
         PlotsSave           = FALSE,
         CsvSave             = FALSE
       ),
-      output_file = "sim_07_pepchem.html",
+      output_file = "sim_04_pepchem.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
@@ -247,9 +313,15 @@ test_that("07_pepchem renders end-to-end against the simulated data", {
   expect_equal(unique(stats$Level), "sample")
   # the descriptors really were compared across the 3 vs 3 samples
   expect_equal(unique(c(stats$n1, stats$n2)), 3L)
+
+  # the shared glossary carries the descriptor table in this report only
+  # (pandoc re-wraps the HTML, so match on whitespace-collapsed text)
+  html <- gsub("\\s+", " ", paste(readLines(out, warn = FALSE), collapse = " "))
+  expect_match(html, "<caption> ?Physicochemical descriptors ?</caption>")
+  expect_match(html, "Kyte-Doolittle hydropathy of the residues", fixed = TRUE)
 })
 
-test_that("07_pepchem renders for a single Condition (no comparison possible)", {
+test_that("04_pepchem renders for a single Condition (no comparison possible)", {
   skip_on_cran()
   skip_if_not_installed("rmarkdown")
   skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
@@ -266,7 +338,7 @@ test_that("07_pepchem renders for a single Condition (no comparison possible)", 
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "07_pepchem",
+      "04_pepchem",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -285,122 +357,13 @@ test_that("07_pepchem renders for a single Condition (no comparison possible)", 
         PlotsSave           = FALSE,
         CsvSave             = FALSE
       ),
-      output_file = "sim_07_pepchem_ctrl.html",
+      output_file = "sim_04_pepchem_ctrl.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
   # the descriptive summary is still written; the stats table is not
   expect_true(file.exists(file.path(proj, "ctrl", "ctrl_pepchem_summary.csv")))
   expect_false(file.exists(file.path(proj, "ctrl", "ctrl_pepchem_stats.csv")))
-})
-
-# Render guard (v0.16.0): 05_quality_score carried an inline `r ...` expression
-# whose else-branch was a bare comma-separated string list ("a", "b", x, "c")
-# instead of a paste0() call. That is a syntax error, so the template aborted at
-# the inline-parse stage and the report had never rendered -- no test covered it,
-# because the suite only rendered 01 and 06.
-
-test_that("05_quality_score renders end-to-end against the simulated data", {
-  skip_on_cran()
-  skip_if_not_installed("rmarkdown")
-  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
-  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
-
-  proj <- tempfile("simquality_"); dir.create(proj)
-  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
-  file.copy(sim_dir, proj, recursive = TRUE)
-  file.copy(sim_annot, proj)
-
-  out <- suppressWarnings(suppressMessages(
-    run_howmahico_report(
-      "05_quality_score",
-      params = list(
-        SampleSet           = "sim",
-        Software            = "fragpipe_dda_individual",
-        Instrument          = "tims_tof",
-        FolderDocumentation = proj,
-        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
-        FolderData          = file.path(proj, "sim_fragpipe_dda"),
-        FolderResults       = proj,
-        FolderFigures       = proj,
-        ProjectDir          = proj,
-        PepAllSource        = "build",
-        Subset              = "",
-        MHCclass            = "MHC1",
-        ResultsOverwrite    = TRUE,
-        PlotsSave           = TRUE,
-        CsvSave             = FALSE
-      ),
-      output_file = "sim_05_quality_score.html",
-      quiet = TRUE)))
-
-  expect_true(file.exists(out))
-  # PlotsSave really writes files: ggsave_rawr used to resolve the plot name from
-  # the package namespace outwards, never reaching the knit environment, so every
-  # report saved nothing at all under PlotsSave = TRUE
-  expect_gt(length(list.files(proj, pattern = "[.]png$")), 0)
-  # and the plots reach the HTML (ggprint_rawr had the same scoping bug)
-  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  expect_gt(length(gregexpr("<img", html)[[1]]), 0)
-
-  # the exported score table carries Condition (v0.24.0), for compare_runs()
-  sc <- utils::read.csv(file.path(proj, "scores.csv"))
-  expect_true("Condition" %in% names(sc))
-  expect_false(anyNA(sc$Condition))
-  expect_setequal(unique(sc$Condition), c("CTRL", "TREAT"))
-})
-
-test_that("09_overview renders end-to-end and writes its red-flag table", {
-  skip_on_cran()
-  skip_if_not_installed("rmarkdown")
-  skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
-  skip_if_not(rmarkdown::pandoc_available(), "pandoc not available")
-
-  proj <- tempfile("simoverview_"); dir.create(proj)
-  on.exit(unlink(proj, recursive = TRUE), add = TRUE)
-  file.copy(sim_dir, proj, recursive = TRUE)
-  file.copy(sim_annot, proj)
-
-  out <- suppressWarnings(suppressMessages(
-    run_howmahico_report(
-      "09_overview",
-      params = list(
-        SampleSet           = "sim",
-        Software            = "fragpipe_dda_individual",
-        Instrument          = "tims_tof",
-        FolderDocumentation = proj,
-        AnnotationFile      = "sim_fragpipe_dda_annotation.csv",
-        FolderData          = file.path(proj, "sim_fragpipe_dda"),
-        FolderResults       = proj,
-        FolderFigures       = proj,
-        ProjectDir          = proj,
-        PepAllSource        = "build",
-        Subset              = "",
-        MHCclass            = "MHC1",
-        ResultsOverwrite    = TRUE,
-        PlotsSave           = FALSE,
-        CsvSave             = FALSE
-      ),
-      output_file = "sim_09_overview.html",
-      quiet = TRUE)))
-
-  expect_true(file.exists(out))
-  expect_true(file.exists(file.path(proj, "09_overview_input_params.csv")))
-  flags <- utils::read.csv(file.path(proj, "red_flags.csv"))
-  expect_named(flags, c("Sample", "Severity", "Flag", "Detail"))
-
-  html <- paste(readLines(out, warn = FALSE), collapse = "\n")
-  for (heading in c("At a glance", "How many ligands per sample", "Red flags",
-                    "Where to go next"))
-    expect_true(grepl(heading, html, fixed = TRUE), info = heading)
-  # the three overview plots reach the HTML
-  expect_gte(length(gregexpr("<img", html)[[1]]), 3)
-  # the red-flag section shows either the table or the explicit all-clear
-  if (nrow(flags) == 0) {
-    expect_true(grepl("No red flags.", html, fixed = TRUE))
-  } else {
-    expect_true(grepl(flags$Flag[1], html, fixed = TRUE))
-  }
 })
 
 # Provider guard (v0.17.0): the report header attribution moved from hardcoded
@@ -438,7 +401,7 @@ test_that("the Provider param reaches the rendered report, and is generic when u
   )
 
   named <- suppressWarnings(suppressMessages(run_howmahico_report(
-    "01_id_counts",
+    "01_mhc_overview",
     params = c(base_params, list(Provider = "Test Platform (TP)")),
     output_file = "sim_provider_named.html", quiet = TRUE)))
   html_named <- paste(readLines(named, warn = FALSE), collapse = "\n")
@@ -447,11 +410,11 @@ test_that("the Provider param reaches the rendered report, and is generic when u
   expect_false(grepl("Generated with the HowMaHiCo R package", html_named, fixed = TRUE))
 
   # and the param is recorded for reproducibility
-  ip <- utils::read.csv(file.path(proj, "01_id_counts_input_params.csv"))
+  ip <- utils::read.csv(file.path(proj, "01_mhc_overview_input_params.csv"))
   expect_equal(ip$Value[ip$Parameter == "Provider"], "Test Platform (TP)")
 
   unset <- suppressWarnings(suppressMessages(run_howmahico_report(
-    "01_id_counts", params = base_params,
+    "01_mhc_overview", params = base_params,
     output_file = "sim_provider_unset.html", quiet = TRUE)))
   html_unset <- paste(readLines(unset, warn = FALSE), collapse = "\n")
 
@@ -465,7 +428,7 @@ test_that("the Provider param reaches the rendered report, and is generic when u
   expect_false(grepl("@dkfz.de", html_unset, fixed = TRUE))
 })
 
-test_that("08_prot_all renders end-to-end against the simulated data", {
+test_that("02_prot_all renders end-to-end against the simulated data", {
   skip_on_cran()
   skip_if_not_installed("rmarkdown")
   skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
@@ -478,7 +441,7 @@ test_that("08_prot_all renders end-to-end against the simulated data", {
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "08_prot_all",
+      "02_prot_all",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -500,7 +463,7 @@ test_that("08_prot_all renders end-to-end against the simulated data", {
         PlotsSave           = FALSE,
         CsvSave             = FALSE
       ),
-      output_file = "sim_08_prot_all.html",
+      output_file = "sim_02_prot_all.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
@@ -522,7 +485,7 @@ test_that("08_prot_all renders end-to-end against the simulated data", {
   expect_equal(intersect(diann_protein_columns(), names(prot)), character(0))
 })
 
-test_that("08_prot_all falls back to leading proteins when none are mapped", {
+test_that("02_prot_all falls back to leading proteins when none are mapped", {
   skip_on_cran()
   skip_if_not_installed("rmarkdown")
   skip_if(sim_dir == "" || sim_annot == "", "sim_fragpipe_dda extdata not installed")
@@ -538,7 +501,7 @@ test_that("08_prot_all falls back to leading proteins when none are mapped", {
 
   out <- suppressWarnings(suppressMessages(
     run_howmahico_report(
-      "08_prot_all",
+      "02_prot_all",
       params = list(
         SampleSet           = "sim",
         Software            = "fragpipe_dda_individual",
@@ -557,7 +520,7 @@ test_that("08_prot_all falls back to leading proteins when none are mapped", {
         PlotsSave           = FALSE,
         CsvSave             = FALSE
       ),
-      output_file = "sim_08_prot_all_mm.html",
+      output_file = "sim_02_prot_all_mm.html",
       quiet = TRUE)))
 
   expect_true(file.exists(out))
@@ -584,10 +547,10 @@ test_that("InteractivePlots puts plotly widgets in the HTML, and FALSE keeps the
   file.copy(sim_dir, proj, recursive = TRUE)
   file.copy(sim_annot, proj)
 
-  render_05 <- function(interactive, output) {
+  render_main <- function(interactive, output) {
     suppressWarnings(suppressMessages(
       run_howmahico_report(
-        "05_quality_score",
+        "01_mhc_overview",
         params = list(
           SampleSet           = "sim",
           Software            = "fragpipe_dda_individual",
@@ -610,20 +573,25 @@ test_that("InteractivePlots puts plotly widgets in the HTML, and FALSE keeps the
         quiet = TRUE)))
   }
 
-  out_on <- render_05(TRUE, "sim_05_interactive.html")
+  out_on <- render_main(TRUE, "sim_01_interactive.html")
   expect_true(file.exists(out_on))
   html_on <- paste(readLines(out_on, warn = FALSE), collapse = "\n")
   # the widget containers and the embedded plotly library both have to be there:
   # containers without the library is exactly the silent-empty-plot failure
   expect_match(html_on, "plotly html-widget", fixed = TRUE)
   expect_match(html_on, "plotly.js", fixed = TRUE)
-  # all three plots of this report are convertible, so all three are widgets
-  n_widgets <- lengths(regmatches(html_on, gregexpr("plotly html-widget", html_on,
-                                                    fixed = TRUE)))
-  expect_gte(n_widgets, 3L)
+  n_widgets <- function(html)
+    lengths(regmatches(html, gregexpr("plotly html-widget", html, fixed = TRUE)))
+  n_on <- n_widgets(html_on)
 
-  out_off <- render_05(FALSE, "sim_05_static.html")
+  out_off <- render_main(FALSE, "sim_01_static.html")
   expect_true(file.exists(out_off))
   html_off <- paste(readLines(out_off, warn = FALSE), collapse = "\n")
-  expect_false(grepl("plotly html-widget", html_off, fixed = TRUE))
+  n_off <- n_widgets(html_off)
+  # with the toggle off, only the two log2(Area) correlation matrices (always
+  # interactive, by design since v0.1) remain widgets ...
+  expect_lte(n_off, 2L)
+  # ... and the toggle converts at least the quality-score composite and
+  # per-metric heatmap, the cross-class histogram and the Area %CV violins
+  expect_gte(n_on - n_off, 3L)
 })

@@ -99,10 +99,10 @@ i <- which(runs$kind == "cross_class")
 simulate_mix(runs$folder[i], runs$annotation[i], SPIKE_HLA2, runs$proportion[i])
 
 # ---- 2. Build pep_all and render the reports --------------------------------
-all_reports <- c("01_id_counts", "02_overlaps", "03_lcms_qc", "04_quant",
-                 "05_quality_score", "06_quant_stats", "07_pepchem",
-                 "08_prot_all", "09_overview")
-control_reports <- c("05_quality_score", "09_overview")
+all_reports <- c("01_mhc_overview", "02_prot_all", "03_lcms_qc",
+                 "04_pepchem", "05_quant_stats")
+# the control runs only need the quality score and red flags, both in 01
+control_reports <- "01_mhc_overview"
 
 for (i in seq_len(nrow(runs))) {
   r <- runs[i, ]

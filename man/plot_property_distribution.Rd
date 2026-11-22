@@ -29,6 +29,12 @@ is the \emph{repertoire} view: every unique sequence of a Condition contributes 
 value, so the spread is between-peptide, not between-replicate — read
 \code{\link[=plot_property_sample_summary]{plot_property_sample_summary()}} alongside it for the replicate view.
 }
+\details{
+With \code{type = "density"}, a descriptor that only takes whole-number values
+(peptide \code{Length}) is drawn as a histogram with one bar per value, scaled so
+each Condition's bars sum to 1. A kernel density would draw bumps between
+values that cannot occur. Continuous descriptors keep the density curve.
+}
 \examples{
 \dontrun{
 plot_property_distribution(props, "GRAVY")

@@ -13,7 +13,7 @@ pepchem_properties(set = c("core", "extended"))
 A character vector of column names of \code{\link[=peptide_properties]{peptide_properties()}}.
 }
 \description{
-The named subsets of \code{\link[=peptide_properties]{peptide_properties()}} the \verb{07_pepchem} report offers
+The named subsets of \code{\link[=peptide_properties]{peptide_properties()}} the \verb{04_pepchem} report offers
 through its \code{PropertySet} param, so the choice lives in the package rather
 than in a hand-maintained list inside the template.
 }

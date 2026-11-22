@@ -5,9 +5,8 @@
 \title{Render a HowMaHiCo QC report from the installed package templates}
 \usage{
 run_howmahico_report(
-  template = c("00_mhc_report", "00_mhc_upsets", "01_id_counts", "02_overlaps",
-    "03_lcms_qc", "04_quant", "05_quality_score", "06_quant_stats", "07_pepchem",
-    "08_prot_all", "09_overview"),
+  template = c("00_mhc_report", "00_mhc_upsets", "01_mhc_overview", "02_prot_all",
+    "03_lcms_qc", "04_pepchem", "05_quant_stats"),
   params,
   output_file,
   ...
@@ -15,24 +14,27 @@ run_howmahico_report(
 }
 \arguments{
 \item{template}{Which report template to render. \code{"00_mhc_report"} is the
-all-in-one QC report (it parses the raw search files itself). The remaining
-templates are focused reports that render against a \code{pep_all} cache built
-once by \code{\link[=build_pep_all]{build_pep_all()}} (or by \verb{00_mhc_report}):
-\code{"00_mhc_upsets"} (per-sample overlap/UpSet), \code{"01_id_counts"} (general
-identification QC: counts, size distributions, motifs, PTM), \code{"02_overlaps"}
-(intra-Condition / cross-Condition / pairwise overlap), \code{"03_lcms_qc"}
-(RT/1k0/mz distributions, Score/ppm QC), \code{"04_quant"}
-(log2(Area) correlation, Area \%CV), \code{"05_quality_score"} (per-sample
-immunopeptidomics quality score with a traffic-light overview) and
-\code{"06_quant_stats"} (advanced quantification: normalization, PCA/clustering
-and limma differential abundance between Conditions) and \code{"07_pepchem"}
+all-in-one QC report (it parses the raw search files itself) and
+\code{"00_mhc_upsets"} its per-sample overlap/UpSet companion; both are kept
+frozen for backward compatibility. The other templates render against a
+\code{pep_all} cache built once by \code{\link[=build_pep_all]{build_pep_all()}} (or by \verb{00_mhc_report}):
+\code{"01_mhc_overview"} (the main report: at-a-glance summary and red flags,
+identification counts and size distributions, the per-sample quality
+score, overlaps, log2(Area) correlation and \%CV, motifs and PTMs),
+\code{"02_prot_all"} (protein level: source proteins per sample, ligands per
+protein, and any protein-level values the search engine reported),
+\code{"03_lcms_qc"} (RT/1k0/mz distributions, Score/ppm QC), \code{"04_pepchem"}
 (peptide physicochemical properties: amino-acid composition, per-position
 residue frequency and descriptors such as GRAVY, compared between
-Conditions) and \code{"08_prot_all"} (protein level: source proteins per sample,
-ligands per protein, and any protein-level values the search engine
-reported) and \code{"09_overview"} (one-page overview for the biologically
-focused user: ligands per sample, length fidelity, quality score and
-plain-language red flags).}
+Conditions) and \code{"05_quant_stats"} (advanced quantification:
+normalization, PCA/clustering and limma differential abundance between
+Conditions).
+
+The names used before v0.27.0 still work, with a deprecation warning:
+\code{"01_id_counts"}, \code{"02_overlaps"}, \code{"04_quant"}, \code{"05_quality_score"}
+and \code{"09_overview"} render \code{"01_mhc_overview"}; \code{"06_quant_stats"},
+\code{"07_pepchem"} and \code{"08_prot_all"} render \code{"05_quant_stats"},
+\code{"04_pepchem"} and \code{"02_prot_all"}.}
 
 \item{params}{Named list of report parameters, as declared in the
 template's YAML header (\code{SampleSet}, \code{AnnotationFile}, \code{Subset},
@@ -93,8 +95,8 @@ build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
 focused_params <- list(SampleSet = "MEGF_035", Subset = "dda_all",
                        FolderData = "2_data", FolderResults = "3_results",
                        FolderFigures = "4_figures", Software = "fragpipe_dda_combined")
-for (tmpl in c("01_id_counts", "02_overlaps", "03_lcms_qc", "04_quant",
-                "05_quality_score", "06_quant_stats", "07_pepchem")) {
+for (tmpl in c("01_mhc_overview", "02_prot_all", "03_lcms_qc",
+                "04_pepchem", "05_quant_stats")) {
   run_howmahico_report(tmpl, params = focused_params,
                        output_file = paste0(tmpl, "__dda_all.html"))
 }

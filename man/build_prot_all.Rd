@@ -34,7 +34,7 @@ present in \code{input}, \code{n_Peptides}, \code{n_Sequences}, \code{n_Peptides
 Zero rows, correctly typed, when \code{input} has none.
 }
 \description{
-Builds the \code{prot_all} table behind the \verb{08_prot_all} report: for every
+Builds the \code{prot_all} table behind the \verb{02_prot_all} report: for every
 (protein, \code{Sample}) pair, how many ligands it contributes and their summed
 intensity, plus the protein annotation and any protein-level value the search
 engine itself reported.
@@ -43,7 +43,7 @@ engine itself reported.
 \code{Area} is summed on the \strong{linear} scale within a sample and log2-transformed
 afterwards, matching \code{\link[=build_quant_matrix]{build_quant_matrix()}}. Note that the older
 \code{get_mat_log2area(pep_all, ProteinFirst, ...)} route used by \verb{00_mhc_report}
-and \verb{04_quant} instead \emph{averages} \code{Log2Area}; the two are not interchangeable.
+and \verb{01_mhc_overview} instead \emph{averages} \code{Log2Area}; the two are not interchangeable.
 }
 \examples{
 \dontrun{

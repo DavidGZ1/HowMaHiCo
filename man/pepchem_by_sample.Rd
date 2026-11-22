@@ -18,7 +18,7 @@ annotation columns, \code{Sequence}, and every descriptor column of
 \code{\link[=peptide_properties]{peptide_properties()}}.
 }
 \description{
-Entry point of the \verb{07_pepchem} engine. Reduces a long \code{pep_all}-shaped table
+Entry point of the \verb{04_pepchem} engine. Reduces a long \code{pep_all}-shaped table
 to its distinct \code{Sequence} per \code{Sample} — the properties are
 sequence-intrinsic, so counting every PSM would weight them by how often a
 peptide happened to be re-sequenced — and joins on \code{\link[=peptide_properties]{peptide_properties()}},

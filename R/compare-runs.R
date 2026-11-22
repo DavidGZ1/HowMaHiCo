@@ -1,20 +1,21 @@
 #' Stack the quality scores of several runs into one table
 #'
-#' One `05_quality_score` render scores one subset. `compare_runs()` stacks the
+#' One `01_mhc_overview` render scores one subset. `compare_runs()` stacks the
 #' per-sample score tables of several renders (different experiments, subsets,
 #' or the same QC standard measured over time) into a single long table, so
 #' that they can be compared side by side with [summarise_runs()] and
 #' [plot_run_trend()].
 #'
 #' `runs` may mix three kinds of input:
-#' * a **score csv** written by `05_quality_score` (`<Subset>_scores.csv`, or
+#' * a **score csv** written by `01_mhc_overview` (`<Subset>_scores.csv`, or
 #'   `scores.csv` when no `Subset` was set);
 #' * a **results folder** holding one or more such files (e.g.
 #'   `<FolderResults>/<Subset>`); every `*scores.csv` in it becomes a run;
 #' * a **data frame** returned by [score_sample_quality()].
 #'
-#' For a csv, the companion `<Subset>_05_quality_score_input_params.csv` that
-#' the same render writes next to it is read when present, and its
+#' For a csv, the companion `<Subset>_01_mhc_overview_input_params.csv` that
+#' the same render writes next to it is read when present (for results written
+#' before v0.27.0, the old `<Subset>_05_quality_score_input_params.csv`), and its
 #' `SampleSet`, `Subset`, `MHCclass`, `ThresholdMode`, `render_timestamp` and
 #' `package_version` are attached as columns (`NA` when absent, and always for
 #' data-frame input).
@@ -79,7 +80,7 @@ compare_runs <- function(runs, labels = NULL, order = c("input", "timestamp")) {
       stop("'", x, "' does not exist.")
     }
     if (length(files) == 0)
-      stop("No '*scores.csv' file found in '", x, "'. Render 05_quality_score ",
+      stop("No '*scores.csv' file found in '", x, "'. Render 01_mhc_overview ",
            "for that subset first; it writes <Subset>_scores.csv into its results folder.")
     nm <- input_names[i]
     for (f in files) {
@@ -108,10 +109,14 @@ compare_runs <- function(runs, labels = NULL, order = c("input", "timestamp")) {
       stop("Run ", j, " has no 'Sample' column; is it a score table?")
     meta <- stats::setNames(as.list(rep(NA_character_, length(meta_cols))), meta_cols)
     if (!is.na(e$file)) {
+      # the input params of 01_mhc_overview (v0.27.0+) or, for results written
+      # before the merge, of the old 05_quality_score report
+      pre <- .score_file_prefix(e$file, sep = TRUE)
       pf <- file.path(dirname(e$file),
-                      paste0(.score_file_prefix(e$file, sep = TRUE),
-                             "05_quality_score_input_params.csv"))
-      if (file.exists(pf)) {
+                      paste0(pre, c("01_mhc_overview", "05_quality_score"),
+                             "_input_params.csv"))
+      pf <- pf[file.exists(pf)][1]
+      if (!is.na(pf)) {
         p <- utils::read.csv(pf, stringsAsFactors = FALSE)
         for (m in meta_cols) {
           v <- p$Value[p$Parameter == m]

@@ -185,3 +185,38 @@ test_that("the limma guard names an install route and the fallback", {
     expect_match(msg, "ttest")
   }
 })
+
+test_that("plot_quant_heatmap draws the clusters it computes", {
+  set.seed(7)
+  m <- matrix(rnorm(60 * 6), 60,
+              dimnames = list(paste0("f", 1:60), paste0("u", 1:6)))
+  m[1:20, 1:3] <- m[1:20, 1:3] + 3
+  m[5, 2] <- NA
+  cd <- data.frame(Unit = colnames(m),
+                   Condition = factor(rep(c("A", "B"), each = 3)))
+
+  p <- plot_quant_heatmap(m, cd, cluster = TRUE, top_n = 40, n_clusters = 3)
+  expect_s3_class(p, "ggarrange")
+  cl <- attr(p, "clusters")
+  expect_equal(nrow(cl), 40)
+  expect_equal(levels(cl$Cluster), c("C1", "C2", "C3"))
+  # C1 is the top block: clusters appear in display order, each contiguous
+  expect_equal(rle(as.character(cl$Cluster))$values, c("C1", "C2", "C3"))
+
+  # the annotation-order view stays a single (plotly-convertible) ggplot
+  q <- plot_quant_heatmap(m, cd, cluster = FALSE, top_n = 40)
+  expect_true(HowMaHiCo:::.is_ggplotly_safe(q))
+  expect_null(attr(q, "clusters"))
+
+  # too small to cluster: falls back to the single plot
+  expect_true(HowMaHiCo:::.is_ggplotly_safe(
+    plot_quant_heatmap(m[1:2, ], cd, cluster = TRUE)))
+})
+
+test_that(".dendro_segments places every leaf and tops out at the root", {
+  hc <- stats::hclust(stats::dist(c(1, 2, 10, 11)))
+  s <- HowMaHiCo:::.dendro_segments(hc)
+  expect_equal(nrow(s), 3 * 3)
+  expect_setequal(s$x[s$y == 0], 1:4)
+  expect_equal(max(s$yend), max(hc$height))
+})

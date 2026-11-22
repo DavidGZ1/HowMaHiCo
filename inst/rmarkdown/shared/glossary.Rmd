@@ -39,3 +39,22 @@ pep_all_glossary() |>
   kable_paper("hover", full_width = FALSE) |>
   kableExtra::column_spec(1, bold = TRUE)
 ```
+
+```{r glossary-pepchem, echo=FALSE, results='asis', message=FALSE, warning=FALSE}
+# Only the peptide-chemistry report sets glossary_pepchem <- TRUE; every other
+# report skips this table (and its heading) entirely.
+if (isTRUE(get0("glossary_pepchem", inherits = TRUE))) {
+  glossary_ph <- if (!is.null(params$ChargePh)) params$ChargePh else 7.4
+  cat("\n\n## Physicochemical descriptors\n\n",
+      "The per-peptide descriptors of this report, computed once per unique ",
+      "sequence by `peptide_properties()`:\n\n", sep = "")
+  # cat() the HTML: print() on a kableExtra table sends it to the viewer, not
+  # into the document, when called from a results='asis' chunk
+  cat(as.character(
+    pepchem_glossary(ph = glossary_ph) |>
+      kable(format = "html", caption = "Physicochemical descriptors") |>
+      kable_paper("hover", full_width = FALSE) |>
+      kableExtra::column_spec(1, bold = TRUE)
+  ), "\n\n")
+}
+```
