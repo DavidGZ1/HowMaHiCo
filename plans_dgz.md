@@ -18,17 +18,15 @@ either by implementing or by re-wording the abstract.
 
 **Tier A — blocking, the abstract makes these promises explicitly**
 
-* make the GitHub repo public. The abstract prints
-  https://github.com/DavidGZ1/HowMaHiCo, which currently 404s (`gh repo view`:
-  `isPrivate: true`), and GitHub Pages will not serve `gh-pages` from a private
-  repo, so https://davidgz1.github.io/HowMaHiCo/ is dead too. While there: add a
-  CITATION.cff, and mint a Zenodo DOI so the poster has something citable.
-  **Partly done (2026-11-19):** repo description, homepage (the pkgdown URL) and
-  topics are set via `gh repo edit`. Still for DGZ: flip the visibility to
-  public, CITATION.cff / Zenodo DOI / first GitHub release.
+* **DONE (2026-11-22)** — the GitHub repo is public (`gh repo edit --visibility
+  public`); description, homepage and topics were set 2026-11-19. Still for DGZ:
+  enable GitHub Pages from the `gh-pages` branch (Settings > Pages; the Pages API
+  returned 404, i.e. never configured), otherwise
+  https://davidgz1.github.io/HowMaHiCo/ stays dead. CITATION.cff / Zenodo DOI /
+  first GitHub release moved to standby.
 * **DONE (v0.23.0)** — license conflict resolved: relicensed to `GPL (>= 2)`
   (not plain GPL-3: Peptides, gplots and ggcorrplot are GPL-2 *only*).
-* abstract housekeeping: the affiliation is still the placeholder
+* **DONE in abstract_eupa2026_v4.md** abstract housekeeping: the affiliation is still the placeholder
   `[Affiliation: institution, city, country]`; decide whether the submission
   carries the institutional address or DESCRIPTION's
   `davidgz.science@gmail.com`.
@@ -115,6 +113,7 @@ either by implementing or by re-wording the abstract.
 
 
 ## In standby
+* citability: add a CITATION.cff, cut a first GitHub release and mint a Zenodo DOI (connect the repo in Zenodo first, then each release gets a DOI) so the poster has something citable — moved from Tier A on 2026-11-22, after the repo went public
 * peptide position within the parent protein (the third part of the physicochemical-properties item) — deferred; it is the only part that needs a user-supplied search FASTA, since no loader carries a position column (FragPipe psm.tsv, DIA-NN report.tsv and PEAKS peptide.csv all lack one). Full design recorded in CLAUDE.md under "Deferred designs".
 * implement safeguard when some conditions or replicates give 0 areas, currently throwing error — moved to standby (no repro available; e.g. CHEB\_001 all dda dataset not in repo). The all-NA Area/CV and all-NA correlation cases are already guarded in the report chunks; the partial (some groups 0/NA) failure needs a repro to target.
 * InteractivePlots (TRUE/FALSE) toggle to render compatible plots via ggplotly — deferred: most compatible plots print inside results='asis' tabset loops where embedding plotly htmlwidgets (vs static ggplots) is finicky and only render-verifiable, which we don't do in-session. Groundwork ready: plotly already in Imports + loaded in shared setup.Rmd; ggplotly already used for the correlation plots (04\_quant L110/L143). Skip ggseqlogo / ggupset / ggvenn / ggarrange composites / base plot\_heatmap.
