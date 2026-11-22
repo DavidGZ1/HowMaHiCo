@@ -42,6 +42,12 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      # pkgdown renders every top-level *.md as a site page and has no config
+      # option to skip one (it ignores .Rbuildignore), so the internal working
+      # notes are removed from the CI checkout only. Never committed back.
+      - name: Exclude internal notes from the site
+        run: rm -f CLAUDE.md plans_dgz.md
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
@@ -50,6 +56,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: JamesIves/github-pages-deploy-action@v4.8.0
         with:
-          clean: false
+          # true: drop pages no longer built (e.g. CLAUDE.html, plans_dgz.html)
+          clean: true
           branch: gh-pages
           folder: docs
