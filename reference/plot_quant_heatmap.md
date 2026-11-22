@@ -8,8 +8,7 @@ their own, and how the conditions look side by side as designed. Unlike
 [`plot_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_heatmap.md),
 which writes a png through
 [`gplots::heatmap.2`](https://talgalili.github.io/gplots/reference/heatmap.2.html),
-this returns a ggplot object that can be printed inside a knitted
-tabset.
+this returns an object that can be printed inside a knitted tabset.
 
 ## Usage
 
@@ -20,6 +19,7 @@ plot_quant_heatmap(
   cluster = TRUE,
   top_n = 500,
   center_rows = TRUE,
+  n_clusters = 4,
   title = NULL
 )
 ```
@@ -48,18 +48,40 @@ plot_quant_heatmap(
   Subtract the feature mean, so the colour encodes the log2 ratio to the
   feature average rather than absolute abundance. Default `TRUE`.
 
+- n_clusters:
+
+  Number of feature clusters drawn in the clustered view (capped at the
+  number of features). Default `4`.
+
 - title:
 
   Plot title. Default `NULL` (auto-generated).
 
 ## Value
 
-A ggplot object, or `NULL` (with a warning) when the matrix is empty.
+For `cluster = FALSE` (or when clustering is not possible: fewer than
+three features or units), a ggplot object. For the clustered view, a
+[`ggpubr::ggarrange()`](https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html)
+composite (dendrogram + Condition bar over the heatmap) carrying
+`attr(, "clusters")`, a data frame with `Feature` and `Cluster` in
+display order. `NULL` (with a warning) when the matrix is empty.
+
+## Details
+
+The clustered view makes the clustering visible rather than only using
+it to order the tiles: the unit (column) dendrogram is drawn above a
+Condition colour bar, the feature (row) dendrogram on the left, and the
+features are cut into `n_clusters` groups
+([`stats::cutree()`](https://rdrr.io/r/stats/cutree.html)), separated by
+white lines and labelled `C1`, `C2`, ... from top to bottom. The
+feature-to-cluster assignment is attached as `attr(p, "clusters")` so a
+report can export it.
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-plot_quant_heatmap(mat_n, qm$coldata, cluster = TRUE, top_n = 300)
+p <- plot_quant_heatmap(mat_n, qm$coldata, cluster = TRUE, top_n = 300)
+head(attr(p, "clusters"))
 } # }
 ```

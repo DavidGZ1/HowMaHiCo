@@ -13,7 +13,7 @@ plot_property_sample_summary() alongside it for the replicate view."></head><bod
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -83,6 +83,13 @@ value, so the spread is between-peptide, not between-replicate — read
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A ggplot object, or <code>NULL</code> when the column is absent or all missing.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>With <code>type = "density"</code>, a descriptor that only takes whole-number values
+(peptide <code>Length</code>) is drawn as a histogram with one bar per value, scaled so
+each Condition's bars sum to 1. A kernel density would draw bumps between
+values that cannot occur. Continuous descriptors keep the density curve.</p>
     </div>
 
     <div class="section level2">

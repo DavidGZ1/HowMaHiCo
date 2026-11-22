@@ -69,6 +69,9 @@ length window and palette, and the Condition pairs to compare
 
   Glossary of the `pep_all` columns
 
+- [`pepchem_glossary()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_glossary.md)
+  : Glossary of the physicochemical descriptors
+
 ## Data loaders
 
 Software-specific loader families that converge on the unified `pep_all`
@@ -294,7 +297,7 @@ correlation
 
 ## Sample quality score
 
-Per-sample immunopeptidomics quality score behind the 05_quality_score
+Per-sample immunopeptidomics quality score behind the 01_mhc_overview
 report: raw signals (length-window fidelity, canonical-length dominance,
 anchor-motif clarity, non-tryptic specificity, charge plausibility,
 depth, mass accuracy, cross-class contamination), the threshold model,
@@ -326,7 +329,7 @@ and the weighted 0-100 composite.
 
 ## Comparing runs
 
-Stack the per-sample score tables written by several 05_quality_score
+Stack the per-sample score tables written by several 01_mhc_overview
 renders (experiments, subsets, or one QC standard over time) and compare
 them side by side or as a trend.
 
@@ -342,7 +345,7 @@ them side by side or as a trend.
 Build the quantitative matrix and compare peptide Area between
 Conditions (filtering, normalization, imputation, limma moderated t /
 Welch t, Fisher presence-absence, PERMANOVA) plus the plots of the
-06_quant_stats report
+05_quant_stats report
 
 - [`build_quant_matrix()`](https://davidgz1.github.io/HowMaHiCo/reference/build_quant_matrix.md)
   :
@@ -405,7 +408,7 @@ Welch t, Fisher presence-absence, PERMANOVA) plus the plots of the
 
 ## Physicochemical properties
 
-Peptide-chemistry engine behind the 07_pepchem report: amino-acid
+Peptide-chemistry engine behind the 04_pepchem report: amino-acid
 composition, per-position residue frequency and per-peptide descriptors
 (GRAVY, pI, charge, …), summarised per sample and compared between
 Conditions.
@@ -444,7 +447,7 @@ Conditions.
 ## Protein-level analysis
 
 Condenses the peptide table to source-protein level (the `prot_all`
-table behind the 08_prot_all report), including the protein-level values
+table behind the 02_prot_all report), including the protein-level values
 the search engine itself reported.
 
 - [`build_prot_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_prot_all.md)

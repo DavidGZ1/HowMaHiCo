@@ -4,14 +4,14 @@ hierarchical clustering of both dimensions (cluster = TRUE) or in the order
 given by the annotation table (cluster = FALSE) — the two views answer
 different questions: whether the data cluster by condition on their own, and
 how the conditions look side by side as designed. Unlike plot_heatmap(),
-which writes a png through gplots::heatmap.2, this returns a ggplot object
-that can be printed inside a knitted tabset."><meta property="og:description" content="ggplot2 tile heatmap of the most variable features, drawn either with
+which writes a png through gplots::heatmap.2, this returns an object that
+can be printed inside a knitted tabset."><meta property="og:description" content="ggplot2 tile heatmap of the most variable features, drawn either with
 hierarchical clustering of both dimensions (cluster = TRUE) or in the order
 given by the annotation table (cluster = FALSE) — the two views answer
 different questions: whether the data cluster by condition on their own, and
 how the conditions look side by side as designed. Unlike plot_heatmap(),
-which writes a png through gplots::heatmap.2, this returns a ggplot object
-that can be printed inside a knitted tabset."></head><body>
+which writes a png through gplots::heatmap.2, this returns an object that
+can be printed inside a knitted tabset."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -19,7 +19,7 @@ that can be printed inside a knitted tabset."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,8 +55,8 @@ hierarchical clustering of both dimensions (<code>cluster = TRUE</code>) or in t
 given by the annotation table (<code>cluster = FALSE</code>) — the two views answer
 different questions: whether the data cluster by condition on their own, and
 how the conditions look side by side as designed. Unlike <code><a href="plot_heatmap.html">plot_heatmap()</a></code>,
-which writes a png through <code><a href="https://talgalili.github.io/gplots/reference/heatmap.2.html" class="external-link">gplots::heatmap.2</a></code>, this returns a ggplot object
-that can be printed inside a knitted tabset.</p>
+which writes a png through <code><a href="https://talgalili.github.io/gplots/reference/heatmap.2.html" class="external-link">gplots::heatmap.2</a></code>, this returns an object that
+can be printed inside a knitted tabset.</p>
     </div>
 
     <div class="section level2">
@@ -67,6 +67,7 @@ that can be printed inside a knitted tabset.</p>
 <span>  cluster <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  top_n <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  center_rows <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  n_clusters <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -97,19 +98,39 @@ annotation order (<code>FALSE</code>).</p></dd>
 ratio to the feature average rather than absolute abundance. Default <code>TRUE</code>.</p></dd>
 
 
+<dt id="arg-n-clusters">n_clusters<a class="anchor" aria-label="anchor" href="#arg-n-clusters"></a></dt>
+<dd><p>Number of feature clusters drawn in the clustered view
+(capped at the number of features). Default <code>4</code>.</p></dd>
+
+
 <dt id="arg-title">title<a class="anchor" aria-label="anchor" href="#arg-title"></a></dt>
 <dd><p>Plot title. Default <code>NULL</code> (auto-generated).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A ggplot object, or <code>NULL</code> (with a warning) when the matrix is empty.</p>
+    <p>For <code>cluster = FALSE</code> (or when clustering is not possible: fewer than
+three features or units), a ggplot object. For the clustered view, a
+<code><a href="https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html" class="external-link">ggpubr::ggarrange()</a></code> composite (dendrogram + Condition bar over the
+heatmap) carrying <code>attr(, "clusters")</code>, a data frame with <code>Feature</code> and
+<code>Cluster</code> in display order. <code>NULL</code> (with a warning) when the matrix is
+empty.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The clustered view makes the clustering visible rather than only using it to
+order the tiles: the unit (column) dendrogram is drawn above a Condition
+colour bar, the feature (row) dendrogram on the left, and the features are
+cut into <code>n_clusters</code> groups (<code><a href="https://rdrr.io/r/stats/cutree.html" class="external-link">stats::cutree()</a></code>), separated by white lines and
+labelled <code>C1</code>, <code>C2</code>, ... from top to bottom. The feature-to-cluster
+assignment is attached as <code>attr(p, "clusters")</code> so a report can export it.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="fu">plot_quant_heatmap</span><span class="op">(</span><span class="va">mat_n</span>, <span class="va">qm</span><span class="op">$</span><span class="va">coldata</span>, cluster <span class="op">=</span> <span class="cn">TRUE</span>, top_n <span class="op">=</span> <span class="fl">300</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">plot_quant_heatmap</span><span class="op">(</span><span class="va">mat_n</span>, <span class="va">qm</span><span class="op">$</span><span class="va">coldata</span>, cluster <span class="op">=</span> <span class="cn">TRUE</span>, top_n <span class="op">=</span> <span class="fl">300</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">p</span>, <span class="st">"clusters"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

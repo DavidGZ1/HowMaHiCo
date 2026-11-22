@@ -2,8 +2,8 @@
 
 Returns the `Sample` values that the annotation flags as experiment QC
 controls in `qc_column` (`TRUE`, `T`, `1`, `QC`, `qc`, `yes` or `Yes`).
-This is how `05_quality_score` and `09_overview` turn their `QCColumn`
-param into the `qc_samples` of
+This is how `01_mhc_overview` turns its `QCColumn` param into the
+`qc_samples` of
 [`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md).
 A missing file, an unreadable annotation, an empty `qc_column` or a
 column the annotation does not have all give an empty vector, because QC

@@ -3,14 +3,14 @@
 long-format pep_all table, dispatching on software to the right loader
 family (FragPipe / DIA-NN / PEAKS). This is the parsing step that the
 00_mhc_report template runs inline; extracting it here lets the focused
-report templates (01_id_counts, 02_overlaps, 03_lcms_qc, 04_quant)
+report templates (01_mhc_overview, 02_prot_all, 03_lcms_qc, 04_pepchem, 05_quant_stats)
 share one cached pep_all instead of each re-parsing the raw files: run
 build_pep_all() once (writing the .rda via file_rda), then render any
 subset of those reports, each of which simply load()s the cache."><meta property="og:description" content="Reads, parses, and annotates LC-MS search-engine output into the unified
 long-format pep_all table, dispatching on software to the right loader
 family (FragPipe / DIA-NN / PEAKS). This is the parsing step that the
 00_mhc_report template runs inline; extracting it here lets the focused
-report templates (01_id_counts, 02_overlaps, 03_lcms_qc, 04_quant)
+report templates (01_mhc_overview, 02_prot_all, 03_lcms_qc, 04_pepchem, 05_quant_stats)
 share one cached pep_all instead of each re-parsing the raw files: run
 build_pep_all() once (writing the .rda via file_rda), then render any
 subset of those reports, each of which simply load()s the cache."></head><body>
@@ -21,7 +21,7 @@ subset of those reports, each of which simply load()s the cache."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -56,7 +56,7 @@ subset of those reports, each of which simply load()s the cache."></head><body>
 long-format <code>pep_all</code> table, dispatching on <code>software</code> to the right loader
 family (FragPipe / DIA-NN / PEAKS). This is the parsing step that the
 <code>00_mhc_report</code> template runs inline; extracting it here lets the focused
-report templates (<code>01_id_counts</code>, <code>02_overlaps</code>, <code>03_lcms_qc</code>, <code>04_quant</code>)
+report templates (<code>01_mhc_overview</code>, <code>02_prot_all</code>, <code>03_lcms_qc</code>, <code>04_pepchem</code>, <code>05_quant_stats</code>)
 share one cached <code>pep_all</code> instead of each re-parsing the raw files: run
 <code>build_pep_all()</code> once (writing the <code>.rda</code> via <code>file_rda</code>), then render any
 subset of those reports, each of which simply <code><a href="https://rdrr.io/r/base/load.html" class="external-link">load()</a></code>s the cache.</p>
@@ -146,7 +146,7 @@ Ignored for the built-in loaders.</p></dd>
 <span class="r-in"><span>  file_rda       <span class="op">=</span> <span class="st">"2_data/dda_all_pep_all.rda"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># then render any focused report against the cache:</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="st">"01_id_counts"</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>, output_file <span class="op">=</span> <span class="st">"01.html"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="st">"01_mhc_overview"</span>, params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">...</span><span class="op">)</span>, output_file <span class="op">=</span> <span class="st">"01.html"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

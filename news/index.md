@@ -1,5 +1,96 @@
 # Changelog
 
+## HowMaHiCo 0.27.1
+
+- `01_mhc_overview`: the “Total=” labels of the *Total by Sample* and
+  *Total by Condition* bar charts are drawn again for small counts
+  (typically Parent proteins).
+  [`plot_bp_count_length()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_bp_count_length.md)
+  nudged them by a fixed `300 + lim_level / 10`, which put them above
+  the y-limit, where ggplot2 silently dropped them; the label now sits
+  just above its bar and the y-axis grows to fit it.
+- `01_mhc_overview`: the peptide-motif logos render as tabs (level-2
+  headings under the level-1 tabset), and the motif and UpSet loops no
+  longer print a stray `` $`8` `` / `$Peptide` line above each plot
+  (they printed a list slice).
+
+## HowMaHiCo 0.27.0
+
+### Breaking: the reports are restructured
+
+The focused reports had become too modular, and the one-page
+`09_overview` mostly repeated them. Five reports are merged into one
+main report, and the others are renumbered (their names are unchanged):
+
+| Before | Now |
+|----|----|
+| `01_id_counts`, `02_overlaps`, `04_quant`, `05_quality_score`, `09_overview` | **`01_mhc_overview`** |
+| `08_prot_all` | `02_prot_all` |
+| `03_lcms_qc` | `03_lcms_qc` |
+| `07_pepchem` | `04_pepchem` |
+| `06_quant_stats` | `05_quant_stats` |
+
+- **`01_mhc_overview`** is the report for both audiences. It opens with
+  **At a glance** and **Red flags** (from `09_overview`), then
+  identification counts, the peptide size distribution, the quality
+  score (composite, per-metric breakdown, raw metrics, cross-class
+  contamination), overlaps, log2(Area) correlation and %CV, motifs and
+  the PTM profile. It ends with “Where to go next”, the scoring method
+  as an appendix, the glossary and the session record. The duplicated
+  parts of `09_overview` were dropped: its ligands-per-sample chart, its
+  length histogram and its copy of the composite plot. The scores and
+  red flags are computed once.
+- It writes the always-written tier of all five old reports in one go
+  (`pep_all.csv`, `counts_pep_all_condition.csv`,
+  `seq_by_condition.xlsx`, `scores.csv`, `red_flags.csv`) plus
+  `<Subset>_01_mhc_overview_input_params.csv`.
+- **Old names keep working.**
+  `run_howmahico_report("05_quality_score", ...)` and the other
+  pre-0.27.0 names render the report that now holds their content, with
+  a deprecation warning.
+- [`compare_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_runs.md)
+  reads `*_01_mhc_overview_input_params.csv` and, for results written
+  before this release, the old `*_05_quality_score_input_params.csv`, so
+  old and new runs stack together.
+- The pipeline script, vignette, README, demo script and pkgdown index
+  use the new names. `00_mhc_report` and `00_mhc_upsets` are unchanged.
+
+## HowMaHiCo 0.26.1
+
+### The clustered heatmap now shows its clusters
+
+- `plot_quant_heatmap(cluster = TRUE)` used the clustering only to order
+  the tiles, so no cluster was visible. It now draws the unit dendrogram
+  above a Condition colour bar and the feature dendrogram on the left.
+  It also cuts the features into `n_clusters` groups (default 4),
+  separated by white lines and labelled `C1` (top block) onwards. The
+  feature-to-cluster table comes back as `attr(p, "clusters")`.
+- `06_quant_stats` gained a `HeatmapClusters` param (default 4). With
+  `CsvSave = TRUE` it also writes `heatmap_clusters.csv`.
+- The clustered view is now a
+  [`ggpubr::ggarrange()`](https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html)
+  composite, because the Condition bar and the value gradient both need
+  a fill scale. It therefore stays static when `InteractivePlots` is on.
+  The unclustered view is unchanged and can still be made interactive.
+  No new dependency: the dendrogram segments are computed from `hclust`
+  directly.
+
+### Peptide chemistry (`07_pepchem`)
+
+- [`plot_property_distribution()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_property_distribution.md)
+  draws a descriptor that only takes whole-number values (peptide
+  `Length`) as a histogram, one bar per value, with each Condition
+  summing to 1. A kernel density drew bumps between lengths that cannot
+  occur. Continuous descriptors keep the density curve.
+- New exported
+  [`pepchem_glossary()`](https://davidgz1.github.io/HowMaHiCo/reference/pepchem_glossary.md):
+  what each
+  [`peptide_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/peptide_properties.md)
+  descriptor measures, how to read it for MHC ligands, and how it is
+  computed. The `frac_*` rows are generated from the residue classes
+  actually used. The shared glossary renders it as a “Physicochemical
+  descriptors” table in `07_pepchem` only.
+
 ## HowMaHiCo 0.26.0
 
 Found by running the EuPA-2026 demonstration (`demo/eupa2026_demo.R`) on

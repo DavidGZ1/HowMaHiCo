@@ -41,6 +41,14 @@ plot_property_distribution(
 
 A ggplot object, or `NULL` when the column is absent or all missing.
 
+## Details
+
+With `type = "density"`, a descriptor that only takes whole-number
+values (peptide `Length`) is drawn as a histogram with one bar per
+value, scaled so each Condition's bars sum to 1. A kernel density would
+draw bumps between values that cannot occur. Continuous descriptors keep
+the density curve.
+
 ## Examples
 
 ``` r

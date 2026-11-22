@@ -2,7 +2,7 @@
 
 The named subsets of
 [`peptide_properties()`](https://davidgz1.github.io/HowMaHiCo/reference/peptide_properties.md)
-the `07_pepchem` report offers through its `PropertySet` param, so the
+the `04_pepchem` report offers through its `PropertySet` param, so the
 choice lives in the package rather than in a hand-maintained list inside
 the template.
 

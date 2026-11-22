@@ -4,7 +4,7 @@ Turns a
 [`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md)
 table into a short list of problems worth a biologist's attention, each
 with a severity and a sentence of detail. It powers the "Red flags"
-section of `09_overview`. The rules are deliberately few and
+section of `01_mhc_overview`. The rules are deliberately few and
 transparent:
 
 ## Usage

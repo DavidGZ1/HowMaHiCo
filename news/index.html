@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,59 @@
       <small>Source: <a href="https://github.com/DavidGZ1/HowMaHiCo/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.27.1" id="howmahico-0271">HowMaHiCo 0.27.1<a class="anchor" aria-label="anchor" href="#howmahico-0271"></a></h2>
+<ul><li>
+<code>01_mhc_overview</code>: the “Total=” labels of the <em>Total by Sample</em> and <em>Total by Condition</em> bar charts are drawn again for small counts (typically Parent proteins). <code><a href="../reference/plot_bp_count_length.html">plot_bp_count_length()</a></code> nudged them by a fixed <code>300 + lim_level / 10</code>, which put them above the y-limit, where ggplot2 silently dropped them; the label now sits just above its bar and the y-axis grows to fit it.</li>
+<li>
+<code>01_mhc_overview</code>: the peptide-motif logos render as tabs (level-2 headings under the level-1 tabset), and the motif and UpSet loops no longer print a stray <code>$`8`</code> / <code>$Peptide</code> line above each plot (they printed a list slice).</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.27.0" id="howmahico-0270">HowMaHiCo 0.27.0<a class="anchor" aria-label="anchor" href="#howmahico-0270"></a></h2>
+<div class="section level3">
+<h3 id="breaking-the-reports-are-restructured-0-27-0">Breaking: the reports are restructured<a class="anchor" aria-label="anchor" href="#breaking-the-reports-are-restructured-0-27-0"></a></h3>
+<p>The focused reports had become too modular, and the one-page <code>09_overview</code> mostly repeated them. Five reports are merged into one main report, and the others are renumbered (their names are unchanged):</p>
+<table class="table"><colgroup><col width="50%"><col width="50%"></colgroup><thead><tr><th>Before</th>
+<th>Now</th>
+</tr></thead><tbody><tr><td>
+<code>01_id_counts</code>, <code>02_overlaps</code>, <code>04_quant</code>, <code>05_quality_score</code>, <code>09_overview</code>
+</td>
+<td><strong><code>01_mhc_overview</code></strong></td>
+</tr><tr><td><code>08_prot_all</code></td>
+<td><code>02_prot_all</code></td>
+</tr><tr><td><code>03_lcms_qc</code></td>
+<td><code>03_lcms_qc</code></td>
+</tr><tr><td><code>07_pepchem</code></td>
+<td><code>04_pepchem</code></td>
+</tr><tr><td><code>06_quant_stats</code></td>
+<td><code>05_quant_stats</code></td>
+</tr></tbody></table><ul><li>
+<strong><code>01_mhc_overview</code></strong> is the report for both audiences. It opens with <strong>At a glance</strong> and <strong>Red flags</strong> (from <code>09_overview</code>), then identification counts, the peptide size distribution, the quality score (composite, per-metric breakdown, raw metrics, cross-class contamination), overlaps, log2(Area) correlation and %CV, motifs and the PTM profile. It ends with “Where to go next”, the scoring method as an appendix, the glossary and the session record. The duplicated parts of <code>09_overview</code> were dropped: its ligands-per-sample chart, its length histogram and its copy of the composite plot. The scores and red flags are computed once.</li>
+<li>It writes the always-written tier of all five old reports in one go (<code>pep_all.csv</code>, <code>counts_pep_all_condition.csv</code>, <code>seq_by_condition.xlsx</code>, <code>scores.csv</code>, <code>red_flags.csv</code>) plus <code>&lt;Subset&gt;_01_mhc_overview_input_params.csv</code>.</li>
+<li>
+<strong>Old names keep working.</strong> <code>run_howmahico_report("05_quality_score", ...)</code> and the other pre-0.27.0 names render the report that now holds their content, with a deprecation warning.</li>
+<li>
+<code><a href="../reference/compare_runs.html">compare_runs()</a></code> reads <code>*_01_mhc_overview_input_params.csv</code> and, for results written before this release, the old <code>*_05_quality_score_input_params.csv</code>, so old and new runs stack together.</li>
+<li>The pipeline script, vignette, README, demo script and pkgdown index use the new names. <code>00_mhc_report</code> and <code>00_mhc_upsets</code> are unchanged.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.26.1" id="howmahico-0261">HowMaHiCo 0.26.1<a class="anchor" aria-label="anchor" href="#howmahico-0261"></a></h2>
+<div class="section level3">
+<h3 id="the-clustered-heatmap-now-shows-its-clusters-0-26-1">The clustered heatmap now shows its clusters<a class="anchor" aria-label="anchor" href="#the-clustered-heatmap-now-shows-its-clusters-0-26-1"></a></h3>
+<ul><li>
+<code>plot_quant_heatmap(cluster = TRUE)</code> used the clustering only to order the tiles, so no cluster was visible. It now draws the unit dendrogram above a Condition colour bar and the feature dendrogram on the left. It also cuts the features into <code>n_clusters</code> groups (default 4), separated by white lines and labelled <code>C1</code> (top block) onwards. The feature-to-cluster table comes back as <code>attr(p, "clusters")</code>.</li>
+<li>
+<code>06_quant_stats</code> gained a <code>HeatmapClusters</code> param (default 4). With <code>CsvSave = TRUE</code> it also writes <code>heatmap_clusters.csv</code>.</li>
+<li>The clustered view is now a <code><a href="https://rpkgs.datanovia.com/ggpubr/reference/ggarrange.html" class="external-link">ggpubr::ggarrange()</a></code> composite, because the Condition bar and the value gradient both need a fill scale. It therefore stays static when <code>InteractivePlots</code> is on. The unclustered view is unchanged and can still be made interactive. No new dependency: the dendrogram segments are computed from <code>hclust</code> directly.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="peptide-chemistry_pepchem-0-26-1">Peptide chemistry (<code>07_pepchem</code>)<a class="anchor" aria-label="anchor" href="#peptide-chemistry_pepchem-0-26-1"></a></h3>
+<ul><li>
+<code><a href="../reference/plot_property_distribution.html">plot_property_distribution()</a></code> draws a descriptor that only takes whole-number values (peptide <code>Length</code>) as a histogram, one bar per value, with each Condition summing to 1. A kernel density drew bumps between lengths that cannot occur. Continuous descriptors keep the density curve.</li>
+<li>New exported <code><a href="../reference/pepchem_glossary.html">pepchem_glossary()</a></code>: what each <code><a href="../reference/peptide_properties.html">peptide_properties()</a></code> descriptor measures, how to read it for MHC ligands, and how it is computed. The <code>frac_*</code> rows are generated from the residue classes actually used. The shared glossary renders it as a “Physicochemical descriptors” table in <code>07_pepchem</code> only.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.26.0" id="howmahico-0260">HowMaHiCo 0.26.0<a class="anchor" aria-label="anchor" href="#howmahico-0260"></a></h2>
 <p>Found by running the EuPA-2026 demonstration (<code>demo/eupa2026_demo.R</code>) on simulated class-1 and class-2 data.</p>

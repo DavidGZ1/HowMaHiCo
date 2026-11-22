@@ -41,7 +41,7 @@ plot_run_trend(
 - color_by:
 
   Optional column to colour the points by (e.g. `"Condition"`, which
-  `05_quality_score` writes into its score csv). `NULL` for none.
+  `01_mhc_overview` writes into its score csv). `NULL` for none.
 
 ## Value
 

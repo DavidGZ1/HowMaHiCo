@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -181,6 +181,13 @@
 
         </dt>
         <dd>Glossary of the <code>pep_all</code> columns</dd>
+
+        <dt>
+
+          <code><a href="pepchem_glossary.html">pepchem_glossary()</a></code>
+
+        </dt>
+        <dd>Glossary of the physicochemical descriptors</dd>
       </dl></div><div class="section level2">
       <h2 id="data-loaders">Data loaders<a class="anchor" aria-label="anchor" href="#data-loaders"></a></h2>
 
@@ -614,7 +621,7 @@
       </dl></div><div class="section level2">
       <h2 id="sample-quality-score">Sample quality score<a class="anchor" aria-label="anchor" href="#sample-quality-score"></a></h2>
 
-      <div class="section-desc"><p>Per-sample immunopeptidomics quality score behind the 05_quality_score report: raw signals (length-window fidelity, canonical-length dominance, anchor-motif clarity, non-tryptic specificity, charge plausibility, depth, mass accuracy, cross-class contamination), the threshold model, and the weighted 0-100 composite.</p></div>
+      <div class="section-desc"><p>Per-sample immunopeptidomics quality score behind the 01_mhc_overview report: raw signals (length-window fidelity, canonical-length dominance, anchor-motif clarity, non-tryptic specificity, charge plausibility, depth, mass accuracy, cross-class contamination), the threshold model, and the weighted 0-100 composite.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -700,7 +707,7 @@
       </dl></div><div class="section level2">
       <h2 id="comparing-runs">Comparing runs<a class="anchor" aria-label="anchor" href="#comparing-runs"></a></h2>
 
-      <div class="section-desc"><p>Stack the per-sample score tables written by several 05_quality_score renders (experiments, subsets, or one QC standard over time) and compare them side by side or as a trend.</p></div>
+      <div class="section-desc"><p>Stack the per-sample score tables written by several 01_mhc_overview renders (experiments, subsets, or one QC standard over time) and compare them side by side or as a trend.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -730,7 +737,7 @@
       </dl></div><div class="section level2">
       <h2 id="advanced-quantification-statistics">Advanced quantification &amp; statistics<a class="anchor" aria-label="anchor" href="#advanced-quantification-statistics"></a></h2>
 
-      <div class="section-desc"><p>Build the quantitative matrix and compare peptide Area between Conditions (filtering, normalization, imputation, limma moderated t / Welch t, Fisher presence-absence, PERMANOVA) plus the plots of the 06_quant_stats report</p></div>
+      <div class="section-desc"><p>Build the quantitative matrix and compare peptide Area between Conditions (filtering, normalization, imputation, limma moderated t / Welch t, Fisher presence-absence, PERMANOVA) plus the plots of the 05_quant_stats report</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -872,7 +879,7 @@
       </dl></div><div class="section level2">
       <h2 id="physicochemical-properties">Physicochemical properties<a class="anchor" aria-label="anchor" href="#physicochemical-properties"></a></h2>
 
-      <div class="section-desc"><p>Peptide-chemistry engine behind the 07_pepchem report: amino-acid composition, per-position residue frequency and per-peptide descriptors (GRAVY, pI, charge, …), summarised per sample and compared between Conditions.</p></div>
+      <div class="section-desc"><p>Peptide-chemistry engine behind the 04_pepchem report: amino-acid composition, per-position residue frequency and per-peptide descriptors (GRAVY, pI, charge, …), summarised per sample and compared between Conditions.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -986,7 +993,7 @@
       </dl></div><div class="section level2">
       <h2 id="protein-level-analysis">Protein-level analysis<a class="anchor" aria-label="anchor" href="#protein-level-analysis"></a></h2>
 
-      <div class="section-desc"><p>Condenses the peptide table to source-protein level (the <code>prot_all</code> table behind the 08_prot_all report), including the protein-level values the search engine itself reported.</p></div>
+      <div class="section-desc"><p>Condenses the peptide table to source-protein level (the <code>prot_all</code> table behind the 02_prot_all report), including the protein-level values the search engine itself reported.</p></div>
 
       <dl></dl></div><div class="section level2">
 

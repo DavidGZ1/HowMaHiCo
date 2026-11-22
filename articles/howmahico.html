@@ -19,7 +19,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -218,10 +218,16 @@ one report.</p>
 <span>  MHCclass      <span class="op">=</span> <span class="st">"MHC1"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="st">"01_id_counts"</span>,</span>
+<span><span class="fu"><a href="../reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="st">"01_mhc_overview"</span>,</span>
 <span>                     params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">report_params</span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>PepAllSource <span class="op">=</span> <span class="st">"cached"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>                     output_file <span class="op">=</span> <span class="st">"01_id_counts.html"</span><span class="op">)</span></span></code></pre></div>
+<span>                     output_file <span class="op">=</span> <span class="st">"01_mhc_overview.html"</span><span class="op">)</span></span></code></pre></div>
 <p>The templates on offer:</p>
+<p>Before v0.27.0 the main report was split over
+<code>01_id_counts</code>, <code>02_overlaps</code>,
+<code>04_quant</code>, <code>05_quality_score</code> and
+<code>09_overview</code>, and the other reports were numbered
+<code>06</code>-<code>08</code>. The old names still work, with a
+deprecation warning.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -241,12 +247,15 @@ one report.</p>
 <td>Overlap / UpSet plots only</td>
 </tr>
 <tr class="odd">
-<td><code>01_id_counts</code></td>
-<td>ID counts, length and charge distributions, motifs, PTM profile</td>
+<td><code>01_mhc_overview</code></td>
+<td>The main report: at a glance and red flags, ID counts, length and
+charge distributions, the per-sample quality score, overlaps, log2(Area)
+correlation and %CV, motifs and PTM profile</td>
 </tr>
 <tr class="even">
-<td><code>02_overlaps</code></td>
-<td>Replicate, cross-condition and pairwise overlap</td>
+<td><code>02_prot_all</code></td>
+<td>Source proteins: ligands per protein, and engine-reported protein
+values</td>
 </tr>
 <tr class="odd">
 <td><code>03_lcms_qc</code></td>
@@ -254,31 +263,13 @@ one report.</p>
 QC</td>
 </tr>
 <tr class="even">
-<td><code>04_quant</code></td>
-<td>log2(Area) correlation between samples, Area %CV</td>
-</tr>
-<tr class="odd">
-<td><code>05_quality_score</code></td>
-<td>Per-sample immunopeptidomics quality score</td>
-</tr>
-<tr class="even">
-<td><code>06_quant_stats</code></td>
-<td>Differential abundance between Conditions</td>
-</tr>
-<tr class="odd">
-<td><code>07_pepchem</code></td>
+<td><code>04_pepchem</code></td>
 <td>Amino-acid composition, positional motifs, GRAVY and other
 descriptors</td>
 </tr>
-<tr class="even">
-<td><code>08_prot_all</code></td>
-<td>Source proteins: ligands per protein, and engine-reported protein
-values</td>
-</tr>
 <tr class="odd">
-<td><code>09_overview</code></td>
-<td>One-page overview for biologists: counts, lengths, quality score,
-red flags</td>
+<td><code>05_quant_stats</code></td>
+<td>Differential abundance between Conditions</td>
 </tr>
 </tbody>
 </table>
@@ -315,7 +306,7 @@ to <code>output_file</code>.</p>
 <div class="section level2">
 <h2 id="comparing-runs">Comparing runs<a class="anchor" aria-label="anchor" href="#comparing-runs"></a>
 </h2>
-<p>Each <code>05_quality_score</code> render writes a per-sample
+<p>Each <code>01_mhc_overview</code> render writes a per-sample
 <code>&lt;Subset&gt;_scores.csv</code>. <code><a href="../reference/compare_runs.html">compare_runs()</a></code>
 stacks several of them — results folders, csv paths or
 <code><a href="../reference/score_sample_quality.html">score_sample_quality()</a></code> data frames — into one table, and

@@ -1,6 +1,6 @@
 # Condense `pep_all` to one row per protein and sample
 
-Builds the `prot_all` table behind the `08_prot_all` report: for every
+Builds the `prot_all` table behind the `02_prot_all` report: for every
 (protein, `Sample`) pair, how many ligands it contributes and their
 summed intensity, plus the protein annotation and any protein-level
 value the search engine itself reported.
@@ -57,8 +57,8 @@ columns. Zero rows, correctly typed, when `input` has none.
 log2-transformed afterwards, matching
 [`build_quant_matrix()`](https://davidgz1.github.io/HowMaHiCo/reference/build_quant_matrix.md).
 Note that the older `get_mat_log2area(pep_all, ProteinFirst, ...)` route
-used by `00_mhc_report` and `04_quant` instead *averages* `Log2Area`;
-the two are not interchangeable.
+used by `00_mhc_report` and `01_mhc_overview` instead *averages*
+`Log2Area`; the two are not interchangeable.
 
 ## Examples
 

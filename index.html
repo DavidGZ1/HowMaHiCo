@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,7 +102,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </tr>
 <tr>
 <td><code>inst/rmarkdown/templates/</code></td>
-<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the focused <code>01_id_counts</code>/<code>02_overlaps</code>/<code>03_lcms_qc</code>/<code>04_quant</code>/<code>05_quality_score</code>/<code>06_quant_stats</code>/<code>07_pepchem</code>/<code>08_prot_all</code>/<code>09_overview</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
+<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the main <code>01_mhc_overview</code> and the focused <code>02_prot_all</code>/<code>03_lcms_qc</code>/<code>04_pepchem</code>/<code>05_quant_stats</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
 </td>
 </tr>
 <tr>
@@ -238,15 +238,12 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span>              annotation <span class="op">=</span> <span class="va">annot</span>, shortpep_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">13</span><span class="op">)</span>,</span>
 <span>              file_rda <span class="op">=</span> <span class="st">"2_data/dda_all_pep_all.rda"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">tmpl</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"01_id_counts"</span>,     <span class="co"># ID counts, size distributions, motifs, PTM</span></span>
-<span>               <span class="st">"02_overlaps"</span>,      <span class="co"># replicate / condition / pairwise overlap</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">tmpl</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"01_mhc_overview"</span>,  <span class="co"># main report: overview + red flags, counts, quality</span></span>
+<span>                                   <span class="co">#   score, overlaps, Area correlation/%CV, motifs, PTM</span></span>
+<span>               <span class="st">"02_prot_all"</span>,      <span class="co"># source proteins, ligands per protein</span></span>
 <span>               <span class="st">"03_lcms_qc"</span>,       <span class="co"># RT/1k0/mz, Score/ppm (advanced)</span></span>
-<span>               <span class="st">"04_quant"</span>,         <span class="co"># log2(Area) correlation, Area %CV</span></span>
-<span>               <span class="st">"05_quality_score"</span>, <span class="co"># per-sample immunopeptidomics quality score</span></span>
-<span>               <span class="st">"06_quant_stats"</span>,   <span class="co"># differential abundance between Conditions</span></span>
-<span>               <span class="st">"07_pepchem"</span>,       <span class="co"># amino-acid composition, motifs, GRAVY &amp; co.</span></span>
-<span>               <span class="st">"08_prot_all"</span>,      <span class="co"># source proteins, ligands per protein</span></span>
-<span>               <span class="st">"09_overview"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>   <span class="co"># one-page overview: counts, lengths, score, red flags</span></span>
+<span>               <span class="st">"04_pepchem"</span>,       <span class="co"># amino-acid composition, motifs, GRAVY &amp; co.</span></span>
+<span>               <span class="st">"05_quant_stats"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span>  <span class="co"># differential abundance between Conditions</span></span>
 <span>  <span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="va">tmpl</span>,</span>
 <span>                       params <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>SampleSet <span class="op">=</span> <span class="st">"project_id"</span>, Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span>
 <span>                                     FolderData <span class="op">=</span> <span class="st">"2_data"</span>, FolderResults <span class="op">=</span> <span class="st">"3_results"</span>,</span>
@@ -256,7 +253,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span><span class="op">}</span></span></code></pre></div>
 <p>Each focused report chooses how to obtain <code>pep_all</code> via the <code>PepAllSource</code> param: <code>"cached"</code> (default — load the <code>&lt;Subset&gt;_pep_all.rda</code> cache), <code>"rda"</code> (load an explicit <code>PepAllFile</code>), or <code>"build"</code> (parse the raw search output itself, no separate <code><a href="reference/build_pep_all.html">build_pep_all()</a></code> call). So to render a single focused report directly from results, pass <code>PepAllSource = "build"</code> (plus <code>Software</code>, <code>AnnotationFile</code>, <code>FolderDocumentation</code>) and skip the <code><a href="reference/build_pep_all.html">build_pep_all()</a></code> step above.</p>
 <p><code>00_mhc_report</code> (all-in-one) and <code>00_mhc_upsets</code> are unchanged and still parse the raw files themselves.</p>
-<p><code>06_quant_stats</code> compares peptide <code>Area</code> between Conditions (normalization, data completeness, PCA and clustered/unclustered heatmaps, then per-pair differential abundance with volcano plots and a presence/absence track for condition-exclusive ligands). It uses <a href="https://bioconductor.org/packages/limma" class="external-link">limma</a>, an optional Bioconductor dependency — install it with <code>BiocManager::install("limma")</code>, or render with <code>StatMethod = "ttest"</code> (and <code>NormMethod = "median"</code>) for a Bioconductor-free run; the report falls back to that automatically when limma is missing. Its methods and their justification are documented in the report itself.</p>
+<p><code>05_quant_stats</code> compares peptide <code>Area</code> between Conditions (normalization, data completeness, PCA and clustered/unclustered heatmaps, then per-pair differential abundance with volcano plots and a presence/absence track for condition-exclusive ligands). It uses <a href="https://bioconductor.org/packages/limma" class="external-link">limma</a>, an optional Bioconductor dependency — install it with <code>BiocManager::install("limma")</code>, or render with <code>StatMethod = "ttest"</code> (and <code>NormMethod = "median"</code>) for a Bioconductor-free run; the report falls back to that automatically when limma is missing. Its methods and their justification are documented in the report itself.</p>
 <p>Reports are written to <code>output_file</code> (HTML), and result tables/figures are written under <code>&lt;FolderResults&gt;/&lt;subset&gt;/</code> and <code>&lt;FolderFigures&gt;/&lt;subset&gt;/</code>.</p>
 </div>
 <div class="section level2">
@@ -286,13 +283,14 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <code>pep_all</code> cache</td>
 </tr>
 <tr>
-<td><code>01_id_counts</code></td>
-<td>Identification counts (mean ± sd per Condition / BioReplicate / Sample), length and charge distributions, sequence motifs, PTM profile</td>
+<td><code>01_mhc_overview</code></td>
+<td>
+<strong>Start here.</strong> The main report, for both the biologist and the LC-MS expert: an at-a-glance summary with a plain-language list of red flags, identification counts (mean ± sd per Condition / BioReplicate / Sample), length and charge distributions, the per-sample immunopeptidomics quality score (0–100, traffic light, per-metric breakdown, cross-class contamination), replicate and Condition overlaps (UpSet, pairwise matrices), log2(Area) correlation and %CV, sequence motifs and PTM profile</td>
 <td>cache</td>
 </tr>
 <tr>
-<td><code>02_overlaps</code></td>
-<td>Intra-Condition replicate overlap (counts and %), cross-Condition UpSet, pairwise overlap matrices</td>
+<td><code>02_prot_all</code></td>
+<td>Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported</td>
 <td>cache</td>
 </tr>
 <tr>
@@ -301,39 +299,18 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <td>cache</td>
 </tr>
 <tr>
-<td><code>04_quant</code></td>
-<td>log2(Area) Pearson correlation between samples, Area %CV violins</td>
-<td>cache</td>
-</tr>
-<tr>
-<td><code>05_quality_score</code></td>
-<td>Per-sample immunopeptidomics quality score (0–100) with a traffic-light overview and per-metric breakdown</td>
-<td>cache</td>
-</tr>
-<tr>
-<td><code>06_quant_stats</code></td>
-<td>Differential abundance between Conditions: normalization, completeness, PCA, heatmaps, volcano/MA, plus a presence/absence track for condition-exclusive ligands</td>
-<td>cache; limma optional</td>
-</tr>
-<tr>
-<td><code>07_pepchem</code></td>
+<td><code>04_pepchem</code></td>
 <td>Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions</td>
 <td>cache</td>
 </tr>
 <tr>
-<td><code>08_prot_all</code></td>
-<td>Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported</td>
-<td>cache</td>
-</tr>
-<tr>
-<td><code>09_overview</code></td>
-<td>
-<strong>Start here.</strong> One-page overview for the biologist: ligands per sample, whether the lengths look like MHC ligands, the quality score, and a plain-language list of red flags, with pointers to the focused report for each topic</td>
-<td>cache</td>
+<td><code>05_quant_stats</code></td>
+<td>Differential abundance between Conditions: normalization, completeness, PCA, clustered heatmap, volcano/MA, plus a presence/absence track for condition-exclusive ligands</td>
+<td>cache; limma optional</td>
 </tr>
 </tbody>
 </table>
-<p>The focused reports each render one slice of the analysis and are independent — render only the ones you need. <code>00_mhc_report</code> covers most of <code>01</code>–<code>04</code> in a single document.</p>
+<p>The reports are independent — render only the ones you need. Before v0.27.0 the content of <code>01_mhc_overview</code> was split over <code>01_id_counts</code>, <code>02_overlaps</code>, <code>04_quant</code>, <code>05_quality_score</code> and <code>09_overview</code>, and <code>02_prot_all</code>, <code>04_pepchem</code> and <code>05_quant_stats</code> were numbered <code>08</code>, <code>07</code> and <code>06</code>; the old names still work, with a deprecation warning.</p>
 </div>
 <div class="section level2">
 <h2 id="parameters">Parameters<a class="anchor" aria-label="anchor" href="#parameters"></a>
@@ -468,8 +445,8 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </table>
 </div>
 <div class="section level3">
-<h3 id="id_05_quality_score">
-<code>05_quality_score</code><a class="anchor" aria-label="anchor" href="#id_05_quality_score"></a>
+<h3 id="id_01_mhc_overview">
+<code>01_mhc_overview</code><a class="anchor" aria-label="anchor" href="#id_01_mhc_overview"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -494,8 +471,8 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </table>
 </div>
 <div class="section level3">
-<h3 id="id_06_quant_stats">
-<code>06_quant_stats</code><a class="anchor" aria-label="anchor" href="#id_06_quant_stats"></a>
+<h3 id="id_05_quant_stats">
+<code>05_quant_stats</code><a class="anchor" aria-label="anchor" href="#id_05_quant_stats"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -557,16 +534,16 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </tr>
 <tr>
 <td>
-<code>TopNHeatmap</code> / <code>PermutationTest</code>
+<code>TopNHeatmap</code> / <code>HeatmapClusters</code> / <code>PermutationTest</code>
 </td>
-<td>Heatmap feature count; whether to run the PERMANOVA test</td>
+<td>Heatmap feature count; feature clusters drawn and exported in the clustered heatmap; whether to run the PERMANOVA test</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level3">
-<h3 id="id_07_pepchem">
-<code>07_pepchem</code><a class="anchor" aria-label="anchor" href="#id_07_pepchem"></a>
+<h3 id="id_04_pepchem">
+<code>04_pepchem</code><a class="anchor" aria-label="anchor" href="#id_04_pepchem"></a>
 </h3>
 <table class="table">
 <colgroup>
@@ -651,7 +628,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <div class="section level2">
 <h2 id="comparing-runs">Comparing runs<a class="anchor" aria-label="anchor" href="#comparing-runs"></a>
 </h2>
-<p>One render scores one subset. To compare several — two experiments, the subsets of one, or the same QC standard measured week after week — stack the <code>&lt;Subset&gt;_scores.csv</code> tables that <code>05_quality_score</code> writes:</p>
+<p>One render scores one subset. To compare several — two experiments, the subsets of one, or the same QC standard measured week after week — stack the <code>&lt;Subset&gt;_scores.csv</code> tables that <code>01_mhc_overview</code> writes:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">runs</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/compare_runs.html">compare_runs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>jy     <span class="op">=</span> <span class="st">"3_results/dda_jy"</span>,       <span class="co"># results folders,</span></span>
 <span>                       plasma <span class="op">=</span> <span class="st">"3_results/dda_plasma"</span><span class="op">)</span><span class="op">)</span>  <span class="co"># csv paths, or data frames</span></span>
@@ -661,7 +638,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <span><span class="co"># longitudinal view of a QC standard, in render order</span></span>
 <span><span class="fu"><a href="reference/compare_runs.html">compare_runs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.dirs</a></span><span class="op">(</span><span class="st">"3_results/qc"</span>, recursive <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span>, order <span class="op">=</span> <span class="st">"timestamp"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="reference/plot_run_trend.html">plot_run_trend</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"line"</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/compare_runs.html">compare_runs()</a></code> reads the companion <code>*_05_quality_score_input_params.csv</code> to label each run (<code>SampleSet | Subset</code>) and to record its <code>MHCclass</code>, <code>ThresholdMode</code> and render time. It warns when runs were scored with different <code>MHCclass</code> or <code>ThresholdMode</code>, because their composite scores are then not directly comparable.</p>
+<p><code><a href="reference/compare_runs.html">compare_runs()</a></code> reads the companion <code>*_01_mhc_overview_input_params.csv</code> (or, for older results, <code>*_05_quality_score_input_params.csv</code>) to label each run (<code>SampleSet | Subset</code>) and to record its <code>MHCclass</code>, <code>ThresholdMode</code> and render time. It warns when runs were scored with different <code>MHCclass</code> or <code>ThresholdMode</code>, because their composite scores are then not directly comparable.</p>
 </div>
 <div class="section level2">
 <h2 id="glossary">Glossary<a class="anchor" aria-label="anchor" href="#glossary"></a>
@@ -872,7 +849,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <tr>
 <td><code>This step needs the 'limma' package</code></td>
 <td>
-<code>BiocManager::install("limma")</code>, or render <code>06_quant_stats</code> with <code>StatMethod = "ttest"</code> and <code>NormMethod = "median"</code>
+<code>BiocManager::install("limma")</code>, or render <code>05_quant_stats</code> with <code>StatMethod = "ttest"</code> and <code>NormMethod = "median"</code>
 </td>
 </tr>
 <tr>

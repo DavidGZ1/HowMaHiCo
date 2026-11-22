@@ -1,6 +1,6 @@
 # Stack the quality scores of several runs into one table
 
-One `05_quality_score` render scores one subset. `compare_runs()` stacks
+One `01_mhc_overview` render scores one subset. `compare_runs()` stacks
 the per-sample score tables of several renders (different experiments,
 subsets, or the same QC standard measured over time) into a single long
 table, so that they can be compared side by side with
@@ -48,7 +48,7 @@ file name.
 
 `runs` may mix three kinds of input:
 
-- a **score csv** written by `05_quality_score` (`<Subset>_scores.csv`,
+- a **score csv** written by `01_mhc_overview` (`<Subset>_scores.csv`,
   or `scores.csv` when no `Subset` was set);
 
 - a **results folder** holding one or more such files (e.g.
@@ -57,11 +57,13 @@ file name.
 - a **data frame** returned by
   [`score_sample_quality()`](https://davidgz1.github.io/HowMaHiCo/reference/score_sample_quality.md).
 
-For a csv, the companion `<Subset>_05_quality_score_input_params.csv`
-that the same render writes next to it is read when present, and its
-`SampleSet`, `Subset`, `MHCclass`, `ThresholdMode`, `render_timestamp`
-and `package_version` are attached as columns (`NA` when absent, and
-always for data-frame input).
+For a csv, the companion `<Subset>_01_mhc_overview_input_params.csv`
+that the same render writes next to it is read when present (for results
+written before v0.27.0, the old
+`<Subset>_05_quality_score_input_params.csv`), and its `SampleSet`,
+`Subset`, `MHCclass`, `ThresholdMode`, `render_timestamp` and
+`package_version` are attached as columns (`NA` when absent, and always
+for data-frame input).
 
 Composite scores are only comparable when the runs were scored the same
 way, so a warning names the runs when `MHCclass` or `ThresholdMode`

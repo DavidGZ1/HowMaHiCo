@@ -1,13 +1,11 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/404.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/CLAUDE.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/LICENSE.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/articles/howmahico.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/articles/index.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/authors.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/index.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/news/index.html</loc></url>
-<url><loc>https://davidgz1.github.io/HowMaHiCo/plans_dgz.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/project-style-guide.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/HowMaHiCo-package.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/aa_composition.html</loc></url>
@@ -72,6 +70,7 @@
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/parse_unified.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/pep_all_glossary.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/pepchem_by_sample.html</loc></url>
+<url><loc>https://davidgz1.github.io/HowMaHiCo/reference/pepchem_glossary.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/pepchem_properties.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/peptide_properties.html</loc></url>
 <url><loc>https://davidgz1.github.io/HowMaHiCo/reference/permanova_condition.html</loc></url>

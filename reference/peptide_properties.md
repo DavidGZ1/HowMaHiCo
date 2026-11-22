@@ -1,6 +1,6 @@
 # Per-sequence physicochemical descriptors
 
-Computes the peptide-chemistry descriptors behind the `07_pepchem`
+Computes the peptide-chemistry descriptors behind the `04_pepchem`
 report. Duplicated sequences are computed once and returned once, so
 this is safe to call with the whole `Sequence` column of a long
 `pep_all` table.

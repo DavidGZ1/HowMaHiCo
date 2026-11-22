@@ -54,7 +54,7 @@ experimental conditions and replicates.
 | Folder | Contents |
 |----|----|
 | `R/` | Package source — 100+ exported functions (loaders, annotation, counting, statistics, plotting, export) plus the [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)/[`derive_filtered_annotation()`](https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.md) entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the focused `01_id_counts`/`02_overlaps`/`03_lcms_qc`/`04_quant`/`05_quality_score`/`06_quant_stats`/`07_pepchem`/`08_prot_all`/`09_overview` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the main `01_mhc_overview` and the focused `02_prot_all`/`03_lcms_qc`/`04_pepchem`/`05_quant_stats` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
 | `inst/scripts/` | The guided pipeline script handed out by [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md) |
 | `vignettes/` | [`vignette("howmahico")`](https://davidgz1.github.io/HowMaHiCo/articles/howmahico.md) — the narrated walkthrough |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
@@ -228,15 +228,12 @@ build_pep_all(software = "fragpipe_dda_combined", folder_data = "2_data",
               annotation = annot, shortpep_range = c(8, 13),
               file_rda = "2_data/dda_all_pep_all.rda")
 
-for (tmpl in c("01_id_counts",     # ID counts, size distributions, motifs, PTM
-               "02_overlaps",      # replicate / condition / pairwise overlap
+for (tmpl in c("01_mhc_overview",  # main report: overview + red flags, counts, quality
+                                   #   score, overlaps, Area correlation/%CV, motifs, PTM
+               "02_prot_all",      # source proteins, ligands per protein
                "03_lcms_qc",       # RT/1k0/mz, Score/ppm (advanced)
-               "04_quant",         # log2(Area) correlation, Area %CV
-               "05_quality_score", # per-sample immunopeptidomics quality score
-               "06_quant_stats",   # differential abundance between Conditions
-               "07_pepchem",       # amino-acid composition, motifs, GRAVY & co.
-               "08_prot_all",      # source proteins, ligands per protein
-               "09_overview")) {   # one-page overview: counts, lengths, score, red flags
+               "04_pepchem",       # amino-acid composition, motifs, GRAVY & co.
+               "05_quant_stats")) {  # differential abundance between Conditions
   run_howmahico_report(tmpl,
                        params = list(SampleSet = "project_id", Subset = "dda_all",
                                      FolderData = "2_data", FolderResults = "3_results",
@@ -260,7 +257,7 @@ step above.
 `00_mhc_report` (all-in-one) and `00_mhc_upsets` are unchanged and still
 parse the raw files themselves.
 
-`06_quant_stats` compares peptide `Area` between Conditions
+`05_quant_stats` compares peptide `Area` between Conditions
 (normalization, data completeness, PCA and clustered/unclustered
 heatmaps, then per-pair differential abundance with volcano plots and a
 presence/absence track for condition-exclusive ligands). It uses
@@ -281,19 +278,17 @@ are written under `<FolderResults>/<subset>/` and
 |----|----|----|
 | `00_mhc_report` | All-in-one QC report: ID counts, overlaps, size/charge distributions, RT–ion-mobility–*m/z* distributions, Area correlation and %CV, Score/ppm QC, motifs, PTM profile | raw files (parses them itself) |
 | `00_mhc_upsets` | Overlap / UpSet plots only | `pep_all` cache |
-| `01_id_counts` | Identification counts (mean ± sd per Condition / BioReplicate / Sample), length and charge distributions, sequence motifs, PTM profile | cache |
-| `02_overlaps` | Intra-Condition replicate overlap (counts and %), cross-Condition UpSet, pairwise overlap matrices | cache |
+| `01_mhc_overview` | **Start here.** The main report, for both the biologist and the LC-MS expert: an at-a-glance summary with a plain-language list of red flags, identification counts (mean ± sd per Condition / BioReplicate / Sample), length and charge distributions, the per-sample immunopeptidomics quality score (0–100, traffic light, per-metric breakdown, cross-class contamination), replicate and Condition overlaps (UpSet, pairwise matrices), log2(Area) correlation and %CV, sequence motifs and PTM profile | cache |
+| `02_prot_all` | Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported | cache |
 | `03_lcms_qc` | RT / ion-mobility / *m/z* distributions, pseudochromatograms and pseudomobilograms, Score and mass-error QC | cache |
-| `04_quant` | log2(Area) Pearson correlation between samples, Area %CV violins | cache |
-| `05_quality_score` | Per-sample immunopeptidomics quality score (0–100) with a traffic-light overview and per-metric breakdown | cache |
-| `06_quant_stats` | Differential abundance between Conditions: normalization, completeness, PCA, heatmaps, volcano/MA, plus a presence/absence track for condition-exclusive ligands | cache; limma optional |
-| `07_pepchem` | Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions | cache |
-| `08_prot_all` | Protein level: source proteins per sample, ligands per protein, top source proteins, detection breadth, and any protein-level values the search engine reported | cache |
-| `09_overview` | **Start here.** One-page overview for the biologist: ligands per sample, whether the lengths look like MHC ligands, the quality score, and a plain-language list of red flags, with pointers to the focused report for each topic | cache |
+| `04_pepchem` | Amino-acid composition, per-position residue frequency, and descriptors (GRAVY, pI, charge, …) compared between Conditions | cache |
+| `05_quant_stats` | Differential abundance between Conditions: normalization, completeness, PCA, clustered heatmap, volcano/MA, plus a presence/absence track for condition-exclusive ligands | cache; limma optional |
 
-The focused reports each render one slice of the analysis and are
-independent — render only the ones you need. `00_mhc_report` covers most
-of `01`–`04` in a single document.
+The reports are independent — render only the ones you need. Before
+v0.27.0 the content of `01_mhc_overview` was split over `01_id_counts`,
+`02_overlaps`, `04_quant`, `05_quality_score` and `09_overview`, and
+`02_prot_all`, `04_pepchem` and `05_quant_stats` were numbered `08`,
+`07` and `06`; the old names still work, with a deprecation warning.
 
 ## Parameters
 
@@ -334,14 +329,14 @@ rendered from anywhere.
 | `PepAllSource` | How to obtain `pep_all`: `"cached"` (default — load `<Subset>_pep_all.rda`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw output itself, skipping [`build_pep_all()`](https://davidgz1.github.io/HowMaHiCo/reference/build_pep_all.md)) |
 | `PepAllFile` | Explicit `.rda` path, used only with `PepAllSource = "rda"` |
 
-### `05_quality_score`
+### `01_mhc_overview`
 
 | Param | Purpose |
 |----|----|
 | `QCColumn` | Annotation column flagging QC control samples (default `"QC"`; empty disables) |
 | `ThresholdMode` | `"default"` (literature thresholds) or `"qc_relative"` (calibrate from the QC samples) |
 
-### `06_quant_stats`
+### `05_quant_stats`
 
 | Param | Purpose |
 |----|----|
@@ -354,9 +349,9 @@ rendered from anywhere.
 | `BlockVar` | Optional column for [`limma::duplicateCorrelation`](https://rdrr.io/pkg/limma/man/dupcor.html) |
 | `FdrCutoff` / `Log2FcCutoff` | Significance cut-offs |
 | `MinDetectExclusive` | Detection count required to call a feature condition-exclusive |
-| `TopNHeatmap` / `PermutationTest` | Heatmap feature count; whether to run the PERMANOVA test |
+| `TopNHeatmap` / `HeatmapClusters` / `PermutationTest` | Heatmap feature count; feature clusters drawn and exported in the clustered heatmap; whether to run the PERMANOVA test |
 
-### `07_pepchem`
+### `04_pepchem`
 
 | Param | Purpose |
 |----|----|
@@ -394,7 +389,7 @@ what the focused reports read.
 
 One render scores one subset. To compare several — two experiments, the
 subsets of one, or the same QC standard measured week after week — stack
-the `<Subset>_scores.csv` tables that `05_quality_score` writes:
+the `<Subset>_scores.csv` tables that `01_mhc_overview` writes:
 
 ``` r
 
@@ -409,11 +404,12 @@ compare_runs(list.dirs("3_results/qc", recursive = FALSE), order = "timestamp") 
 ```
 
 [`compare_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/compare_runs.md)
-reads the companion `*_05_quality_score_input_params.csv` to label each
-run (`SampleSet | Subset`) and to record its `MHCclass`, `ThresholdMode`
-and render time. It warns when runs were scored with different
-`MHCclass` or `ThresholdMode`, because their composite scores are then
-not directly comparable.
+reads the companion `*_01_mhc_overview_input_params.csv` (or, for older
+results, `*_05_quality_score_input_params.csv`) to label each run
+(`SampleSet | Subset`) and to record its `MHCclass`, `ThresholdMode` and
+render time. It warns when runs were scored with different `MHCclass` or
+`ThresholdMode`, because their composite scores are then not directly
+comparable.
 
 ## Glossary
 
@@ -470,7 +466,7 @@ from
 | `The following result files were found and they cannot be overwritten` | Results from an earlier run are in the way. Move them, or set `ResultsOverwrite = TRUE` |
 | `Files listed in the annotation table were not found` | `FolderData` or the `Sample_folder` column does not match the data layout |
 | A sample is missing from the report | It is not listed in the annotation table — only listed samples are read |
-| `This step needs the 'limma' package` | `BiocManager::install("limma")`, or render `06_quant_stats` with `StatMethod = "ttest"` and `NormMethod = "median"` |
+| `This step needs the 'limma' package` | `BiocManager::install("limma")`, or render `05_quant_stats` with `StatMethod = "ttest"` and `NormMethod = "median"` |
 | Only one Condition, and comparison sections are empty | Expected — pairwise sections need ≥ 2 Conditions and say so rather than failing |
 | Plots or correlations look wrong after a quick run | `TestMode = TRUE` keeps ~100 rows per run; correlations need the full data |
 | `pandoc` errors when rendering | pandoc is missing or not on `PATH`. Use RStudio, or install pandoc separately |

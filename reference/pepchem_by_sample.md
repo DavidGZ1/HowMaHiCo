@@ -1,6 +1,6 @@
 # Per-sample peptide physicochemical descriptors
 
-Entry point of the `07_pepchem` engine. Reduces a long `pep_all`-shaped
+Entry point of the `04_pepchem` engine. Reduces a long `pep_all`-shaped
 table to its distinct `Sequence` per `Sample` — the properties are
 sequence-intrinsic, so counting every PSM would weight them by how often
 a peptide happened to be re-sequenced — and joins on
