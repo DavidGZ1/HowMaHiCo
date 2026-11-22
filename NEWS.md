@@ -1,3 +1,14 @@
+# HowMaHiCo 0.27.1
+
+* `01_mhc_overview`: the "Total=" labels of the *Total by Sample* and *Total by
+  Condition* bar charts are drawn again for small counts (typically Parent
+  proteins). `plot_bp_count_length()` nudged them by a fixed `300 + lim_level / 10`,
+  which put them above the y-limit, where ggplot2 silently dropped them; the
+  label now sits just above its bar and the y-axis grows to fit it.
+* `01_mhc_overview`: the peptide-motif logos render as tabs (level-2 headings
+  under the level-1 tabset), and the motif and UpSet loops no longer print a
+  stray `` $`8` `` / `$Peptide` line above each plot (they printed a list slice).
+
 # HowMaHiCo 0.27.0
 
 ## Breaking: the reports are restructured

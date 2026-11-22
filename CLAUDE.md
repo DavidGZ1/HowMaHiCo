@@ -7,7 +7,11 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.27.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.27.1** — Phases 1–6 of the package conversion are complete.
+v0.27.1 is a `01_mhc_overview` display fix: `plot_bp_count_length()` no longer
+drops its "Total=" label past the y-limit (it was nudged by a fixed
+`300 + lim/10`, so Parent-protein totals vanished), and the motif/UpSet tab
+loops print `[[i]]` instead of a list slice (which wrote a stray `` $`8` `` line).
 v0.27.0 **restructures the reports (breaking)**: the focused reports had become
 too modular and `09_overview` repeated them, so `01_id_counts`, `02_overlaps`,
 `04_quant`, `05_quality_score` and `09_overview` are merged into one main report,

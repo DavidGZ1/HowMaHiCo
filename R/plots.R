@@ -326,6 +326,13 @@ plot_pepmz <- function(input, title, xlimits = NULL){
 plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13),
                                   x_var = "Condition", palette = NULL){
   nlevel <- paste0("n_", level)
+  totals <- df |> dplyr::filter(Length_range == "All peptides")
+  # The "Total=" label sits just above the bar. It used to be nudged by a fixed
+  # 300 + lim_level / 10, which pushed it past the y-limit (and ggplot silently
+  # dropped it) whenever the counts were small - typically Parent proteins.
+  # Make room for the two-line label instead of trusting lim_level.
+  max_total <- suppressWarnings(max(totals[[nlevel]], na.rm = TRUE))
+  if (is.finite(max_total)) lim_level <- max(lim_level, max_total * 1.25)
   p <- df |>
     dplyr::filter(Length_range != "All peptides") |>
     droplevels() |>
@@ -333,13 +340,13 @@ plot_bp_count_length <- function(df, level, lim_level, shortpep_range = c(8, 13)
                       label = TRUE, alpha = 0.5,
                       lab.vjust = 1.5,
                       lab.nb.digits = 0, lab.size = 2.5) +
-    ggplot2::geom_text(data = df |> dplyr::filter(Length_range == "All peptides"),
-                       ggplot2::aes(label = paste0("Total=\n", get(nlevel))),
-                       nudge_y = 300 + lim_level / 10,
+    ggplot2::geom_text(data = totals,
+                       ggplot2::aes(label = paste0("Total=\n", .data[[nlevel]])),
+                       nudge_y = lim_level * 0.02, vjust = 0,
                        size = 2.5, alpha = 0.8,
                        parse = FALSE) +
     theme_howmahico() +
-    ggplot2::scale_y_continuous(limits = c(0, lim_level), 
+    ggplot2::scale_y_continuous(limits = c(0, lim_level),
                                 # breaks = seq(0, lim_level, 5000),
                                 # labels = scales::label_number(suffix = " k", scale = 1e-3)
                                 n.breaks = 5) +

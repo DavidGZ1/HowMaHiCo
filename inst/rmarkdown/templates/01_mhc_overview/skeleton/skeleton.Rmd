@@ -778,7 +778,7 @@ if (dplyr::n_distinct(pep_all$Condition) < 2) {
   up_pep_all_list <- plot_upset_batch(pep_all, vars = var_levels, Compare = "Condition")
   for (i in 1:length(var_levels)) {
     cat("\n### ", var_levels[i],"\n")
-    up_pep_all_list[i]  |>  print()
+    print(up_pep_all_list[[i]])
     cat('\n\n')
   }
 }
@@ -794,7 +794,7 @@ if (dplyr::n_distinct(pep_short$Condition) < 2) {
   up_pep_short_list <- plot_upset_batch(pep_short, vars = var_levels, Compare = "Condition")
   for (i in 1:length(var_levels)) {
     cat("\n### ", var_levels[i],"\n")
-    up_pep_short_list[i]  |>  print()
+    print(up_pep_short_list[[i]])
     cat('\n\n')
   }
 }
@@ -1066,8 +1066,8 @@ motifs_pepshort <- lapply(seq_lengths_short, function(x){
 names(motifs_pepshort) <- seq_lengths_short
 
 for (i in 1:length(motifs_pepshort)) {
-  cat("\n### Length = ", names(motifs_pepshort)[i],"\n")
-  motifs_pepshort[i]  |>  print()
+  cat("\n## Length = ", names(motifs_pepshort)[i],"\n")
+  print(motifs_pepshort[[i]])
   cat('\n\n')
 }
 ```
