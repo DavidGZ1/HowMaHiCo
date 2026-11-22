@@ -19,7 +19,8 @@
 #
 # Run from the repository root:   Rscript demo/eupa2026_demo.R
 # Needs: HowMaHiCo (this repo, installed or via devtools::load_all()),
-#        MaHiCoInSilico (only when a simulated folder does not exist yet), pandoc.
+#        MaHiCoInSilico >= 0.8.0 (only when a simulated folder does not exist
+#        yet; earlier versions do not nest class II), pandoc.
 # Data and outputs live under example/, which is gitignored. Re-running skips
 # simulations whose folders already exist.
 # =============================================================================
@@ -37,8 +38,14 @@ DIR_DATA    <- file.path(ROOT, "2_data")
 DIR_DOC     <- file.path(ROOT, "1_documentation")
 DIR_RESULTS <- file.path(ROOT, "3_results", "eupa2026")
 DIR_FIGURES <- file.path(ROOT, "4_figures", "eupa2026")
-DIR_HTML    <- file.path(DIR_RESULTS, "html")
+DIR_HTML    <- file.path(ROOT, "reports_html")
 SAMPLE_SET  <- "EuPA2026 demo"
+# create directories within the wd, if needed
+dir.create(DIR_DOC, showWarnings = TRUE)
+dir.create(DIR_DATA, showWarnings = TRUE)
+dir.create(DIR_RESULTS, showWarnings = TRUE)
+dir.create(DIR_FIGURES, showWarnings = TRUE)
+dir.create(DIR_HTML, showWarnings = TRUE)
 
 SEED <- 1
 # Limit of detection for the mixed runs. With lod = 0 every spike peptide is
@@ -52,10 +59,15 @@ TITRATION <- c(0, 0.05, 0.10, 0.25, 0.50, 0.75, 1)
 HOST_HLA1 <- list(n = 5000, mhc_class = "MHC1",
                   alleles = c("HLA-A*02:01", "HLA-B*07:02"), seed = 1)
 SPIKE_PROTEOME <- list(n = 5000, data_type = "proteomics", seed = 2)
-SPIKE_HLA2 <- list(n = 5000, mhc_class = "MHC2", alleles = "HLA-DRB1*01:01", seed = 1)
+# class II as nested families (MaHiCoInSilico >= 0.8.0): half of the ligands are
+# ragged length variants around a shared 9-mer core, ~4 per family. Pinned
+# here (they are also the 0.8.0 defaults) so a future default change cannot
+# shift the demo; this is what makes frac_nested_core demonstrable.
+SPIKE_HLA2 <- list(n = 5000, mhc_class = "MHC2", alleles = "HLA-DRB1*01:01", seed = 1,
+                   nested_fraction = 0.5, nested_family_size = 4)
 DESIGN <- list(conditions = c("CTRL", "TREAT"), n_bioreps = 3)
 
-for (d in c(DIR_DATA, DIR_DOC, DIR_RESULTS, DIR_FIGURES, DIR_HTML)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
+for (d in c(DIR_DOC, DIR_DATA, DIR_RESULTS, DIR_FIGURES, DIR_HTML)) dir.create(d, recursive = TRUE, showWarnings = TRUE)
 
 # every run: name, data folder, annotation csv, MHC class it is scored as
 run_name <- function(p) sprintf("titr_p%03d", round(100 * p))
@@ -79,12 +91,12 @@ runs <- rbind(
 # ---- 1. Simulate the datasets -----------------------------------------------
 # The class-1 and class-2 pulldowns. Their settings ARE the titration's host
 # (HOST_HLA1) and the cross-class spike (SPIKE_HLA2), so the given runs and the
-# mixes describe the same simulated samples. Checked: these calls reproduce the
-# existing example/2_data/sim_fragpipe_dda_hla1|hla2 psm.tsv and annotation
-# files byte for byte (MaHiCoInSilico 0.7.1), i.e.
-#   sim_experiment(tool = "fragpipe", n = 5000, [mhc_class = "MHC2",]
+# mixes describe the same simulated samples, i.e.
+#   sim_experiment(tool = "fragpipe", n = 5000, [mhc_class = "MHC2", nested_*]
 #                  alleles = ..., conditions = c("CTRL", "TREAT"),
 #                  n_bioreps = 3, seed = 1)
+# Class-I and proteomics output is identical in MaHiCoInSilico 0.7.1 and 0.8.0
+# (checked byte for byte); class II changed in 0.8.0 (nested families).
 simulate_given <- function(folder, annotation, settings) {
   out_dir <- file.path(DIR_DATA, folder)
   if (dir.exists(out_dir)) {
@@ -235,15 +247,19 @@ lines <- c(
   "## Caveats",
   "",
   "* **Simulated data** (MaHiCoInSilico): not the real JY class 1/class 2 data, which is still to come.",
-  "* **Class 2 is a lower bound.** The simulator draws class-II peptides independently, so it never",
-  "  produces the ragged nested families of a real HLA-II immunopeptidome: `frac_nested_core` is ~0",
-  "  and that weight-3 dimension scores 0. A genuine class-II sample would score higher.",
+  "* **Class 2 is idealised.** Class II is simulated as nested families (MaHiCoInSilico >= 0.8.0,",
+  "  `nested_fraction = 0.5`), so `frac_nested_core` (~0.48) largely reads back that setting, and every",
+  "  simulated class-II ligand lies in the 12-25 AA window with no cross-class tail. Real HLA-II data",
+  "  will score lower than this run; it shows the metric works, not what a real sample reaches.",
+  "* **Mixed-class labels**: `runs_summary.csv` labels every row with the class-1 metric names when",
+  "  runs of both classes are stacked (e.g. hla2's `frac_nested_core` reads \"diagnostic\" and",
+  "  `frac_charge_1_2` counts 2+ to 4+ for hla2). The values are correct.",
   "* **Anchor motif clarity rebounds at 100 % tryptic**: pure tryptic 9-mers all end in K/R, which",
   "  looks like a sharp PΩ anchor. The composite still falls monotonically because the length,",
   "  tryptic-background and cross-class dimensions dominate. Flagged for review in plans_dgz.",
   "",
   "Figures: `example/4_figures/eupa2026/panel_A_titration.png`, `panel_B_classes.png`.",
-  "Per-run reports: `example/3_results/eupa2026/html/`."
+  "Per-run reports: `example/reports_html/`."
 )
 writeLines(lines, file.path(DIR_RESULTS, "demo_summary.md"))
 message("\nDone. Summary: ", file.path(DIR_RESULTS, "demo_summary.md"))
