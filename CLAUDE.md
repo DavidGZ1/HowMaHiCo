@@ -48,8 +48,11 @@ from factor level codes**: `pep_all$Charge` is a `"+ n"` factor, and
 That hit `get_charge_group()` and the PEAKS `PeptideID`/`Peptide_charge`. Use
 the internal **`.charge_number()`** (`R/utils-loaders.R`), never
 `as.numeric(Charge)` on `pep_all`. Known, not fixed: anchor information
-content rewards tryptic K/R C-termini (it rebounds at 100 % tryptic), and the
-simulator makes no nested HLA-II families (`frac_nested_core` ~0 on sim data).
+content rewards tryptic K/R C-termini (it rebounds at 100 % tryptic). Since
+MaHiCoInSilico 0.8.0 the demo simulates nested HLA-II families (pinned
+`nested_fraction = 0.5`; class-I/proteomics output unchanged), so hla2 has
+`frac_nested_core` ~0.48 and composite 98.2 (was ~0 / 70): idealised, not a
+real-sample benchmark.
 v0.25.0 adds the **general-overview report `09_overview`** (Tier B), the
 "biologically focused user" half of the abstract's two-audience promise
 (`03_lcms_qc` is the expert half). One page: an at-a-glance table, ligands per
