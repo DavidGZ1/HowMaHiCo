@@ -7,7 +7,14 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.27.1** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.27.2** — Phases 1–6 of the package conversion are complete.
+v0.27.2: `summarise_runs()` labels each row by its run's `MHCclass` and
+`plot_run_trend()` joins differing class labels ("A / B") — a mixed class-1/2
+stack used to get the MHC1 labels throughout (internal
+`.class_metric_labels()`/`.run_metric_labels()`, `R/compare-runs.R`). Note: the
+class helpers in `R/quality-score.R` compare with `identical()`, so pass them an
+**unnamed** class string — a named one (e.g. from `tapply()`) silently falls
+back to MHC1.
 v0.27.1 is a `01_mhc_overview` display fix: `plot_bp_count_length()` no longer
 drops its "Total=" label past the y-limit (it was nudged by a fixed
 `300 + lim/10`, so Parent-protein totals vanished), and the motif/UpSet tab

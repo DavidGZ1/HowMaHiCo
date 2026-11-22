@@ -192,11 +192,37 @@ compare_runs <- function(runs, labels = NULL, order = c("input", "timestamp")) {
   if (sep) pre else sub("_$", "", pre)
 }
 
-# metric -> human-readable label, from the threshold table of the runs' class
-.run_metric_labels <- function(runs_tbl) {
-  cls <- if ("MHCclass" %in% names(runs_tbl)) stats::na.omit(unique(runs_tbl$MHCclass)) else character(0)
-  th <- quality_thresholds_default(if (length(cls) == 1) cls else "MHC1")
+# metric -> human-readable label for one MHC class (NA / absent -> MHC1). The
+# metric keys are identical across classes; a few labels are not (frac_9mer,
+# frac_nested_core, frac_charge_1_2), because the metric means something
+# different there.
+.class_metric_labels <- function(cls = NA) {
+  # unname: the class helpers compare with identical(), which a named string fails
+  cls <- unname(as.character(cls))
+  if (length(cls) != 1 || is.na(cls) || !nzchar(cls)) cls <- "MHC1"
+  th <- quality_thresholds_default(cls)
   c(composite_score = "Composite score", stats::setNames(th$label, th$metric))
+}
+
+# the classes of the runs in a compare_runs() table (character(0) if unknown)
+.run_classes <- function(runs_tbl) {
+  if (!"MHCclass" %in% names(runs_tbl)) return(character(0))
+  cls <- as.character(stats::na.omit(unique(runs_tbl$MHCclass)))
+  cls[nzchar(cls)]
+}
+
+# metric -> one label covering every class in the table: where the classes
+# label a metric differently (stacking class 1 and class 2 runs), the labels
+# are joined with " / " so a shared plot panel does not name only one of them.
+# Previously a mixed table silently got the MHC1 labels throughout.
+.run_metric_labels <- function(runs_tbl) {
+  cls <- .run_classes(runs_tbl)
+  if (length(cls) <= 1) return(.class_metric_labels(if (length(cls)) cls else NA))
+  per_class <- lapply(cls, .class_metric_labels)
+  keys <- names(per_class[[1]])
+  stats::setNames(vapply(keys, function(k)
+    paste(unique(vapply(per_class, function(l) unname(l[k]), character(1))), collapse = " / "),
+    character(1)), keys)
 }
 
 #' Summarise stacked quality scores per run
@@ -238,9 +264,23 @@ summarise_runs <- function(runs_tbl, metrics = NULL) {
       .groups = "drop") |>
     dplyr::mutate(metric = factor(metric, levels = metrics)) |>
     dplyr::arrange(Run, metric) |>
-    dplyr::mutate(metric = as.character(metric),
-                  label = unname(ifelse(metric %in% names(labels), labels[metric], metric)),
-                  .after = metric)
+    dplyr::mutate(metric = as.character(metric))
+  # label each row from ITS run's class, so a mixed class-1/class-2 table does
+  # not call a class-2 metric by its class-1 name
+  run_cls <- if ("MHCclass" %in% names(runs_tbl)) {
+    v <- tapply(as.character(runs_tbl$MHCclass), runs_tbl$Run,
+                function(x) { x <- x[!is.na(x)]; if (length(x)) x[1] else NA_character_ })
+    v[as.character(out$Run)]
+  } else rep(NA_character_, nrow(out))
+  lab_cache <- list()
+  out$label <- vapply(seq_len(nrow(out)), function(i) {
+    key <- if (is.na(run_cls[i])) "<NA>" else run_cls[i]
+    if (is.null(lab_cache[[key]])) lab_cache[[key]] <<- .class_metric_labels(run_cls[i])
+    l <- lab_cache[[key]]
+    m <- out$metric[i]
+    if (m %in% names(l)) unname(l[m]) else m
+  }, character(1))
+  out <- dplyr::relocate(out, label, .after = metric)
 
   cats <- c("Pass", "Warning", "Fail")
   cat_counts <- lapply(cats, function(k) {
