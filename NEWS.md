@@ -1,3 +1,12 @@
+# HowMaHiCo 0.27.2
+
+* `summarise_runs()` labels each row from its own run's `MHCclass`, and
+  `plot_run_trend()` names both labels ("A / B") on a panel whose metric the
+  stacked classes label differently. Stacking class-1 and class-2 runs used to
+  give every row the class-1 labels, so a class-2 run's scored
+  `frac_nested_core` read "Nested cores (diagnostic)" and its 2+ to 4+ charge
+  metric "Charge 1+/2+". Values were always correct.
+
 # HowMaHiCo 0.27.1
 
 * `01_mhc_overview`: the "Total=" labels of the *Total by Sample* and *Total by

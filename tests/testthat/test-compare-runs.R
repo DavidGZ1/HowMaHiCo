@@ -136,6 +136,39 @@ test_that("summarise_runs gives per-run medians and category counts", {
   expect_error(summarise_runs(out, metrics = "bogus"), "bogus")
 })
 
+test_that("a mixed class-1/class-2 table labels each run by its own class", {
+  # before v0.27.2 every row got the MHC1 labels, so a class-2 run's scored
+  # nested-core metric read "Nested cores (diagnostic)"
+  root <- tempfile("runs_"); dir.create(root)
+  on.exit(unlink(root, recursive = TRUE), add = TRUE)
+  ex <- list(frac_nested_core = c(0.01, 0.02), frac_charge_1_2 = c(0.9, 0.9))
+  d1 <- write_run(file.path(root, "c1"), "c1", fake_scores(c("s1", "s2"), c(80, 70), ex),
+                  list(SampleSet = "X", MHCclass = "MHC1", ThresholdMode = "default"))
+  d2 <- write_run(file.path(root, "c2"), "c2", fake_scores(c("s1", "s2"), c(90, 85), ex),
+                  list(SampleSet = "Y", MHCclass = "MHC2", ThresholdMode = "default"))
+  out <- suppressWarnings(compare_runs(c(d1, d2)))
+  lab1 <- HowMaHiCo:::.class_metric_labels("MHC1")
+  lab2 <- HowMaHiCo:::.class_metric_labels("MHC2")
+
+  s <- summarise_runs(out, metrics = c("frac_nested_core", "frac_charge_1_2", "composite_score"))
+  get_lab <- function(run, m) s$label[s$Run == run & s$metric == m]
+  expect_equal(get_lab("X", "frac_nested_core"), unname(lab1["frac_nested_core"]))
+  expect_equal(get_lab("Y", "frac_nested_core"), unname(lab2["frac_nested_core"]))
+  expect_equal(get_lab("Y", "frac_charge_1_2"), unname(lab2["frac_charge_1_2"]))
+  expect_equal(get_lab("Y", "composite_score"), "Composite score")
+  expect_false(identical(lab1["frac_nested_core"], lab2["frac_nested_core"]))
+
+  # one shared plot panel per metric names both classes' labels where they differ
+  panels <- levels(ggplot2::ggplot_build(
+    plot_run_trend(out, metrics = c("frac_nested_core", "composite_score")))$layout$layout$Metric)
+  expect_true(paste(lab1["frac_nested_core"], lab2["frac_nested_core"], sep = " / ") %in% panels)
+  expect_true("Composite score" %in% panels)
+
+  # a single-class or class-less table keeps plain labels
+  expect_equal(HowMaHiCo:::.run_metric_labels(out[out$MHCclass == "MHC2", ]), lab2)
+  expect_equal(HowMaHiCo:::.run_metric_labels(compare_runs(list(a = fake_scores("s1", 80)))), lab1)
+})
+
 test_that("plot_run_trend builds both plot types and validates its inputs", {
   out <- compare_runs(list(A = fake_scores(c("s1", "s2"), c(80, 60), list(Condition = c("c", "t"))),
                            B = fake_scores(c("s1", "s2"), c(90, 75), list(Condition = c("c", "t")))))
