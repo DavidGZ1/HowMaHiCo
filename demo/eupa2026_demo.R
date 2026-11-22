@@ -5,8 +5,8 @@
 # from SIMULATED data (MaHiCoInSilico; not the real JY data, which is still to
 # come):
 #
-#   * class 1: example/2_data/sim_fragpipe_dda_hla1  (HLA-A*02:01 + B*07:02)
-#   * class 2: example/2_data/sim_fragpipe_dda_hla2  (HLA-DRB1*01:01)
+#   * class 1: example/2_data/sim_fragpipe_dda_hla1  (HLA-A*02:01 + B*07:02, simulated here)
+#   * class 2: example/2_data/sim_fragpipe_dda_hla2  (HLA-DRB1*01:01, simulated here)
 #   * simulated here, all as FragPipe DDA psm.tsv with the same CTRL/TREAT x 3
 #     design:
 #       - a contamination titration: the class-1 pulldown blended with tryptic
@@ -55,7 +55,7 @@ SPIKE_PROTEOME <- list(n = 5000, data_type = "proteomics", seed = 2)
 SPIKE_HLA2 <- list(n = 5000, mhc_class = "MHC2", alleles = "HLA-DRB1*01:01", seed = 1)
 DESIGN <- list(conditions = c("CTRL", "TREAT"), n_bioreps = 3)
 
-for (d in c(DIR_RESULTS, DIR_FIGURES, DIR_HTML)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
+for (d in c(DIR_DATA, DIR_DOC, DIR_RESULTS, DIR_FIGURES, DIR_HTML)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
 # every run: name, data folder, annotation csv, MHC class it is scored as
 run_name <- function(p) sprintf("titr_p%03d", round(100 * p))
@@ -76,7 +76,34 @@ runs <- rbind(
              stringsAsFactors = FALSE)
 )
 
-# ---- 1. Simulate the controls -----------------------------------------------
+# ---- 1. Simulate the datasets -----------------------------------------------
+# The class-1 and class-2 pulldowns. Their settings ARE the titration's host
+# (HOST_HLA1) and the cross-class spike (SPIKE_HLA2), so the given runs and the
+# mixes describe the same simulated samples. Checked: these calls reproduce the
+# existing example/2_data/sim_fragpipe_dda_hla1|hla2 psm.tsv and annotation
+# files byte for byte (MaHiCoInSilico 0.7.1), i.e.
+#   sim_experiment(tool = "fragpipe", n = 5000, [mhc_class = "MHC2",]
+#                  alleles = ..., conditions = c("CTRL", "TREAT"),
+#                  n_bioreps = 3, seed = 1)
+simulate_given <- function(folder, annotation, settings) {
+  out_dir <- file.path(DIR_DATA, folder)
+  if (dir.exists(out_dir)) {
+    message("exists, skipping simulation: ", out_dir)
+    return(invisible())
+  }
+  if (!requireNamespace("MaHiCoInSilico", quietly = TRUE))
+    stop("MaHiCoInSilico is needed to simulate '", folder, "'.")
+  message("simulating ", folder)
+  ex <- do.call(MaHiCoInSilico::sim_experiment,
+                c(list(tool = "fragpipe", results_dir = out_dir), settings, DESIGN))
+  file.copy(ex$annotation_path, file.path(DIR_DOC, annotation), overwrite = TRUE)
+}
+
+given_settings <- list(hla1 = HOST_HLA1, hla2 = SPIKE_HLA2)
+for (i in which(runs$kind == "given"))
+  simulate_given(runs$folder[i], runs$annotation[i], given_settings[[runs$run[i]]])
+
+# the controls
 simulate_mix <- function(folder, annotation, spike, p) {
   out_dir <- file.path(DIR_DATA, folder)
   if (dir.exists(out_dir)) {
@@ -101,6 +128,7 @@ simulate_mix(runs$folder[i], runs$annotation[i], SPIKE_HLA2, runs$proportion[i])
 # ---- 2. Build pep_all and render the reports --------------------------------
 all_reports <- c("01_mhc_overview", "02_prot_all", "03_lcms_qc",
                  "04_pepchem", "05_quant_stats")
+
 # the control runs only need the quality score and red flags, both in 01
 control_reports <- "01_mhc_overview"
 
