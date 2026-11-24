@@ -257,6 +257,32 @@ The dictionary maps raw column names onto the `pep_all` schema;
 reference dictionaries for the three built-in engines ship in
 `inst/extdata/dictionaries/`.
 
+## Running a report step by step
+
+When a report fails, or you want to change one of its plots, run it
+outside the knit.
+[`report_params()`](https://davidgz1.github.io/HowMaHiCo/reference/report_params.md)
+gives the template’s parameters (its YAML defaults plus your values; a
+misspelled name is an error) and
+[`report_setup()`](https://davidgz1.github.io/HowMaHiCo/reference/report_setup.md)
+creates everything the report’s chunks use. Then run the chunks of the
+skeleton that
+[`get_report_template()`](https://davidgz1.github.io/HowMaHiCo/reference/get_report_template.md)
+copies (RStudio’s “Run All” works):
+
+``` r
+
+params <- report_params("01_mhc_overview", Subset = "dda_all",
+                        FolderData = "2_data", FolderResults = "3_results")
+report_setup(params)                 # pep_all, pep_short, shortpep_range, ...
+get_report_template("my_overview", template = "01_mhc_overview")
+
+# or keep the knit environment of a render that failed
+e <- new.env()
+try(run_howmahico_report("01_mhc_overview", params, "overview.html", envir = e))
+ls(e)
+```
+
 ## Where to go next
 
 - [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md)

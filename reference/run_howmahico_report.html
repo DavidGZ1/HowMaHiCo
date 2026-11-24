@@ -15,7 +15,7 @@ Docker-idiomatic (&quot;one container run = one job&quot;)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,6 +60,7 @@ Docker-idiomatic ("one container run = one job").</p>
 <span>    <span class="st">"03_lcms_qc"</span>, <span class="st">"04_pepchem"</span>, <span class="st">"05_quant_stats"</span><span class="op">)</span>,</span>
 <span>  <span class="va">params</span>,</span>
 <span>  <span class="va">output_file</span>,</span>
+<span>  envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">new.env</a></span><span class="op">(</span>parent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">globalenv</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -111,9 +112,19 @@ against <code>params$ProjectDir</code> (if supplied) or the current working dire
 at call time — never against the package-internal skeleton location.</p></dd>
 
 
+<dt id="arg-envir">envir<a class="anchor" aria-label="anchor" href="#arg-envir"></a></dt>
+<dd><p>Environment the report is knitted in. The default, a fresh
+environment, is discarded after the render; pass your own to inspect the
+report's objects (<code>pep_all</code>, <code>pep_short</code>, intermediate tables) afterwards</p><ul><li><p>in particular after a render that failed:
+<code>e &lt;- new.env(); try(run_howmahico_report(..., envir = e)); ls(e)</code>.
+See also <code><a href="report_params.html">report_params()</a></code> and <code><a href="report_setup.html">report_setup()</a></code> for
+running a report step by step.</p></li>
+</ul></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments forwarded to <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">rmarkdown::render()</a></code> (e.g.
-<code>quiet</code>, <code>envir</code>).</p></dd>
+<code>quiet</code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

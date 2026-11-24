@@ -24,6 +24,12 @@ focused 01-07 reports)
 - [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md)
   : Copy the guided analysis-pipeline script to the working directory
 
+- [`report_params()`](https://davidgz1.github.io/HowMaHiCo/reference/report_params.md)
+  : Build the parameter list of a HowMaHiCo report
+
+- [`report_setup()`](https://davidgz1.github.io/HowMaHiCo/reference/report_setup.md)
+  : Set up the objects a HowMaHiCo report works on
+
 ## Annotation
 
 Read, validate, display, and auto-generate sample annotation tables

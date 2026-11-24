@@ -54,7 +54,7 @@ experimental conditions and replicates.
 | Folder | Contents |
 |----|----|
 | `R/` | Package source — 100+ exported functions (loaders, annotation, counting, statistics, plotting, export) plus the [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)/[`derive_filtered_annotation()`](https://davidgz1.github.io/HowMaHiCo/reference/derive_filtered_annotation.md) entry points |
-| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the main `01_mhc_overview` and the focused `02_prot_all`/`03_lcms_qc`/`04_pepchem`/`05_quant_stats` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). Shared setup for the focused reports lives in `inst/rmarkdown/shared/setup.Rmd` |
+| `inst/rmarkdown/templates/` | The parameterized Rmd report templates — `00_mhc_report` (all-in-one), `00_mhc_upsets`, and the main `01_mhc_overview` and the focused `02_prot_all`/`03_lcms_qc`/`04_pepchem`/`05_quant_stats` — packaged for [`rmarkdown::draft()`](https://pkgs.rstudio.com/rmarkdown/reference/draft.html)/[`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md). The focused reports set themselves up with [`report_setup()`](https://davidgz1.github.io/HowMaHiCo/reference/report_setup.md), so they can also be run chunk by chunk |
 | `inst/scripts/` | The guided pipeline script handed out by [`get_pipeline_script()`](https://davidgz1.github.io/HowMaHiCo/reference/get_pipeline_script.md) |
 | `vignettes/` | [`vignette("howmahico")`](https://davidgz1.github.io/HowMaHiCo/articles/howmahico.md) — the narrated walkthrough |
 | `tests/testthat/` | testthat-edition-3 suite (hand-synthesized fixtures — never derived from real instrument data) |
@@ -470,6 +470,30 @@ from
 | Only one Condition, and comparison sections are empty | Expected — pairwise sections need ≥ 2 Conditions and say so rather than failing |
 | Plots or correlations look wrong after a quick run | `TestMode = TRUE` keeps ~100 rows per run; correlations need the full data |
 | `pandoc` errors when rendering | pandoc is missing or not on `PATH`. Use RStudio, or install pandoc separately |
+| A render fails and you need to see why | Step through the report in plain R — see *Running a report step by step* below |
+
+### Running a report step by step
+
+The focused reports (`01`–`05`) need nothing a knit provides, so any of
+them can be run outside
+[`rmarkdown::render()`](https://pkgs.rstudio.com/rmarkdown/reference/render.html):
+
+``` r
+
+library(HowMaHiCo)
+# 1. the report's params: template defaults + your values (typos are an error)
+params <- report_params("03_lcms_qc", Subset = "dda_all",
+                        FolderData = "2_data", FolderResults = "3_results")
+
+# 2a. run the setup at the console, then any chunk of the skeleton
+#     (get_report_template(template = "03_lcms_qc") copies it; RStudio "Run All" works)
+report_setup(params)          # creates pep_all, pep_short, shortpep_range, ...
+
+# 2b. or render, keeping the knit environment to inspect after a failure
+e <- new.env()
+try(run_howmahico_report("03_lcms_qc", params, "03.html", envir = e))
+ls(e)
+```
 
 ## More detail
 

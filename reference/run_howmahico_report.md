@@ -18,6 +18,7 @@ run_howmahico_report(
     "03_lcms_qc", "04_pepchem", "05_quant_stats"),
   params,
   output_file,
+  envir = new.env(parent = globalenv()),
   ...
 )
 ```
@@ -70,11 +71,26 @@ run_howmahico_report(
   `params$ProjectDir` (if supplied) or the current working directory at
   call time — never against the package-internal skeleton location.
 
+- envir:
+
+  Environment the report is knitted in. The default, a fresh
+  environment, is discarded after the render; pass your own to inspect
+  the report's objects (`pep_all`, `pep_short`, intermediate tables)
+  afterwards
+
+  - in particular after a render that failed:
+    `e <- new.env(); try(run_howmahico_report(..., envir = e)); ls(e)`.
+    See also
+    [`report_params()`](https://davidgz1.github.io/HowMaHiCo/reference/report_params.md)
+    and
+    [`report_setup()`](https://davidgz1.github.io/HowMaHiCo/reference/report_setup.md)
+    for running a report step by step.
+
 - ...:
 
   Additional arguments forwarded to
   [`rmarkdown::render()`](https://pkgs.rstudio.com/rmarkdown/reference/render.html)
-  (e.g. `quiet`, `envir`).
+  (e.g. `quiet`).
 
 ## Value
 

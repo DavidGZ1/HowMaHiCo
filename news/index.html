@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,14 @@
       <small>Source: <a href="https://github.com/DavidGZ1/HowMaHiCo/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.28.0" id="howmahico-0280">HowMaHiCo 0.28.0<a class="anchor" aria-label="anchor" href="#howmahico-0280"></a></h2>
+<ul><li>
+<strong>The focused reports can be run outside a knit.</strong> <code>01_mhc_overview</code>, <code>02_prot_all</code>, <code>03_lcms_qc</code>, <code>04_pepchem</code> and <code>05_quant_stats</code> used to pull their setup in through a knitr child (<code>inst/rmarkdown/shared/setup.Rmd</code>). RStudio’s “Run All” skips child chunks, so a report stepped through at the console stopped at its first real chunk (<code>pep_all</code> not found), and a change to the child was only seen after reinstalling the package. The setup is now the exported <code>report_setup(params, envir)</code>, called from an ordinary chunk; same logic, same objects. <code>setup.Rmd</code> is removed. The glossary child stays.</li>
+<li>New <code>report_params(template, ...)</code>: a template’s declared parameters with their YAML defaults, overlaid with your values. An undeclared name is an error that lists the valid ones; <code><a href="../reference/run_howmahico_report.html">run_howmahico_report()</a></code> now checks this before rendering.</li>
+<li>
+<code><a href="../reference/run_howmahico_report.html">run_howmahico_report()</a></code> gained an <code>envir</code> argument (default: a fresh environment, as before), so the objects of a failed render can be inspected: <code>e &lt;- new.env(); try(run_howmahico_report(..., envir = e)); ls(e)</code>.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.27.2" id="howmahico-0272">HowMaHiCo 0.27.2<a class="anchor" aria-label="anchor" href="#howmahico-0272"></a></h2>
 <ul><li>

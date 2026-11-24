@@ -1,5 +1,27 @@
 # Changelog
 
+## HowMaHiCo 0.28.0
+
+- **The focused reports can be run outside a knit.** `01_mhc_overview`,
+  `02_prot_all`, `03_lcms_qc`, `04_pepchem` and `05_quant_stats` used to
+  pull their setup in through a knitr child
+  (`inst/rmarkdown/shared/setup.Rmd`). RStudio’s “Run All” skips child
+  chunks, so a report stepped through at the console stopped at its
+  first real chunk (`pep_all` not found), and a change to the child was
+  only seen after reinstalling the package. The setup is now the
+  exported `report_setup(params, envir)`, called from an ordinary chunk;
+  same logic, same objects. `setup.Rmd` is removed. The glossary child
+  stays.
+- New `report_params(template, ...)`: a template’s declared parameters
+  with their YAML defaults, overlaid with your values. An undeclared
+  name is an error that lists the valid ones;
+  [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)
+  now checks this before rendering.
+- [`run_howmahico_report()`](https://davidgz1.github.io/HowMaHiCo/reference/run_howmahico_report.md)
+  gained an `envir` argument (default: a fresh environment, as before),
+  so the objects of a failed render can be inspected:
+  `e <- new.env(); try(run_howmahico_report(..., envir = e)); ls(e)`.
+
 ## HowMaHiCo 0.27.2
 
 - [`summarise_runs()`](https://davidgz1.github.io/HowMaHiCo/reference/summarise_runs.md)

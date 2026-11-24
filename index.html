@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.27.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,8 +102,7 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 </tr>
 <tr>
 <td><code>inst/rmarkdown/templates/</code></td>
-<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the main <code>01_mhc_overview</code> and the focused <code>02_prot_all</code>/<code>03_lcms_qc</code>/<code>04_pepchem</code>/<code>05_quant_stats</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. Shared setup for the focused reports lives in <code>inst/rmarkdown/shared/setup.Rmd</code>
-</td>
+<td>The parameterized Rmd report templates — <code>00_mhc_report</code> (all-in-one), <code>00_mhc_upsets</code>, and the main <code>01_mhc_overview</code> and the focused <code>02_prot_all</code>/<code>03_lcms_qc</code>/<code>04_pepchem</code>/<code>05_quant_stats</code> — packaged for <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/draft.html" class="external-link">rmarkdown::draft()</a></code>/<code><a href="reference/run_howmahico_report.html">run_howmahico_report()</a></code>. The focused reports set themselves up with <code><a href="reference/report_setup.html">report_setup()</a></code>, so they can also be run chunk by chunk</td>
 </tr>
 <tr>
 <td><code>inst/scripts/</code></td>
@@ -866,8 +865,31 @@ csv / xlsx result tables  +  optional PNG figure exports</code></pre>
 <code>pandoc</code> errors when rendering</td>
 <td>pandoc is missing or not on <code>PATH</code>. Use RStudio, or install pandoc separately</td>
 </tr>
+<tr>
+<td>A render fails and you need to see why</td>
+<td>Step through the report in plain R — see <em>Running a report step by step</em> below</td>
+</tr>
 </tbody>
 </table>
+<div class="section level3">
+<h3 id="running-a-report-step-by-step">Running a report step by step<a class="anchor" aria-label="anchor" href="#running-a-report-step-by-step"></a>
+</h3>
+<p>The focused reports (<code>01</code>–<code>05</code>) need nothing a knit provides, so any of them can be run outside <code><a href="https://pkgs.rstudio.com/rmarkdown/reference/render.html" class="external-link">rmarkdown::render()</a></code>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DavidGZ1/HowMaHiCo" class="external-link">HowMaHiCo</a></span><span class="op">)</span></span>
+<span><span class="co"># 1. the report's params: template defaults + your values (typos are an error)</span></span>
+<span><span class="va">params</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/report_params.html">report_params</a></span><span class="op">(</span><span class="st">"03_lcms_qc"</span>, Subset <span class="op">=</span> <span class="st">"dda_all"</span>,</span>
+<span>                        FolderData <span class="op">=</span> <span class="st">"2_data"</span>, FolderResults <span class="op">=</span> <span class="st">"3_results"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 2a. run the setup at the console, then any chunk of the skeleton</span></span>
+<span><span class="co">#     (get_report_template(template = "03_lcms_qc") copies it; RStudio "Run All" works)</span></span>
+<span><span class="fu"><a href="reference/report_setup.html">report_setup</a></span><span class="op">(</span><span class="va">params</span><span class="op">)</span>          <span class="co"># creates pep_all, pep_short, shortpep_range, ...</span></span>
+<span></span>
+<span><span class="co"># 2b. or render, keeping the knit environment to inspect after a failure</span></span>
+<span><span class="va">e</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">new.env</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/try.html" class="external-link">try</a></span><span class="op">(</span><span class="fu"><a href="reference/run_howmahico_report.html">run_howmahico_report</a></span><span class="op">(</span><span class="st">"03_lcms_qc"</span>, <span class="va">params</span>, <span class="st">"03.html"</span>, envir <span class="op">=</span> <span class="va">e</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="va">e</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="more-detail">More detail<a class="anchor" aria-label="anchor" href="#more-detail"></a>
