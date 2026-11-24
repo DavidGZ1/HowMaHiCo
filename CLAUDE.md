@@ -7,7 +7,19 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.27.2** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.28.0** — Phases 1–6 of the package conversion are complete.
+v0.28.0 makes the **focused reports runnable outside a knit**: the knitr child
+`inst/rmarkdown/shared/setup.Rmd` is gone (RStudio "Run All" skips child
+chunks, so stepping through a report stopped at `pep_all` not found). Its logic
+is the exported **`report_setup(params, envir)`** (`R/report-setup.R`), called
+from an ordinary `load-pep-all` chunk after an `initialize` chunk that attaches
+the packages; it assigns the same objects (`shortpep_range`, `FolderResults`,
+`result_prefix`, `pep_all`, `pep_short`, `conditions`, `phis_ncol`, ...).
+**`report_params(template, ...)`** returns the template's YAML params with
+overrides and errors on undeclared names (`run_howmahico_report()` calls it
+first); `run_howmahico_report()` gained `envir`.
+Only `glossary.Rmd` remains a shared child. Setup changes in a focused report
+now go in `report_setup()`, not in the skeletons.
 v0.27.2: `summarise_runs()` labels each row by its run's `MHCclass` and
 `plot_run_trend()` joins differing class labels ("A / B") — a mixed class-1/2
 stack used to get the MHC1 labels throughout (internal
@@ -38,7 +50,7 @@ blocks, `attr(p, "clusters")`; a `ggarrange` composite, so static) with the
 `06_quant_stats` param `HeatmapClusters`; `plot_property_distribution()` draws
 integer descriptors (Length) as histograms; new `pepchem_glossary()` rendered by
 the shared glossary only when the parent sets `glossary_pepchem <- TRUE`.
-**Render tests read the shared children (`setup.Rmd`, `glossary.Rmd`) from the
+**Render tests read the shared child (`glossary.Rmd`) and the skeletons from the
 INSTALLED package** (the knit env's `system.file()` is not pkgload's shim), so
 reinstall (`devtools::install(quick = TRUE)`) before trusting a render test of
 a changed child. Inside a `results='asis'` chunk, `cat(as.character(kable))`;
@@ -469,7 +481,7 @@ is not a dependency (no `Imports`/`Remotes:` entry anywhere: CI/Docker/installs)
 | Folder | Contents |
 |---|---|
 | `R/` | Package source: all exported functions (100+) + internal helpers |
-| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/` (frozen all-in-one reports), the main `01_mhc_overview/`, and the focused `02_prot_all/`, `03_lcms_qc/`, `04_pepchem/`, `05_quant_stats/` skeleton Rmds (+ the shared children `inst/rmarkdown/shared/setup.Rmd` and `glossary.Rmd`) |
+| `inst/rmarkdown/templates/` | `00_mhc_report/`, `00_mhc_upsets/` (frozen all-in-one reports), the main `01_mhc_overview/`, and the focused `02_prot_all/`, `03_lcms_qc/`, `04_pepchem/`, `05_quant_stats/` skeleton Rmds (+ the shared child `inst/rmarkdown/shared/glossary.Rmd`; setup is `report_setup()`) |
 | `inst/scripts/` | `howmahico_pipeline.R` — the guided, runnable walkthrough handed out by `get_pipeline_script()` |
 | `vignettes/` | `howmahico.Rmd` — the narrated walkthrough (`vignette("howmahico")`) |
 | `inst/extdata/sim_fragpipe_dda/`, `inst/extdata/sim_peaks_xpro/` | Simulated search output (+ their annotation CSVs) used by the end-to-end tests and by `get_pipeline_script()`'s demo mode |
@@ -537,6 +549,9 @@ one topic each. Pre-v0.27.0 names resolve through `.template_aliases`
 - **`R/io.R`** — `write.csv_rawr`, `write_input_params`
 - **`R/run-report.R`** — `run_howmahico_report`, `derive_filtered_annotation`
 - **`R/get-report.R`** — `get_report_template` (copies a skeleton to the working dir)
+- **`R/report-setup.R`** — `report_setup()` (the focused reports' setup step),
+  `report_params()` (a template's declared params + overrides), and the internals
+  `.report_skeleton()` / `.report_templates` / `.report_param_defaults()`
 - **`R/parse-unified.R`** — `read_dictionary()` + `parse_unified()`: the
   dictionary-driven parser for the `software = "custom"` path (rename +
   `Found_By` + shared derived recipe + `validate_pep_all` guard)
@@ -642,7 +657,7 @@ one topic each. Pre-v0.27.0 names resolve through `.template_aliases`
   `R/prot-all.R`; `03_lcms_qc` the LC-MS expert QC; `04_pepchem` the
   peptide-physicochemical-properties report from `R/pepchem.R`;
   `05_quant_stats` the advanced-quantification / differential-abundance report
-  from `R/quant-stats.R`. All share `inst/rmarkdown/shared/setup.Rmd` and load
+  from `R/quant-stats.R`. All call `report_setup(params)` (`R/report-setup.R`) and load
   the `pep_all` cache from `build_pep_all()` (`R/build-pep-all.R`)
 
 ## Annotation file schema (`1_documentation/sample_annotation_*.csv`)
@@ -742,7 +757,7 @@ didn't need (they hardcoded `1_documentation/`):
 | `FolderDocumentation` | **Absolute** (or render-time-cwd-relative) path to the folder containing `AnnotationFile` |
 | `AnnotationFile` | CSV name within `FolderDocumentation` |
 | `FolderData` / `FolderResults` / `FolderFigures` | **Absolute** (or render-time-cwd-relative) paths for cached `pep_all` input / csv+xlsx output / png output |
-| `PepAllSource` | **Focused reports only** (the `01`–`05` templates, via `inst/rmarkdown/shared/setup.Rmd`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
+| `PepAllSource` | **Focused reports only** (the `01`–`05` templates, via `report_setup()`): how to obtain `pep_all` — `"cached"` (default; load `<Subset>_pep_all.rda` from `FolderData`), `"rda"` (load `PepAllFile`), or `"build"` (parse the raw search output via `build_pep_all()` and write the cache). The two `00_*` all-in-one reports ignore this (they always build / load their own way). |
 | `PeptideSet` / `QuantFeature` / `QuantUnit` / `MinReplicates` / `NormMethod` / `ImputeMethod` / `StatMethod` / `BlockVar` / `FdrCutoff` / `Log2FcCutoff` / `MinDetectExclusive` / `TopNHeatmap` / `HeatmapClusters` / `PermutationTest` | **`05_quant_stats` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the matrix rows (`Peptide` default \| `Sequence` \| `PeptideID` \| `ProteinFirst`) and columns (`BioReplicate` default \| `Sample` \| `Condition`), the filtering cut-off (default 2 units in ≥1 Condition), normalization (`median` default \| `quantile` \| `cyclicloess` \| `scale` \| `none`), imputation (`none` default \| `minprob` \| `mindet`), test (`limma` default \| `ttest`), an optional `limma::duplicateCorrelation` blocking column, the significance cut-offs, the detection-count rule for condition-exclusive features, the heatmap feature count, and whether to run the PERMANOVA permutation test. |
 | `PeptideSet` / `PropertySet` / `MotifLength` / `TerminalPositions` / `ChargePh` / `MinPeptidesSample` / `FdrCutoff` | **`04_pepchem` only**: which peptides to analyse (`"selected"` = `pep_short`, or `"all"`), the descriptor set (`core` = Length/GRAVY/pI/Charge \| `extended` adds MW, Boman, hydrophobic moment, instability + aliphatic index and the `frac_*` class fractions — see `pepchem_properties()`), the peptide length used for the per-position frequency map (`"auto"` = modal length, or an integer), the comma-separated positions profiled across all lengths (negative counts from the C-terminus), the pH of the net-charge descriptor, the unique-sequence count below which a sample is flagged as noisy, and the BH significance cut-off. |
 | `Provider` | Organisation/person that produced the report, printed in the header via `provider_line()`. Default `""` prints a generic attribution naming no organisation. Declared by all seven templates. |

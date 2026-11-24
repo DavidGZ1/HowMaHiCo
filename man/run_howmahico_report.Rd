@@ -9,6 +9,7 @@ run_howmahico_report(
     "03_lcms_qc", "04_pepchem", "05_quant_stats"),
   params,
   output_file,
+  envir = new.env(parent = globalenv()),
   ...
 )
 }
@@ -51,8 +52,18 @@ working directory — useful when R is started from a subdirectory.}
 against \code{params$ProjectDir} (if supplied) or the current working directory
 at call time — never against the package-internal skeleton location.}
 
+\item{envir}{Environment the report is knitted in. The default, a fresh
+environment, is discarded after the render; pass your own to inspect the
+report's objects (\code{pep_all}, \code{pep_short}, intermediate tables) afterwards
+\itemize{
+\item in particular after a render that failed:
+\verb{e <- new.env(); try(run_howmahico_report(..., envir = e)); ls(e)}.
+See also \code{\link[=report_params]{report_params()}} and \code{\link[=report_setup]{report_setup()}} for
+running a report step by step.
+}}
+
 \item{...}{Additional arguments forwarded to \code{\link[rmarkdown:render]{rmarkdown::render()}} (e.g.
-\code{quiet}, \code{envir}).}
+\code{quiet}).}
 }
 \value{
 The path to the rendered output file (invisibly), as returned by

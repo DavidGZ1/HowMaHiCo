@@ -69,7 +69,33 @@ section at the end.
 
 **Code version:** `r packageVersion("HowMaHiCo")`
 
-```{r child = system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+if (!is.null(params$ProjectDir) && nzchar(params$ProjectDir))
+  knitr::opts_knit$set(root.dir = normalizePath(params$ProjectDir, mustWork = FALSE))
+```
+
+```{r initialize, message=FALSE, include=FALSE}
+# Running this report outside a knit (RStudio "Run All", or line by line)?
+# Create `params` first:  params <- HowMaHiCo::report_params("02_prot_all", ...)
+library(HowMaHiCo)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(stringr)
+library(kableExtra)
+library(ggpubr)
+library(viridis)
+library(plotly)
+library(openxlsx)
+library(DT)
+```
+
+```{r load-pep-all, message=TRUE, warning=TRUE}
+# derives shortpep_range / palettes / output folders, loads (or builds) pep_all
+# per PepAllSource, and derives pep_short + the grouping vectors - see
+# ?report_setup for every object it creates
+report_setup(params)
 ```
 
 

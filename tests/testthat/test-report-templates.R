@@ -1,27 +1,24 @@
-# Regression guard (v0.7.1): a fenced r-chunk written inside the shared
-# setup.Rmd HTML comment is still parsed by knitr (chunk headers are detected even
-# inside comments, and leading whitespace is allowed). Such an example fence
-# re-includes setup.Rmd and duplicates the 'setup' chunk label, aborting every
-# focused report at parse time with "Duplicate chunk label 'setup'". Keep the
-# leading comment free of chunk fences.
+# v0.28.0: the focused reports no longer pull their setup in through a knitr
+# child (RStudio's "Run All" skips child chunks, so the report could not be
+# stepped through outside a knit). They call report_setup(params) from an
+# ordinary chunk instead. Guard both halves, and that no template still points
+# at the removed shared setup.Rmd.
 
-test_that("shared setup.Rmd has no chunk fence inside its leading HTML comment", {
-  setup_rmd <- system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo")
-  expect_true(nzchar(setup_rmd) && file.exists(setup_rmd))
-  lines <- readLines(setup_rmd)
-
-  comment_open  <- grep("<!--", lines)[1]
-  comment_close <- grep("-->", lines)[1]
-  expect_false(is.na(comment_open))
-  expect_false(is.na(comment_close))
-
-  in_comment <- lines[comment_open:comment_close]
-  # knitr's chunk-begin pattern (leading tabs/spaces/">" allowed)
-  chunk_begin <- "^[\t >]*```+\\s*\\{[rR][ ,}]"
-  expect_false(any(grepl(chunk_begin, in_comment)))
-
-  # exactly one real 'setup'-labelled chunk in the whole fragment
-  expect_equal(sum(grepl("^[\t >]*```+\\s*\\{[rR][ ,]*setup[ ,}]", lines)), 1L)
+test_that("focused templates set up through report_setup(), not a child", {
+  dir_templates <- system.file("rmarkdown", "templates", package = "HowMaHiCo")
+  skip_if(dir_templates == "", "report templates not installed")
+  expect_equal(system.file("rmarkdown", "shared", "setup.Rmd", package = "HowMaHiCo"),
+               "")
+  for (tpl in c("01_mhc_overview", "02_prot_all", "03_lcms_qc", "04_pepchem",
+                "05_quant_stats")) {
+    lines <- readLines(file.path(dir_templates, tpl, "skeleton", "skeleton.Rmd"),
+                       warn = FALSE)
+    expect_false(any(grepl("setup.Rmd", lines, fixed = TRUE)), info = tpl)
+    expect_equal(sum(startsWith(lines, "report_setup(params)")), 1L, info = tpl)
+    # exactly one 'setup'-labelled chunk (knitr's chunk-begin pattern)
+    expect_equal(sum(grepl("^[\t >]*```+\\s*\\{[rR][ ,]*setup[ ,}]", lines)), 1L,
+                 info = tpl)
+  }
 })
 
 # Registration guard: run_howmahico_report() dispatches through match.arg(), so a
@@ -168,8 +165,7 @@ test_that("no results='asis' chunk prints an interactive plot", {
 test_that("every template that prints plots derives interactive_plots from the param", {
   dir_templates <- system.file("rmarkdown", "templates", package = "HowMaHiCo")
   skip_if(dir_templates == "", "report templates not installed")
-  shared_setup <- readLines(system.file("rmarkdown", "shared", "setup.Rmd",
-                                        package = "HowMaHiCo"), warn = FALSE)
+  # report_setup() derives interactive_plots for the focused templates
 
   shipped <- list.dirs(dir_templates, full.names = FALSE, recursive = FALSE)
   shipped <- shipped[nzchar(shipped)]
@@ -179,11 +175,13 @@ test_that("every template that prints plots derives interactive_plots from the p
                        warn = FALSE)
     uses <- any(grepl("interactive = interactive_plots", lines, fixed = TRUE))
     if (!uses) next
-    # either the template derives it itself (the two 00_* reports) or it pulls in
-    # the shared setup child, which does
+    # either the template derives it itself (the two 00_* reports) or it calls
+    # report_setup(), which does
     derives <- any(grepl("interactive_plots <- isTRUE(params$InteractivePlots)",
-                         c(lines, if (any(grepl("shared", lines, fixed = TRUE))) shared_setup),
-                         fixed = TRUE))
+                         lines, fixed = TRUE)) ||
+      (any(startsWith(lines, "report_setup(params)")) &&
+         any(grepl("interactive_plots <- isTRUE(p$InteractivePlots)",
+                   deparse(report_setup), fixed = TRUE)))
     expect_true(derives,
                 info = paste0("Template '", tpl, "' uses interactive_plots but ",
                               "never derives it."))
