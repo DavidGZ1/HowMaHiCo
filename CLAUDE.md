@@ -7,7 +7,9 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.28.0** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.28.1** — Phases 1–6 of the package conversion are complete.
+v0.28.1 changes two plot defaults: `theme_howmahico(base_size = 10)` (was 8) and
+`plot_pseudomobilogram(binwidth = 0.05)` (was 0.2).
 v0.28.0 makes the **focused reports runnable outside a knit**: the knitr child
 `inst/rmarkdown/shared/setup.Rmd` is gone (RStudio "Run All" skips child
 chunks, so stepping through a report stopped at `pep_all` not found). Its logic

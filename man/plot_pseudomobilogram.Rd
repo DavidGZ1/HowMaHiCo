@@ -4,7 +4,7 @@
 \alias{plot_pseudomobilogram}
 \title{Peptide ID pseudomobilogram: count vs 1/k0, faceted by Condition}
 \usage{
-plot_pseudomobilogram(input, title, ncol = 3, binwidth = 0.2)
+plot_pseudomobilogram(input, title, ncol = 3, binwidth = 0.05)
 }
 \arguments{
 \item{input}{A \code{pep_all}-shaped data frame with \code{invk0}, \code{Peptide},
@@ -14,7 +14,7 @@ plot_pseudomobilogram(input, title, ncol = 3, binwidth = 0.2)
 
 \item{ncol}{Number of facet columns.}
 
-\item{binwidth}{1/k0 bin width. Default \code{0.2}.}
+\item{binwidth}{1/k0 bin width. Default \code{0.05}.}
 }
 \value{
 A ggplot2 bar chart.

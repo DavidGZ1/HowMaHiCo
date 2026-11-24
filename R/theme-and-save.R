@@ -54,7 +54,7 @@ theme_rawr <- function(base_size = 8){
 #' plot functions and report templates. Standardises strip/axis/legend/title
 #' font sizes and sets a white plot background.
 #'
-#' @param base_size Base font size (points). Default 8.
+#' @param base_size Base font size (points). Default 10.
 #'
 #' @return A ggplot2 theme object, addable to a plot with `+`.
 #'
@@ -64,7 +64,7 @@ theme_rawr <- function(base_size = 8){
 #' \dontrun{
 #' ggplot(pep_all, aes(Length)) + geom_histogram() + theme_howmahico()
 #' }
-theme_howmahico <- function(base_size = 8) {
+theme_howmahico <- function(base_size = 10) {
   ggplot2::theme_classic(base_size = base_size) +
     ggplot2::theme(
       strip.background = ggplot2::element_blank(),

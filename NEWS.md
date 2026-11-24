@@ -1,3 +1,10 @@
+# HowMaHiCo 0.28.1
+
+* `theme_howmahico()` now defaults to `base_size = 10` (was 8): plot text is
+  larger in every report.
+* `plot_pseudomobilogram()` now defaults to `binwidth = 0.05` (was 0.2): finer
+  1/k0 bins.
+
 # HowMaHiCo 0.28.0
 
 * **The focused reports can be run outside a knit.** `01_mhc_overview`,
