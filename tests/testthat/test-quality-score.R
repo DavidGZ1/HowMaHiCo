@@ -258,3 +258,17 @@ test_that("MHC2 relabels the charge row with its own cut-offs; MHC1 is unchanged
   expect_equal(c(r2$green, r2$amber), c(0.80, 0.60))
   expect_equal(r2$weight, r1$weight)
 })
+
+test_that("plot_quality_heatmap() omits metrics that are NA for every sample", {
+  sc <- data.frame(Sample = factor(c("S1", "S2")), is_QC = FALSE,
+                   score_frac_in_window = c(90, 60),
+                   score_median_abs_rt_error = c(NA_real_, NA_real_),
+                   score_median_abs_ppm = c(80, NA))
+  th <- quality_thresholds_default()
+  lab <- function(m) th$label[th$metric == m]
+  shown <- levels(droplevels(plot_quality_heatmap(sc, th)$data$Metric))
+  expect_false(lab("median_abs_rt_error") %in% shown)
+  expect_true(all(c(lab("frac_in_window"), lab("median_abs_ppm")) %in% shown))
+  kept <- levels(droplevels(plot_quality_heatmap(sc, th, drop_all_na = FALSE)$data$Metric))
+  expect_true(lab("median_abs_rt_error") %in% kept)
+})

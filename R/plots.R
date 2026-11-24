@@ -1212,6 +1212,10 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
 #' @param scores Output of [score_sample_quality()].
 #' @param thresholds Scoring table used to label/order the metric rows (default
 #'   [quality_thresholds_default()]).
+#' @param drop_all_na If `TRUE` (default), omit metrics whose sub-score is `NA`
+#'   for every sample (dimensions undefined for this dataset, e.g. the depth
+#'   metrics in `default` threshold mode or the DIA RT/IM errors for FragPipe).
+#'   All rows are kept if every metric would be dropped.
 #'
 #' @return A ggplot2 tile heatmap.
 #'
@@ -1221,8 +1225,15 @@ plot_ptm_heatmap <- function(pep_short, type = c("count", "proportion"),
 #' \dontrun{
 #' plot_quality_heatmap(score_sample_quality(pep_all, c(8, 13), "MHC1"))
 #' }
-plot_quality_heatmap <- function(scores, thresholds = quality_thresholds_default()) {
+plot_quality_heatmap <- function(scores, thresholds = quality_thresholds_default(),
+                                 drop_all_na = TRUE) {
   score_metrics <- thresholds$metric[paste0("score_", thresholds$metric) %in% names(scores)]
+  if (isTRUE(drop_all_na)) {
+    defined <- vapply(score_metrics,
+                      function(m) any(!is.na(scores[[paste0("score_", m)]])),
+                      logical(1))
+    if (any(defined)) score_metrics <- score_metrics[defined]
+  }
   labels <- stats::setNames(thresholds$label, thresholds$metric)[score_metrics]
 
   long <- scores |>

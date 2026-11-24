@@ -631,7 +631,8 @@ ggprint_rawr(p_quality_composite, interactive = interactive_plots)
 ## Per-metric breakdown
 
 Sub-scores (0-100) for every sample and quality dimension. Red = poor, green =
-good; grey = not applicable to this dataset.
+good. Dimensions undefined for every sample are omitted; grey marks a value
+missing for an individual sample.
 
 ```{r plot-heatmap, echo=FALSE, fig.height=4, fig.width=8, warning=FALSE}
 p_quality_heatmap <- plot_quality_heatmap(scores, thresholds_used)
@@ -644,6 +645,8 @@ The underlying raw values behind each sub-score.
 
 ```{r raw-metrics-table, echo=FALSE}
 raw_cols <- intersect(thresholds_used$metric, names(scores))
+# omit metrics that are NA for every sample (undefined for this dataset)
+raw_cols <- raw_cols[vapply(raw_cols, function(m) any(!is.na(scores[[m]])), logical(1))]
 scores |>
   dplyr::select(Sample, dplyr::all_of(raw_cols)) |>
   dplyr::mutate(dplyr::across(where(is.numeric), ~ round(.x, 3))) |>
