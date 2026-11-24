@@ -9,14 +9,14 @@ sets a white plot background.
 ## Usage
 
 ``` r
-theme_howmahico(base_size = 8)
+theme_howmahico(base_size = 10)
 ```
 
 ## Arguments
 
 - base_size:
 
-  Base font size (points). Default 8.
+  Base font size (points). Default 10.
 
 ## Value
 

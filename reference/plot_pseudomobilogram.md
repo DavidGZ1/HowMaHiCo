@@ -9,7 +9,7 @@ Condition.
 ## Usage
 
 ``` r
-plot_pseudomobilogram(input, title, ncol = 3, binwidth = 0.2)
+plot_pseudomobilogram(input, title, ncol = 3, binwidth = 0.05)
 ```
 
 ## Arguments
@@ -28,7 +28,7 @@ plot_pseudomobilogram(input, title, ncol = 3, binwidth = 0.2)
 
 - binwidth:
 
-  1/k0 bin width. Default `0.2`.
+  1/k0 bin width. Default `0.05`.
 
 ## Value
 
