@@ -790,7 +790,7 @@ plot_pseudochromatogram <- function(input, title, ncol = 3) {
 #'   `Condition`.
 #' @param title Plot title string.
 #' @param ncol Number of facet columns.
-#' @param binwidth 1/k0 bin width. Default `0.2`.
+#' @param binwidth 1/k0 bin width. Default `0.05`.
 #'
 #' @return A ggplot2 bar chart.
 #'
@@ -800,7 +800,7 @@ plot_pseudochromatogram <- function(input, title, ncol = 3) {
 #' \dontrun{
 #' plot_pseudomobilogram(pep_all, "All peptides identified", ncol = 3)
 #' }
-plot_pseudomobilogram <- function(input, title, ncol = 3, binwidth = 0.2) {
+plot_pseudomobilogram <- function(input, title, ncol = 3, binwidth = 0.05) {
   input |>
     dplyr::mutate(invk0_bin = floor(invk0 / binwidth) * binwidth) |>
     dplyr::group_by(Condition, invk0_bin) |>
