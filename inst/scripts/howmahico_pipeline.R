@@ -20,6 +20,11 @@
 # Reports are produced with run_howmahico_report(), which calls
 # rmarkdown::render() for you — you never need to open a template and knit it
 # by hand.
+#
+# A report failed, or you want to work on one of its plots? Run it step by
+# step instead: params <- report_params("<template>", ...), then
+# report_setup(params) and the chunks of the skeleton that
+# get_report_template(template = "<template>") copies.
 # ==============================================================================
 
 library(HowMaHiCo)

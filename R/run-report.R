@@ -47,8 +47,15 @@
 #' @param output_file Output HTML file path. Relative paths are resolved
 #'   against `params$ProjectDir` (if supplied) or the current working directory
 #'   at call time — never against the package-internal skeleton location.
+#' @param envir Environment the report is knitted in. The default, a fresh
+#'   environment, is discarded after the render; pass your own to inspect the
+#'   report's objects (`pep_all`, `pep_short`, intermediate tables) afterwards
+#'   - in particular after a render that failed:
+#'   `e <- new.env(); try(run_howmahico_report(..., envir = e)); ls(e)`.
+#'   See also [report_params()] and [report_setup()] for
+#'   running a report step by step.
 #' @param ... Additional arguments forwarded to [rmarkdown::render()] (e.g.
-#'   `quiet`, `envir`).
+#'   `quiet`).
 #'
 #' @return The path to the rendered output file (invisibly), as returned by
 #'   [rmarkdown::render()].
@@ -97,15 +104,18 @@ run_howmahico_report <- function(template = c("00_mhc_report", "00_mhc_upsets",
                                               "01_mhc_overview", "02_prot_all",
                                               "03_lcms_qc", "04_pepchem",
                                               "05_quant_stats"),
-                                 params, output_file, ...){
+                                 params, output_file,
+                                 envir = new.env(parent = globalenv()), ...){
   template <- .resolve_template_alias(template)
   template <- match.arg(template)
-  skeleton <- system.file("rmarkdown", "templates", template, "skeleton", "skeleton.Rmd",
-                          package = "HowMaHiCo")
+  skeleton <- .report_skeleton(template)
+  # fail before the render on a misspelled / undeclared param, naming the
+  # valid ones (rmarkdown would abort too, but only after starting the knit)
+  report_params(template, .params = params)
   # render() defaults to knitting in parent.frame() — that's *this* function's
   # own environment, which already binds a `params` argument and collides with
   # the `params` rmarkdown injects into the knit environment. Knit in a fresh
-  # environment instead.
+  # environment instead (or the caller's `envir`, to inspect it afterwards).
   knit_root_dir <- if (!is.null(params$ProjectDir) && nzchar(params$ProjectDir))
     normalizePath(params$ProjectDir, mustWork = FALSE) else NULL
   # Resolve output_file against the project root (or cwd) so a bare filename
@@ -114,7 +124,7 @@ run_howmahico_report <- function(template = c("00_mhc_report", "00_mhc_upsets",
   output_file <- normalizePath(file.path(base_dir, output_file), mustWork = FALSE)
   rmarkdown::render(input = skeleton, output_file = output_file, params = params,
                     knit_root_dir = knit_root_dir,
-                    envir = new.env(parent = globalenv()), ...)
+                    envir = envir, ...)
 }
 
 # Template names used before v0.27.0, mapped to the report that now holds

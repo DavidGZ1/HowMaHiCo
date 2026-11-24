@@ -14,6 +14,8 @@ reference:
   - derive_filtered_annotation
   - get_report_template
   - get_pipeline_script
+  - report_params
+  - report_setup
 
 - title: Annotation
   desc: Read, validate, display, and auto-generate sample annotation tables
