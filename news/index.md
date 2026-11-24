@@ -1,5 +1,15 @@
 # Changelog
 
+## HowMaHiCo 0.28.2
+
+- `01_mhc_overview` no longer shows quality-score metrics that are `NA`
+  for every sample (e.g. the depth metrics in `default` threshold mode,
+  the DIA RT/1/k0 errors for FragPipe/PEAKS, `ppm` for DIA-NN): they are
+  dropped from the per-metric heatmap and the raw-metrics table. Display
+  only; scores, composite and `scores.csv` are unchanged.
+  [`plot_quality_heatmap()`](https://davidgz1.github.io/HowMaHiCo/reference/plot_quality_heatmap.md)
+  gained `drop_all_na = TRUE` (`FALSE` restores the previous output).
+
 ## HowMaHiCo 0.28.1
 
 - [`theme_howmahico()`](https://davidgz1.github.io/HowMaHiCo/reference/theme_howmahico.md)

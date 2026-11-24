@@ -13,7 +13,7 @@ human-readable names and QC samples are marked with a trailing asterisk."></head
 
     <a class="navbar-brand me-2" href="../index.html">HowMaHiCo</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.28.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,7 +52,11 @@ human-readable names and QC samples are marked with a trailing asterisk.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_quality_heatmap</span><span class="op">(</span><span class="va">scores</span>, thresholds <span class="op">=</span> <span class="fu"><a href="quality_thresholds_default.html">quality_thresholds_default</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plot_quality_heatmap</span><span class="op">(</span></span>
+<span>  <span class="va">scores</span>,</span>
+<span>  thresholds <span class="op">=</span> <span class="fu"><a href="quality_thresholds_default.html">quality_thresholds_default</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  drop_all_na <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -66,6 +70,13 @@ human-readable names and QC samples are marked with a trailing asterisk.</p>
 <dt id="arg-thresholds">thresholds<a class="anchor" aria-label="anchor" href="#arg-thresholds"></a></dt>
 <dd><p>Scoring table used to label/order the metric rows (default
 <code><a href="quality_thresholds_default.html">quality_thresholds_default()</a></code>).</p></dd>
+
+
+<dt id="arg-drop-all-na">drop_all_na<a class="anchor" aria-label="anchor" href="#arg-drop-all-na"></a></dt>
+<dd><p>If <code>TRUE</code> (default), omit metrics whose sub-score is <code>NA</code>
+for every sample (dimensions undefined for this dataset, e.g. the depth
+metrics in <code>default</code> threshold mode or the DIA RT/IM errors for FragPipe).
+All rows are kept if every metric would be dropped.</p></dd>
 
 </dl></div>
     <div class="section level2">

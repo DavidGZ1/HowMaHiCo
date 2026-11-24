@@ -10,7 +10,11 @@ a trailing asterisk.
 ## Usage
 
 ``` r
-plot_quality_heatmap(scores, thresholds = quality_thresholds_default())
+plot_quality_heatmap(
+  scores,
+  thresholds = quality_thresholds_default(),
+  drop_all_na = TRUE
+)
 ```
 
 ## Arguments
@@ -24,6 +28,13 @@ plot_quality_heatmap(scores, thresholds = quality_thresholds_default())
 
   Scoring table used to label/order the metric rows (default
   [`quality_thresholds_default()`](https://davidgz1.github.io/HowMaHiCo/reference/quality_thresholds_default.md)).
+
+- drop_all_na:
+
+  If `TRUE` (default), omit metrics whose sub-score is `NA` for every
+  sample (dimensions undefined for this dataset, e.g. the depth metrics
+  in `default` threshold mode or the DIA RT/IM errors for FragPipe). All
+  rows are kept if every metric would be dropped.
 
 ## Value
 
