@@ -7,7 +7,11 @@ RMarkdown reporting pipeline that ingests LC-MS search-engine output (FragPipe, 
 PEAKS), normalizes it into one unified long-format table (`pep_all`), and renders
 self-contained interactive HTML QC reports plus csv/xlsx/png result exports.
 
-**Current version: 0.28.1** — Phases 1–6 of the package conversion are complete.
+**Current version: 0.28.2** — Phases 1–6 of the package conversion are complete.
+v0.28.2 hides quality-score metrics that are `NA` for every sample (depth metrics
+in `default` mode, DIA RT/IM errors for FragPipe/PEAKS, `ppm` for DIA-NN) from the
+`01_mhc_overview` heatmap (`plot_quality_heatmap(drop_all_na = TRUE)`) and
+raw-metrics table; display only, the score is unchanged.
 v0.28.1 changes two plot defaults: `theme_howmahico(base_size = 10)` (was 8) and
 `plot_pseudomobilogram(binwidth = 0.05)` (was 0.2).
 v0.28.0 makes the **focused reports runnable outside a knit**: the knitr child
